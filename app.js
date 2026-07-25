@@ -1,7 +1,20 @@
+import { APP_MODES, summarizeSelectedFiles, viewForMode } from './ui-state.mjs';
+
 const rdfCanvas = document.querySelector('#rdfCanvas');
 const poreCanvas = document.querySelector('#poreCanvas');
 const fileInput = document.querySelector('#fileInput');
 const status = document.querySelector('#fileStatus');
+const workspace = document.querySelector('#demoWorkspace');
+const modeBanner = document.querySelector('#modeBanner');
+
+function setMode(mode, files = []) {
+  const view = viewForMode(mode, summarizeSelectedFiles(files));
+  workspace.hidden = view.workspaceHidden;
+  modeBanner.textContent = view.badge;
+  modeBanner.classList.toggle('synthetic', mode === APP_MODES.SYNTHETIC);
+  status.textContent = view.status;
+  if (!view.workspaceHidden) requestAnimationFrame(() => { drawRdf(); drawPore(); });
+}
 
 function fitCanvas(canvas) {
   const ratio = window.devicePixelRatio || 1;
@@ -17,7 +30,7 @@ function drawRdf() {
   const { context: c, width: w, height: h } = fitCanvas(rdfCanvas);
   const pad = { left: 48, right: 12, top: 12, bottom: 33 };
   const pw = w - pad.left - pad.right, ph = h - pad.top - pad.bottom;
-  c.font = '9px DM Mono'; c.strokeStyle = '#dcddd7'; c.fillStyle = '#747a74'; c.lineWidth = 1;
+  c.font = '9px ui-monospace'; c.strokeStyle = '#dcddd7'; c.fillStyle = '#747a74'; c.lineWidth = 1;
   for (let i = 0; i <= 5; i++) {
     const y = pad.top + ph * i / 5; c.beginPath(); c.moveTo(pad.left, y); c.lineTo(w-pad.right, y); c.stroke();
     c.fillText((3-i*.6).toFixed(1), 12, y+3);
@@ -55,14 +68,14 @@ function drawPore() {
 
 function handleFiles(files){
   if(!files.length)return;
-  const types=[...files].reduce((a,f)=>{const ext=f.name.split('.').pop().toUpperCase();a[ext]=(a[ext]||0)+1;return a},{});
-  status.textContent=`✓ ${files.length} files indexed locally · ${Object.entries(types).map(([k,v])=>`${v} ${k}`).join(' · ')} · ready to map`;
+  setMode(APP_MODES.FILES_SELECTED, files);
 }
 fileInput.addEventListener('change',e=>handleFiles(e.target.files));
-document.querySelector('#demoButton').addEventListener('click',()=>{status.textContent='✓ C₅ demo loaded · 48 pressure states · 12,400 trajectory frames';drawRdf();drawPore()});
+document.querySelector('#demoButton').addEventListener('click',()=>setMode(APP_MODES.SYNTHETIC));
 document.querySelector('#inspectButton').addEventListener('click',()=>document.querySelector('#details').scrollIntoView({behavior:'smooth'}));
 document.querySelectorAll('.segmented button').forEach(button=>button.addEventListener('click',e=>{e.currentTarget.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));e.currentTarget.classList.add('active')}));
 const drop=document.querySelector('#dropzone');
 ['dragenter','dragover'].forEach(name=>drop.addEventListener(name,e=>{e.preventDefault();drop.style.outline='2px solid #ff7247'}));
 ['dragleave','drop'].forEach(name=>drop.addEventListener(name,e=>{e.preventDefault();drop.style.outline='none';if(e.dataTransfer)handleFiles(e.dataTransfer.files)}));
-window.addEventListener('resize',()=>{drawRdf();drawPore()});drawRdf();drawPore();
+window.addEventListener('resize',()=>{if (!workspace.hidden) { drawRdf(); drawPore(); }});
+setMode(APP_MODES.EMPTY);
