@@ -1,0 +1,2 @@
+n_value,component,run,pressure_pa,pressure_bar,rdf_filename,source_relative_path,collected_relative_path,size_bytes,sha256
+10,C10,1_otherstuff,23299.51811,0.2329951811,RDF_CF3_sp3_O2.dat,source/RDF_CF3_sp3_O2.dat,rdfs/RDF_CF3_sp3_O2.dat,192,fixture-not-verified

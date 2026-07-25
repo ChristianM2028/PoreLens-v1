@@ -4,9 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PoreLens — RASPA trajectory forensics</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,24 +16,35 @@
   <main id="workspace">
     <section class="hero">
       <div>
-        <p class="eyebrow"><span></span> INTERACTION ANALYSIS / 04</p>
+        <p class="eyebrow"><span></span> LOCAL RASPA DATA REVIEW</p>
         <h1>Find the physics<br>inside your <em>trajectories.</em></h1>
       </div>
-      <p class="hero-copy">Connect pressure-dependent structure to atom-level Lennard–Jones contributions — without manually scanning hundreds of plots.</p>
+      <p class="hero-copy">Inspect pressure-dependent structure alongside sampling evidence. PoreLens reports measurements and provenance without turning an RDF peak into an energetic or causal claim.</p>
     </section>
 
     <section class="upload-card" id="dropzone">
       <div class="upload-icon">↗</div>
-      <div><strong>Drop a RASPA dataset</strong><span>RDF tables, XYZ movies, CIF frameworks, or a project folder</span></div>
-      <label class="button light">Choose files<input id="fileInput" type="file" multiple accept=".csv,.dat,.txt,.xyz,.cif,.json"></label>
-      <button class="text-button" id="demoButton">or explore the C<sub>5</sub> demo →</button>
+      <div><strong>Select representative RASPA files</strong><span>Manifest CSV, RDF tables, multi-model PDB movies, CIFs, and run metadata</span></div>
+      <label class="button light">Choose files<input id="fileInput" type="file" multiple accept=".csv,.dat,.txt,.pdb,.cif,.json,.input"></label>
+      <label class="button light directory-button">Choose folder<input id="directoryInput" type="file" multiple webkitdirectory></label>
+      <label class="integrity"><input id="verifyChecksums" type="checkbox"> Verify SHA-256</label>
+      <button class="text-button" id="demoButton">or view a clearly labeled synthetic UI demo →</button>
     </section>
-    <div class="file-status" id="fileStatus" aria-live="polite"></div>
+    <div class="file-status" id="fileStatus" aria-live="polite">Select local files to begin. No dataset has been parsed.</div>
+
+    <div class="mode-banner" id="modeBanner">No analysis loaded</div>
+    <section class="panel real-workspace" id="realWorkspace" hidden>
+      <div class="panel-head"><div><p class="eyebrow">IMPORTED RDF EVIDENCE</p><h2 id="datasetTitle">Dataset</h2></div><button class="chip" id="exportButton">Export visible CSV</button></div>
+      <div class="selectors"><label>Component<select id="componentSelect"></select></label><label>Pair<select id="pairSelect"></select></label><label>Pressure<select id="pressureSelect"></select></label></div>
+      <div class="evidence-grid"><div><canvas id="realRdfCanvas" width="900" height="430" aria-label="Parsed radial distribution curve"></canvas></div><dl class="evidence-values"><div><dt>Pressure</dt><dd id="pressureValue"></dd></div><div><dt>Histogram weight</dt><dd id="weightValue"></dd></div><div><dt>Loading</dt><dd>Unavailable — RASPA output not imported</dd></div><div><dt>Coordination number</dt><dd>Disabled — target density and pair semantics unknown</dd></div></dl></div>
+      <h3>Dataset diagnostics</h3><ul class="diagnostics" id="diagnostics"></ul>
+    </section>
+    <div id="demoWorkspace" hidden>
 
     <section class="analysis-grid">
       <article class="panel rdf-panel">
         <div class="panel-head">
-          <div><p class="eyebrow">RADIAL DISTRIBUTION</p><h2>CF<sub>3</sub> — framework</h2></div>
+          <div><p class="eyebrow">SYNTHETIC RADIAL DISTRIBUTION</p><h2>Illustrative pair — framework</h2></div>
           <div class="segmented"><button class="active">g(r)</button><button>Δg/ΔlogP</button></div>
         </div>
         <div class="legend"><span>Pressure</span><i></i><b>10<sup>−5</sup></b><span>bar</span><i></i><b>10<sup>1</sup></b></div>
@@ -45,35 +53,29 @@
       </article>
 
       <aside class="panel finding-panel">
-        <div class="panel-head"><div><p class="eyebrow">LEADING SIGNAL</p><h2>Confinement locks<br>a preferred contact</h2></div><span class="confidence">94%<small>confidence</small></span></div>
-        <p class="finding-copy">A narrow CF<sub>3</sub>–framework band persists at <strong>5.31–5.48 Å</strong> above 0.02 bar. Its low drift and increasing excess area are consistent with geometry-directed packing.</p>
-        <div class="metric-row"><div><span>Peak drift</span><strong>0.17 Å</strong><small>−71% vs C<sub>3</sub></small></div><div><span>Excess area</span><strong>+38%</strong><small>across pressure</small></div></div>
-        <button class="button dark" id="inspectButton">Inspect contributing atoms <span>→</span></button>
-        <p class="fineprint">Inference, not proof. Validate against force-field and framework topology.</p>
+        <div class="panel-head"><div><p class="eyebrow">DEMO LIMITATION</p><h2>No scientific finding</h2></div></div>
+        <p class="finding-copy">These curves are synthetic and exist only to preview the interface. They contain no loading, unnormalized histogram, trajectory, topology, or force-field evidence.</p>
+        <div class="metric-row"><div><span>Peak metrics</span><strong>Not calculated</strong><small>requires parsed RDF rows</small></div><div><span>Sampling status</span><strong>Unknown</strong><small>requires histogram weight</small></div></div>
+        <button class="button dark" id="inspectButton">Review unavailable evidence <span>→</span></button>
+        <p class="fineprint">No confidence, energy, causality, or coordination claim is made.</p>
       </aside>
     </section>
 
     <section class="lower-grid" id="details">
       <article class="panel contributors">
-        <div class="panel-head"><div><p class="eyebrow">ENERGY ATTRIBUTION</p><h2>Who creates the LJ well?</h2></div><button class="chip">5.31–5.48 Å⌄</button></div>
-        <div class="bar-chart" id="barChart">
-          <div><label><b>C1</b><span>terminal CF<sub>3</sub></span></label><i><em style="--w:88%"></em></i><strong>−12.8</strong></div>
-          <div><label><b>C5</b><span>terminal CF<sub>3</sub></span></label><i><em style="--w:74%"></em></i><strong>−10.7</strong></div>
-          <div><label><b>C2</b><span>backbone CF<sub>2</sub></span></label><i><em style="--w:39%"></em></i><strong>−5.6</strong></div>
-          <div><label><b>C4</b><span>backbone CF<sub>2</sub></span></label><i><em style="--w:33%"></em></i><strong>−4.8</strong></div>
-          <div><label><b>C3</b><span>backbone CF<sub>2</sub></span></label><i><em style="--w:20%"></em></i><strong>−2.9</strong></div>
-        </div>
-        <footer><span>LJ contribution / kJ mol<sup>−1</sup></span><span>more attractive ←</span></footer>
+        <div class="panel-head"><div><p class="eyebrow">ENERGY ATTRIBUTION</p><h2>Unavailable</h2></div></div>
+        <p class="placeholder-copy">Pairwise Lennard–Jones attribution is disabled. It requires validated coordinates, parameters, mixing rules, exclusions, cutoff treatment, and periodic-boundary behavior.</p>
       </article>
       <article class="panel geometry">
         <div class="panel-head"><div><p class="eyebrow">SPATIAL EVIDENCE</p><h2>Pore contact map</h2></div><button class="icon-button">↗</button></div>
         <canvas id="poreCanvas" width="580" height="340" aria-label="Molecular pore contact visualization"></canvas>
-        <div class="geometry-note"><span class="pulse"></span><div><strong>Terminal alignment</strong><p>CF<sub>3</sub> ends occupy opposing pore pockets, concentrating framework contacts near the LJ minimum.</p></div></div>
+        <div class="geometry-note"><span class="pulse"></span><div><strong>Synthetic geometry</strong><p>This decorative preview is not a trajectory frame and does not identify atom roles or contacts.</p></div></div>
       </article>
     </section>
+    </div>
   </main>
 
   <footer class="page-footer"><span>PoreLens / local analysis prototype</span><span>Files stay in your browser · no upload</span></footer>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

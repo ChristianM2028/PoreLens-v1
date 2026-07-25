@@ -1,7 +1,29 @@
+import { APP_MODES, summarizeSelectedFiles, viewForMode } from './ui-state.mjs';
+import { importBrowserFiles } from './importers.mjs';
+import { samplingQuality } from './analysis.mjs';
+
 const rdfCanvas = document.querySelector('#rdfCanvas');
 const poreCanvas = document.querySelector('#poreCanvas');
 const fileInput = document.querySelector('#fileInput');
+const directoryInput = document.querySelector('#directoryInput');
 const status = document.querySelector('#fileStatus');
+const workspace = document.querySelector('#demoWorkspace');
+const modeBanner = document.querySelector('#modeBanner');
+const realWorkspace = document.querySelector('#realWorkspace');
+const componentSelect = document.querySelector('#componentSelect');
+const pairSelect = document.querySelector('#pairSelect');
+const pressureSelect = document.querySelector('#pressureSelect');
+let imported = null;
+
+function setMode(mode, files = []) {
+  const view = viewForMode(mode, summarizeSelectedFiles(files));
+  workspace.hidden = view.workspaceHidden;
+  realWorkspace.hidden = true;
+  modeBanner.textContent = view.badge;
+  modeBanner.classList.toggle('synthetic', mode === APP_MODES.SYNTHETIC);
+  status.textContent = view.status;
+  if (!view.workspaceHidden) requestAnimationFrame(() => { drawRdf(); drawPore(); });
+}
 
 function fitCanvas(canvas) {
   const ratio = window.devicePixelRatio || 1;
@@ -17,7 +39,7 @@ function drawRdf() {
   const { context: c, width: w, height: h } = fitCanvas(rdfCanvas);
   const pad = { left: 48, right: 12, top: 12, bottom: 33 };
   const pw = w - pad.left - pad.right, ph = h - pad.top - pad.bottom;
-  c.font = '9px DM Mono'; c.strokeStyle = '#dcddd7'; c.fillStyle = '#747a74'; c.lineWidth = 1;
+  c.font = '9px ui-monospace'; c.strokeStyle = '#dcddd7'; c.fillStyle = '#747a74'; c.lineWidth = 1;
   for (let i = 0; i <= 5; i++) {
     const y = pad.top + ph * i / 5; c.beginPath(); c.moveTo(pad.left, y); c.lineTo(w-pad.right, y); c.stroke();
     c.fillText((3-i*.6).toFixed(1), 12, y+3);
@@ -53,16 +75,57 @@ function drawPore() {
   c.strokeStyle='#ff7247';c.lineWidth=1;c.setLineDash([4,4]);[atoms[0],atoms[4]].forEach(([x,y])=>{c.beginPath();c.arc(w/2+x*w,h/2+y*h,26,0,7);c.stroke()});c.setLineDash([]);
 }
 
-function handleFiles(files){
+function pairKey(dataset) { return dataset.manifest.rdf_filename; }
+
+function options(select, values) {
+  select.replaceChildren(...values.map(value => Object.assign(document.createElement('option'), { value, textContent: value })));
+}
+
+function drawRealRdf(records) {
+  const canvas = document.querySelector('#realRdfCanvas');
+  const { context: c, width: w, height: h } = fitCanvas(canvas);
+  const pad = { left: 52, right: 16, top: 16, bottom: 36 }, pw = w-pad.left-pad.right, ph=h-pad.top-pad.bottom;
+  const xMin=records[0].distanceA, xMax=records.at(-1).distanceA, yMax=Math.max(1, ...records.map(row=>row.gR));
+  c.strokeStyle='#d8d8cf'; c.fillStyle='#17251f'; c.font='10px ui-monospace'; c.strokeRect(pad.left,pad.top,pw,ph);
+  c.beginPath(); c.strokeStyle='#2b7055'; c.lineWidth=2;
+  records.forEach((row,index)=>{ const x=pad.left+(row.distanceA-xMin)/(xMax-xMin)*pw, y=pad.top+ph-row.gR/yMax*ph; index?c.lineTo(x,y):c.moveTo(x,y); }); c.stroke();
+  c.fillText(`${xMin} Å`,pad.left,h-12); c.fillText(`${xMax} Å`,w-pad.right-55,h-12); c.fillText(`true max g(r): ${yMax}`,pad.left+8,pad.top+16);
+}
+
+function renderImported() {
+  const components=[...new Set(imported.datasets.map(item=>item.manifest.component))];
+  if (!components.includes(componentSelect.value)) options(componentSelect, components);
+  const component=componentSelect.value, pairs=[...new Set(imported.datasets.filter(item=>item.manifest.component===component).map(pairKey))];
+  if (!pairs.includes(pairSelect.value)) options(pairSelect,pairs);
+  const rows=imported.datasets.filter(item=>item.manifest.component===component&&pairKey(item)===pairSelect.value);
+  options(pressureSelect,rows.map((item,index)=>String(index))); const selected=rows[Number(pressureSelect.dataset.selected || 0)] || rows[0];
+  if (!selected) return;
+  document.querySelector('#datasetTitle').textContent=`${component} · ${selected.manifest.rdf_filename}`;
+  document.querySelector('#pressureValue').textContent=`${selected.manifest.pressure_pa} Pa (${selected.manifest.pressure_bar} bar)`;
+  document.querySelector('#weightValue').textContent=`${samplingQuality(selected.rdf.records).weight} · unnormalized distance histogram sum`;
+  [...pressureSelect.options].forEach((option,index)=>option.textContent=`${rows[index].manifest.pressure_pa} Pa · run ${rows[index].manifest.run}`);
+  document.querySelector('#diagnostics').replaceChildren(...(imported.diagnostics.length?imported.diagnostics:[{severity:'ok',message:'Manifest targets and parsed RDF rows are valid.'}]).map(item=>{const li=document.createElement('li');li.className=item.severity;li.textContent=`${item.severity.toUpperCase()}: ${item.message}`;return li;}));
+  realWorkspace.hidden=false; workspace.hidden=true; drawRealRdf(selected.rdf.records);
+}
+
+async function handleFiles(files){
   if(!files.length)return;
-  const types=[...files].reduce((a,f)=>{const ext=f.name.split('.').pop().toUpperCase();a[ext]=(a[ext]||0)+1;return a},{});
-  status.textContent=`✓ ${files.length} files indexed locally · ${Object.entries(types).map(([k,v])=>`${v} ${k}`).join(' · ')} · ready to map`;
+  setMode(APP_MODES.FILES_SELECTED, files);
+  status.textContent=`Reading ${files.length} local files…`;
+  imported=await importBrowserFiles(files,{verifyChecksums:document.querySelector('#verifyChecksums').checked});
+  if(imported.datasets.length){ status.textContent=`Parsed ${imported.datasets.length} RDF files from ${imported.rows.length} manifest rows · ${imported.diagnostics.length} diagnostics`; renderImported(); }
+  else { status.textContent=`Import produced no browsable RDF data · ${imported.diagnostics.map(item=>item.message).join(' ')}`; }
 }
 fileInput.addEventListener('change',e=>handleFiles(e.target.files));
-document.querySelector('#demoButton').addEventListener('click',()=>{status.textContent='✓ C₅ demo loaded · 48 pressure states · 12,400 trajectory frames';drawRdf();drawPore()});
+directoryInput.addEventListener('change',e=>handleFiles(e.target.files));
+document.querySelector('#demoButton').addEventListener('click',()=>setMode(APP_MODES.SYNTHETIC));
+[componentSelect,pairSelect].forEach(select=>select.addEventListener('change',()=>{pressureSelect.dataset.selected='0';renderImported();}));
+pressureSelect.addEventListener('change',()=>{pressureSelect.dataset.selected=pressureSelect.value;renderImported();});
+document.querySelector('#exportButton').addEventListener('click',()=>{const component=componentSelect.value,pair=pairSelect.value;const items=imported.datasets.filter(item=>item.manifest.component===component&&pairKey(item)===pair);const csv=['component,run,pressure_pa,rdf_filename,bin_index,distance_A,g_r,unnormalized_distance_histogram',...items.flatMap(item=>item.rdf.records.map(row=>[component,item.manifest.run,item.manifest.pressure_pa,pair,row.binIndex,row.distanceA,row.gR,row.unnormalizedDistanceHistogram].join(',')))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='porelens-rdf-export.csv';a.click();URL.revokeObjectURL(a.href);});
 document.querySelector('#inspectButton').addEventListener('click',()=>document.querySelector('#details').scrollIntoView({behavior:'smooth'}));
 document.querySelectorAll('.segmented button').forEach(button=>button.addEventListener('click',e=>{e.currentTarget.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));e.currentTarget.classList.add('active')}));
 const drop=document.querySelector('#dropzone');
 ['dragenter','dragover'].forEach(name=>drop.addEventListener(name,e=>{e.preventDefault();drop.style.outline='2px solid #ff7247'}));
 ['dragleave','drop'].forEach(name=>drop.addEventListener(name,e=>{e.preventDefault();drop.style.outline='none';if(e.dataTransfer)handleFiles(e.dataTransfer.files)}));
-window.addEventListener('resize',()=>{drawRdf();drawPore()});drawRdf();drawPore();
+window.addEventListener('resize',()=>{if (!workspace.hidden) { drawRdf(); drawPore(); }});
+setMode(APP_MODES.EMPTY);
