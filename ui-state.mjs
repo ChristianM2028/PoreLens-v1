@@ -21,7 +21,7 @@ export function viewForMode(mode, summary = { count: 0, typeSummary: '' }) {
   if (mode === APP_MODES.FILES_SELECTED) return {
     workspaceHidden: true,
     badge: 'No analysis loaded',
-    status: `${summary.count} local file${summary.count === 1 ? '' : 's'} selected${summary.typeSummary ? ` · ${summary.typeSummary}` : ''}. Parsing is not implemented yet; no scientific values are shown.`,
+    status: `${summary.count} local file${summary.count === 1 ? '' : 's'} selected${summary.typeSummary ? ` · ${summary.typeSummary}` : ''}.`,
   };
   return { workspaceHidden: true, badge: 'No analysis loaded', status: 'Select local files to begin. No dataset has been parsed.' };
 }
