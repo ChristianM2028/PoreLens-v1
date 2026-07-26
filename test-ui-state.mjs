@@ -13,7 +13,7 @@ test('selected real files hide all synthetic scientific values', () => {
   const view = viewForMode(APP_MODES.FILES_SELECTED, summary);
   assert.equal(view.workspaceHidden, true);
   assert.equal(summary.typeSummary, '1 CSV · 1 DAT');
-  assert.match(view.status, /Parsing is not implemented yet/);
+  assert.match(view.status, /selected/);
 });
 
 test('synthetic content is only visible in an explicitly labeled mode', () => {

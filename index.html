@@ -1,81 +1,18 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>PoreLens — RASPA trajectory forensics</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="#"><span class="brand-mark">P</span><span>PoreLens</span><small>RASPA FORENSICS</small></a>
-    <nav><a class="active" href="#workspace">Workspace</a><a href="#method">Method</a><a href="#about">About</a></nav>
-    <button class="icon-button" aria-label="Project settings">•••</button>
-  </header>
-
-  <main id="workspace">
-    <section class="hero">
-      <div>
-        <p class="eyebrow"><span></span> LOCAL RASPA DATA REVIEW</p>
-        <h1>Find the physics<br>inside your <em>trajectories.</em></h1>
-      </div>
-      <p class="hero-copy">Inspect pressure-dependent structure alongside sampling evidence. PoreLens reports measurements and provenance without turning an RDF peak into an energetic or causal claim.</p>
-    </section>
-
-    <section class="upload-card" id="dropzone">
-      <div class="upload-icon">↗</div>
-      <div><strong>Select representative RASPA files</strong><span>Manifest CSV, RDF tables, multi-model PDB movies, CIFs, and run metadata</span></div>
-      <label class="button light">Choose files<input id="fileInput" type="file" multiple accept=".csv,.dat,.txt,.pdb,.cif,.json,.input"></label>
-      <label class="button light directory-button">Choose folder<input id="directoryInput" type="file" multiple webkitdirectory></label>
-      <label class="integrity"><input id="verifyChecksums" type="checkbox"> Verify SHA-256</label>
-      <button class="text-button" id="demoButton">or view a clearly labeled synthetic UI demo →</button>
-    </section>
-    <div class="file-status" id="fileStatus" aria-live="polite">Select local files to begin. No dataset has been parsed.</div>
-
-    <div class="mode-banner" id="modeBanner">No analysis loaded</div>
-    <section class="panel real-workspace" id="realWorkspace" hidden>
-      <div class="panel-head"><div><p class="eyebrow">IMPORTED RDF EVIDENCE</p><h2 id="datasetTitle">Dataset</h2></div><button class="chip" id="exportButton">Export visible CSV</button></div>
-      <div class="selectors"><label>Component<select id="componentSelect"></select></label><label>Pair<select id="pairSelect"></select></label><label>Pressure<select id="pressureSelect"></select></label></div>
-      <div class="evidence-grid"><div><canvas id="realRdfCanvas" width="900" height="430" aria-label="Parsed radial distribution curve"></canvas></div><dl class="evidence-values"><div><dt>Pressure</dt><dd id="pressureValue"></dd></div><div><dt>Histogram weight</dt><dd id="weightValue"></dd></div><div><dt>Loading</dt><dd>Unavailable — RASPA output not imported</dd></div><div><dt>Coordination number</dt><dd>Disabled — target density and pair semantics unknown</dd></div></dl></div>
-      <h3>Dataset diagnostics</h3><ul class="diagnostics" id="diagnostics"></ul>
-    </section>
-    <div id="demoWorkspace" hidden>
-
-    <section class="analysis-grid">
-      <article class="panel rdf-panel">
-        <div class="panel-head">
-          <div><p class="eyebrow">SYNTHETIC RADIAL DISTRIBUTION</p><h2>Illustrative pair — framework</h2></div>
-          <div class="segmented"><button class="active">g(r)</button><button>Δg/ΔlogP</button></div>
-        </div>
-        <div class="legend"><span>Pressure</span><i></i><b>10<sup>−5</sup></b><span>bar</span><i></i><b>10<sup>1</sup></b></div>
-        <canvas id="rdfCanvas" width="900" height="430" aria-label="Pressure-dependent radial distribution chart"></canvas>
-        <div class="range-row"><span>2.5 Å</span><div class="range-track"><i></i><b></b></div><span>7.5 Å</span></div>
-      </article>
-
-      <aside class="panel finding-panel">
-        <div class="panel-head"><div><p class="eyebrow">DEMO LIMITATION</p><h2>No scientific finding</h2></div></div>
-        <p class="finding-copy">These curves are synthetic and exist only to preview the interface. They contain no loading, unnormalized histogram, trajectory, topology, or force-field evidence.</p>
-        <div class="metric-row"><div><span>Peak metrics</span><strong>Not calculated</strong><small>requires parsed RDF rows</small></div><div><span>Sampling status</span><strong>Unknown</strong><small>requires histogram weight</small></div></div>
-        <button class="button dark" id="inspectButton">Review unavailable evidence <span>→</span></button>
-        <p class="fineprint">No confidence, energy, causality, or coordination claim is made.</p>
-      </aside>
-    </section>
-
-    <section class="lower-grid" id="details">
-      <article class="panel contributors">
-        <div class="panel-head"><div><p class="eyebrow">ENERGY ATTRIBUTION</p><h2>Unavailable</h2></div></div>
-        <p class="placeholder-copy">Pairwise Lennard–Jones attribution is disabled. It requires validated coordinates, parameters, mixing rules, exclusions, cutoff treatment, and periodic-boundary behavior.</p>
-      </article>
-      <article class="panel geometry">
-        <div class="panel-head"><div><p class="eyebrow">SPATIAL EVIDENCE</p><h2>Pore contact map</h2></div><button class="icon-button">↗</button></div>
-        <canvas id="poreCanvas" width="580" height="340" aria-label="Molecular pore contact visualization"></canvas>
-        <div class="geometry-note"><span class="pulse"></span><div><strong>Synthetic geometry</strong><p>This decorative preview is not a trajectory frame and does not identify atom roles or contacts.</p></div></div>
-      </article>
-    </section>
-    </div>
-  </main>
-
-  <footer class="page-footer"><span>PoreLens / local analysis prototype</span><span>Files stay in your browser · no upload</span></footer>
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PoreLens — RDF workspace</title><link rel="stylesheet" href="styles.css"></head><body>
+<header class="topbar"><a class="brand" href="#"><span class="brand-mark">P</span><span>PoreLens</span><small>LOCAL RDF FORENSICS</small></a><nav><a href="#datasets">Datasets</a><a href="#analysis">Analysis</a><a href="#comparison">Comparison</a></nav></header>
+<main><section class="hero"><div><p class="eyebrow"><span></span> MEASURED RDF EVIDENCE</p><h1>Pressure–distance<br><em>without guesswork.</em></h1></div><p class="hero-copy">All plots and annotations are calculated locally from selected manifest and RDF files. RDF structure is not evidence of energy, causality, mechanism, or statistical confidence.</p></section>
+<section id="datasets" class="dataset-grid">
+  <article class="panel slot"><p class="eyebrow">DATASET A · PRIMARY</p><h2 id="nameA">Not loaded</h2><label class="button dark">Load / Replace A<input id="filesA" type="file" multiple webkitdirectory></label><button id="removeA" class="chip">Remove A</button><p id="statusA">Choose a folder containing manifest.csv and its referenced RDF files.</p></article>
+  <article class="panel slot"><p class="eyebrow">DATASET B · OPTIONAL</p><h2 id="nameB">Not loaded</h2><label class="button dark">Load / Replace B<input id="filesB" type="file" multiple webkitdirectory></label><button id="removeB" class="chip">Remove B</button><p id="statusB">Independent comparison slot. Loading B never replaces A.</p></article>
+</section>
+<label class="integrity standalone"><input id="verifyChecksums" type="checkbox"> Verify available SHA-256 values during import</label>
+<div class="mode-banner" id="activeState">No dataset loaded</div>
+<section class="panel" id="analysis" hidden><div class="panel-head"><div><p class="eyebrow">IN-APP HEATMAP ANALYSIS</p><h2>Pressure × radial distance</h2></div><button id="exportButton" class="chip">Export selected pair CSV</button></div>
+ <div class="selectors"><label>Dataset<select id="datasetSelect"><option>A</option><option>B</option></select></label><label>Chain / component<select id="componentSelect"></select></label><label>RDF pair<select id="pairSelect"></select></label><label>Exact simulated pressure<select id="pressureSelect"></select></label><label>High-region criterion<select id="thresholdMode"><option value="fraction">Fraction of map maximum</option><option value="absolute">Absolute g(r)</option></select></label><label>Threshold<input id="threshold" type="number" value="0.5" min="0" step="0.05"></label><label class="check"><input id="maskPeaks" type="checkbox" checked> Mask low-sampling rows</label></div>
+ <div class="active-strip" id="selectionSummary"></div><div class="plot-grid"><article><h3>Heatmap</h3><canvas id="heatmap" width="900" height="430" tabindex="0" aria-label="RDF pressure-distance heatmap"></canvas><p id="heatmapScale"></p></article><article><h3>Selected exact RDF</h3><canvas id="realRdfCanvas" width="900" height="430" aria-label="Selected RDF curve"></canvas><p id="sourceInfo"></p></article></div>
+ <aside class="notice">High g(r) at low loading may reflect normalization and poor sampling. “Histogram weight” is the RASPA unnormalized distance histogram sum—not a literal contact count, frame count, or coordination number.</aside><h3>Calculated annotations</h3><div id="annotations" class="metrics"></div><h3>Dataset diagnostics</h3><ul id="diagnostics" class="diagnostics"></ul>
+</section>
+<section class="panel comparison" id="comparison" aria-disabled="true"><div class="panel-head"><div><p class="eyebrow">PERSISTENT TWO-DATASET WORKSPACE</p><h2>Comparison</h2></div></div><p id="comparisonGate">Load Dataset B to enable comparison.</p><div id="comparisonBody" hidden>
+ <div class="selectors"><label>A chain<select id="compA"></select></label><label>A pair<select id="pairA"></select></label><label>A pressure<select id="pressureA"></select></label><label>B chain<select id="compB"></select></label><label>B pair<select id="pairB"></select></label><label>B pressure<select id="pressureB"></select></label><label class="check"><input id="nearestMatch" type="checkbox"> Match B to nearest A pressure</label><label>RDF view<select id="rdfCompareMode"><option value="overlay">A/B overlay</option><option value="panels">Separate panels</option><option value="difference">gB(r) − gA(r)</option></select></label><label>Heatmap scale<select id="colorMode"><option value="independent">Independent</option><option value="shared">Shared</option></select></label><label class="check"><input id="compareMask" type="checkbox" checked> Mask low-sampling rows</label><label class="check"><input id="differenceMap" type="checkbox"> Show difference heatmap</label></div>
+ <div class="active-strip" id="matchReport"></div><div class="compare-plots"><canvas id="heatmapA" width="700" height="360" aria-label="Dataset A heatmap"></canvas><canvas id="heatmapB" width="700" height="360" aria-label="Dataset B heatmap"></canvas><canvas id="differenceHeatmap" width="700" height="360" hidden aria-label="Difference heatmap"></canvas></div><canvas id="compareRdf" width="1200" height="420" aria-label="Compared RDF curves"></canvas><div id="comparisonMetrics" class="metrics"></div>
+</div></section></main><footer class="page-footer"><span>PoreLens / local-first</span><span>Data stays in this browser tab · no telemetry</span></footer><script type="module" src="app.js"></script></body></html>
