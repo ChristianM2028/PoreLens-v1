@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { APP_MODES, summarizeSelectedFiles, viewForMode } from './ui-state.mjs';
+import { APP_MODES, summarizeSelectedFiles, viewForMode, groupDiagnostics } from './ui-state.mjs';
 
 test('empty state never exposes demonstration analysis', () => {
   const view = viewForMode(APP_MODES.EMPTY);
@@ -20,4 +20,16 @@ test('synthetic content is only visible in an explicitly labeled mode', () => {
   const view = viewForMode(APP_MODES.SYNTHETIC);
   assert.equal(view.workspaceHidden, false);
   assert.match(`${view.badge} ${view.status}`, /Synthetic.*not calculated from RASPA data/i);
+});
+
+test('repeated diagnostics are stacked while distinct messages remain visible', () => {
+  const grouped = groupDiagnostics([
+    { severity: 'warning', message: 'Duplicate pressure' },
+    { severity: 'warning', message: 'Duplicate pressure' },
+    { severity: 'error', message: 'Missing RDF' },
+  ]);
+  assert.deepEqual(grouped, [
+    { severity: 'warning', message: 'Duplicate pressure', count: 2 },
+    { severity: 'error', message: 'Missing RDF', count: 1 },
+  ]);
 });
