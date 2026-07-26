@@ -76,3 +76,83 @@ export function coordinationNumber(records, densityPerA3, cutoffA) {
   }
   return 4 * Math.PI * densityPerA3 * integral;
 }
+
+/** The pair-specific low-sampling row mask used by rdf_pressure_heatmaps.py. */
+export function pairSamplingMask(pressuresPa, rawSums, { jumpThresholdDecades = 1, minimumRawSum = 0, minimumRawFraction = 0 } = {}) {
+  const maximum = Math.max(0, ...rawSums.filter(Number.isFinite));
+  const valid = rawSums.map(value => Number.isFinite(value) && value >= minimumRawSum && (!minimumRawFraction || value >= minimumRawFraction * maximum));
+  let cutoffPa = null, jumpDecades = 0;
+  if (jumpThresholdDecades > 0 && pressuresPa.length >= 3) {
+    const jumps = rawSums.slice(1).map((value, i) => Math.log10(Math.max(value, 1e-300)) - Math.log10(Math.max(rawSums[i], 1e-300)));
+    const qualifying = jumps.slice(0, Math.max(1, Math.floor(pressuresPa.length / 2))).map((jump, i) => jump >= jumpThresholdDecades ? i : -1).filter(i => i >= 0);
+    if (qualifying.length) {
+      const index = qualifying.at(-1); jumpDecades = jumps[index]; cutoffPa = pressuresPa[index + 1];
+      for (let i = 0; i <= index; i++) valid[i] = false;
+    }
+  }
+  return { valid, cutoffPa, jumpDecades };
+}
+
+export function percentile(values, q) {
+  const sorted = values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if (!sorted.length) return null;
+  const at=(sorted.length-1)*q/100, lo=Math.floor(at), f=at-lo;
+  return sorted[lo] + f*((sorted[lo+1] ?? sorted[lo])-sorted[lo]);
+}
+
+export function sameGrid(a, b, tolerance = 1e-10) {
+  return a.length === b.length && a.every((value, i) => Math.abs(value-b[i]) <= tolerance);
+}
+
+export function buildHeatmap(items, maskOptions = {}) {
+  const rows=[...items].sort((a,b)=>a.manifest.pressure_pa-b.manifest.pressure_pa);
+  if (!rows.length) throw new Error('No RDF rows are available for this heatmap');
+  const distances=rows[0].rdf.records.map(row=>row.distanceA);
+  if (rows.some(item=>!sameGrid(distances,item.rdf.records.map(row=>row.distanceA)))) throw new Error('RDF radial grids are incompatible; no silent interpolation was applied.');
+  const pressuresPa=rows.map(item=>item.manifest.pressure_pa), rawSums=rows.map(item=>item.rdf.records.reduce((sum,row)=>sum+row.unnormalizedDistanceHistogram,0));
+  const mask=pairSamplingMask(pressuresPa,rawSums,maskOptions), values=rows.map(item=>item.rdf.records.map(row=>row.gR));
+  const flat=values.flat();
+  return { rows, pressuresPa, distances, values, rawSums, ...mask, trueMaximum:Math.max(...flat), colorMaximum:Math.max(1.01,percentile(flat,99)) };
+}
+
+export function nearestPressureIndex(pressuresPa, targetPa) {
+  if (!pressuresPa.length) return -1;
+  return pressuresPa.reduce((best,value,index)=>Math.abs(value-targetPa)<Math.abs(pressuresPa[best]-targetPa)?index:best,0);
+}
+
+export function matchNearestPressure(pressuresPa, targetPa) {
+  const index=nearestPressureIndex(pressuresPa,targetPa), actualPa=pressuresPa[index];
+  return { index, actualPa, differencePa:actualPa-targetPa, exact:actualPa===targetPa };
+}
+
+export function highRegions(records, { mode='fraction', threshold=0.5, mapMaximum=null } = {}) {
+  const limit=mode==='absolute'?threshold:threshold*(mapMaximum ?? Math.max(...records.map(row=>row.gR)));
+  const regions=[]; let start=null;
+  records.forEach((row,index)=>{
+    if(row.gR>=limit && start===null) start=index;
+    if(start!==null && (row.gR<limit || index===records.length-1)) {
+      const end=row.gR>=limit&&index===records.length-1?index:index-1, slice=records.slice(start,end+1), peak=slice.reduce((a,b)=>b.gR>a.gR?b:a);
+      regions.push({startA:records[start].distanceA,endA:records[end].distanceA,widthA:records[end].distanceA-records[start].distanceA,peakPositionA:peak.distanceA,peakHeight:peak.gR,criterion:{mode,threshold,limit}}); start=null;
+    }
+  });
+  return regions;
+}
+
+export function mapAnnotations(heatmap, options) {
+  let global={height:-Infinity,positionA:null,pressurePa:null};
+  const byPressure=heatmap.rows.map((item,i)=>{
+    const records=item.rdf.records, peaks=findPeaks(records,records[0].distanceA,records.at(-1).distanceA,0);
+    records.forEach(row=>{if(row.gR>global.height)global={height:row.gR,positionA:row.distanceA,pressurePa:item.manifest.pressure_pa};});
+    return {pressurePa:item.manifest.pressure_pa,peaks,regions:highRegions(records,{...options,mapMaximum:heatmap.trueMaximum})};
+  });
+  const persistence=[];
+  byPressure.forEach(row=>row.regions.forEach(region=>{let group=persistence.find(g=>region.startA<=g.endA&&region.endA>=g.startA);if(!group){group={startA:region.startA,endA:region.endA,pressuresPa:[]};persistence.push(group)}group.startA=Math.min(group.startA,region.startA);group.endA=Math.max(group.endA,region.endA);group.pressuresPa.push(row.pressurePa)}));
+  return {global,byPressure,persistence:persistence.map(g=>({...g,widthA:g.endA-g.startA,pressureMinPa:Math.min(...g.pressuresPa),pressureMaxPa:Math.max(...g.pressuresPa)}))};
+}
+
+export function compareRdfs(aRecords,bRecords) {
+  const aGrid=aRecords.map(r=>r.distanceA),bGrid=bRecords.map(r=>r.distanceA);
+  if(!sameGrid(aGrid,bGrid)) return {compatible:false,reason:'Radial grids differ; difference is disabled because no alignment method was selected.'};
+  const aPeak=aRecords.reduce((x,y)=>y.gR>x.gR?y:x),bPeak=bRecords.reduce((x,y)=>y.gR>x.gR?y:x);
+  return {compatible:true,difference:bRecords.map((row,i)=>({distanceA:row.distanceA,gR:row.gR-aRecords[i].gR})),peakHeightDifference:bPeak.gR-aPeak.gR,peakPositionDifferenceA:bPeak.distanceA-aPeak.distanceA};
+}
