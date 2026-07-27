@@ -21,3 +21,90 @@ Then open `http://127.0.0.1:8000`. Selected files stay in the browser; there is 
 ```bash
 node --test
 ```
+
+## Annotation-driven movie LJ milestone
+
+The first movie-analysis layer is implemented as pure ES modules rather than
+copying the reference scripts' system-specific workflow:
+
+- `raspa-package.mjs` audits run-package inputs and refuses quantitative LJ
+  attribution when the movie, cutoff, force field, topology, CIF mapping, or
+  other essential input is absent or contradictory. A missing trajectory is a
+  capability warning, not a reason to discard RDFs or annotations.
+- `raspa-physics.mjs` parses pseudoatoms, mixing rules, pair overrides,
+  molecule site order/intramolecular VDW pairs, CIF cells and framework sites;
+  implements triclinic minimum images, shifted/truncated LJ, and deterministic
+  physics fingerprints.
+- `movie-analysis.mjs` compiles annotations only with explicit scope
+  (`pair_only`, `anchor_site`, `whole_molecule`), pair criterion (`any`,
+  `nearest`, `all`), and reference selection. Pressure annotations select exact
+  simulated run/pressure identities. Results are versioned and explicitly
+  labeled as reconstructed coordinate-based pairwise LJ, with JSON-ready data
+  and a pair contribution CSV export.
+- `lj-workflow.mjs` executes validated framewise selections and reference
+  populations, normalization, guest–framework/guest–guest separation, block
+  uncertainty, and pressure grouping. `lj-ui.mjs` exposes that workflow in the
+  browser with progress, unavailable/error/success states, sortable results,
+  progressive diagnostics, and JSON/CSV downloads.
+
+### Browser workflow
+
+Load an RDF manifest collection, create or import annotations, and choose
+**Movie / LJ analysis**. Select the matching run-package files, review the
+parsed cutoff, potential mode, mixing rule, mapping count, diagnostics, and
+physics fingerprint, then select one or more annotations. Radial annotations
+require an explicit scope, pair criterion, reference population, and
+normalization; pressure-only annotations require an explicit reference and
+normalization. The Run button stays disabled until the package and choices are
+valid. Results show selected/reference populations, normalized energies,
+guest–framework and guest–guest counts, block standard errors, pressure rows,
+filterable/sortable pair contributions, provenance, mappings, limitations, and
+download controls.
+
+Run packages may be selected separately from the RDF collection so a missing
+large trajectory does not prevent annotation browsing. The imported
+`simulation.input` pressure must exactly match the annotated simulated
+pressure. A package without a movie, an unresolved RDF pair, ambiguous mapping,
+or incomplete force field produces an unavailable or failure state instead of
+a numerical result.
+
+### Reference-script audit
+
+`custom_movie_analysis.py` hard-codes C10, sites 0/9 as terminal, chemistry
+names, LJ parameters, a 4.5–5.5 Å nearest-Zn condition, Lorentz–Berthelot
+mixing, orthorhombic boxes, unshifted/truncated behavior, and per-terminal or
+backbone normalizations. It does not read the run force field, cutoff behavior,
+or topology. Its useful symmetry expansion, minimum-image geometry, frame
+iteration, pair accumulation, and block grouping were separated and made
+input-driven; its constants and implicit selection semantics were replaced.
+
+`c10_pocket_decomposition.py` inherits those assumptions and additionally fixes
+framework labels, Zn/O coordination cutoffs, radial bins, nearest-Zn inside vs
+outside control, terminal-only attribution, and PFA-specific local axes. Its
+pair/type accumulation and selected-minus-reference concept informed the
+structured result, but the fixed pocket geometry and silent outside control
+were not reused. `rdf_pressure_heatmaps.py` provides useful manifest/RDF parsing
+ideas but is not a physical movie-energy implementation.
+
+### Required inputs and current limits
+
+Quantitative movie LJ reconstruction requires an exact `simulation.input`, PDB
+movie, matching adsorbate molecule `.def`, framework CIF, `pseudo_atoms.def`,
+`force_field_mixing_rules.def`, and any applicable `force_field.def` overrides.
+The cutoff, shifted/truncated mode, mixing rule, every interacting type,
+movie/topology ordering, molecule boundaries, periodic cell, framework mapping,
+and relevant exclusions must resolve without ambiguity. Output `.data`, RDF
+manifest/files, and the annotation sidecar are required for source validation
+and aggregate comparison when those capabilities are requested.
+
+The workflow does not claim a RASPA total potential: tail corrections are not
+localized, rounded PDB coordinates can perturb steep repulsions, and compatible
+RASPA output totals can also differ due to sampling, electrostatics, framework
+treatment, and excluded intramolecular terms. CIF symmetry operations used by
+the representative fixture are expanded and deduplicated; arbitrary CIF
+expression dialects, Ewald/electrostatic reconstruction, flexible frameworks, changing cells,
+anisotropic or non-LJ potentials, and tail-correction attribution remain
+unsupported. The included two-frame trimmed PDB preserves one 25-molecule and
+one 26-molecule frame, lossy all-C labels, absent molecule delimiters, and
+out-of-cell coordinates for routine parser tests; the complete movie remains
+an optional integration fixture.
