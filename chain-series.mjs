@@ -66,7 +66,9 @@ export function matchRuns(runs, { mode, pressurePa, tolerancePa = 0, manual = {}
 }
 
 export function availableLoadingUnits(parsedOutputs,kind='absolute'){
-  const sets=parsedOutputs.map(x=>new Set(Object.keys(x.parsed.loadings?.[kind]||{})));return sets.length?[...sets.reduce((a,s)=>new Set([...a].filter(x=>s.has(x))))]:[];
+  const units=new Set();
+  for(const output of parsedOutputs)for(const unit of Object.keys(output.parsed.loadings?.[kind]||{}))units.add(unit);
+  return [...units].sort((a,b)=>a==='molecules/unit cell'?-1:b==='molecules/unit cell'?1:a.localeCompare(b));
 }
 
 /** Assemble every valid output file into pressure-sorted chain curves without pressure matching. */
