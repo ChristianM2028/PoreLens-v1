@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {AnalysisWorkspaces,capabilityState,WORKSPACE_IDS} from './analysis-workspaces.mjs';
+
+test('top-level workspaces own selections, loading, and errors independently',()=>{const w=new AnalysisWorkspaces();w.select('isotherm',{unit:'mol/kg framework'});w.select('movie',{run:'7',frame:38});w.fail('isotherm',new Error('malformed output'));assert.equal(w.state('movie').selection.frame,38);assert.equal(w.state('movie').error,null);assert.equal(w.state('rdf').selection.unit,undefined);w.activate('movie');assert.equal(w.active,'movie')});
+test('missing output types disable only their own capability',()=>{const c=capabilityState([{type:'movie'},{type:'rdf'}]);assert.deepEqual(c,{isotherm:false,rdf:true,end_to_end:false,movie:true,vtk:false})});
+test('all principal workspaces remain directly addressable',()=>{assert.deepEqual(WORKSPACE_IDS,['isotherm','rdf','end_to_end','movie','vtk'])});
+test('movie metadata never requires an absolute loading object',()=>{const movie={type:'movie',path:'C10/7/Movies/System_0/AllComponents.pdb',loadingMetadata:null};assert.doesNotThrow(()=>capabilityState([movie]));assert.equal(capabilityState([movie]).movie,true)});
+test('markup exposes direct heatmap navigation and no shared result-type selector',async()=>{const {readFile}=await import('node:fs/promises');const html=await readFile(new URL('./index.html',import.meta.url),'utf8');for(const target of ['adsorption-isotherms','rdf-workspace','end-to-end-histograms','movies-lj','spatial-density'])assert.match(html,new RegExp(`href=\"#${target}\"`));assert.match(html,/data-rdf-subview="curves"[^>]*>RDF Curves/);assert.match(html,/data-rdf-subview="heatmaps"[^>]*>RDF Heatmaps/);assert.doesNotMatch(html,/<span>Result type<\/span>/);assert.doesNotMatch(html,/<span>Output type<\/span>/)});
