@@ -129,3 +129,34 @@ unsupported. The included two-frame trimmed PDB preserves one 25-molecule and
 one 26-molecule frame, lossy all-C labels, absent molecule delimiters, and
 out-of-cell coordinates for routine parser tests; the complete movie remains
 an optional integration fixture.
+
+## End-to-end and VTK run outputs
+
+The full-dataset browser catalogs RDFs, recursively discovered
+`EndToEndDistanceHistograms/` files, legacy `.vtk` grids, and PDB movies as
+independent run capabilities. A run with no RDF can still open its histogram,
+VTK, or movie catalog. Files are parsed only when selected; **Refresh Dataset
+cache** invalidates successful result parses.
+
+End-to-end files currently use the common ASCII two-column distance/value
+form. Header text determines whether values are identified as probability
+density or raw weights; otherwise the UI says stored values. Probability views
+are available only for positive finite integrals. Statistics use the continuous
+piecewise-linear curve and report no uncertainty when the source supplies none.
+The matching component definition supplies ordered terminal pseudoatoms;
+missing/invalid definitions and C1/C2 interpretation are warned rather than
+inferred. Movie-derived conformations are not substituted for the online RASPA
+observable.
+
+VTK support is intentionally strict: ASCII legacy `STRUCTURED_POINTS` and
+`IMAGE_DATA`, scalar arrays, dimensions, origin, spacing, and stored values are
+preserved. The browser supplies orthogonal slices, thresholded 3D voxel
+projection, opacity, linear/log color mapping, explicitly display-only maximum
+normalization, screenshots, and visualization-state JSON. Difference utilities
+require identical geometry and scalar names and never regrid. Scalar values
+remain labeled **stored scalar value** because generic legacy VTK headers do not
+establish physical units or normalization. Binary/XML VTK, true polygonal
+marching-cubes geometry, arbitrary framework/grid registration, synchronized
+side-by-side rendering, and production-scale worker geometry are remaining
+limitations; parsing yields to the browser before large VTK work but is not yet
+implemented in a dedicated Web Worker.
