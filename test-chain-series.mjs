@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { discoverChains, discoverPairs, filterPairs, matchRuns, parseEndToEndHistogram, plottedExport, exportCsv } from './chain-series.mjs';
+import { discoverChains, discoverPairs, filterPairs, matchRuns, parseEndToEndHistogram, plottedExport, exportCsv, buildChainCatalog } from './chain-series.mjs';
 
 test('discovers only immediate exact Cn directories in numeric order', () => {
   assert.deepEqual(discoverChains(['root/C10/1/a', 'root/C2/1/a', 'root/C1/1/a', 'root/C3_extra/1/a', 'root/x/C4/1/a']), [
@@ -40,3 +40,5 @@ test('exports exactly visible plotted data with isolated family provenance and o
   assert.deepEqual(out.data.map(x=>x.family),['alkane','PFA']); assert.equal(out.configuration.annotations.length,1);
   assert.equal(exportCsv(out).split('\n').length,3);
 });
+
+test('catalogs RDF, recursive histograms, VTK and movies independently with simulation provenance',async()=>{const simulation=`Framework 0\nFrameworkName MOF-X\nUnitCells 2 1 1\nExternalTemperature 310\nExternalPressure 1234\nComponent 0 MoleculeName PFA5\n`;const file=(path,text='x')=>({name:path.split('/').at(-1),webkitRelativePath:path,text:async()=>text,size:text.length,lastModified:1});const catalog=await buildChainCatalog([file('root/C5/7/simulation.input',simulation),file('root/C5/7/RadialDistributionFunctions/RDF_A_B.dat','0 1 2 3\n1 2 3 4'),file('root/C5/7/EndToEndDistanceHistograms/System_1/nested/h.dat','0 0\n1 1'),file('root/C5/7/VTK/System_0/grid.vtk'),file('root/C5/7/Movies/System_1/movie.pdb')],{datasetId:'PFA'});assert.deepEqual([...new Set(catalog.results.map(x=>x.type))].sort(),['rdf','end_to_end','vtk','movie'].sort());const histogram=catalog.results.find(x=>x.type==='end_to_end');assert.equal(histogram.pressurePa,1234);assert.equal(histogram.temperatureK,310);assert.equal(histogram.framework,'MOF-X');assert.equal(histogram.provenance.simulationInput,'root/C5/7/simulation.input');assert.match(histogram.path,/System_1\/nested/);});
