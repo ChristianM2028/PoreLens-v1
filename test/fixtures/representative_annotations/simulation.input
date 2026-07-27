@@ -1,0 +1,36 @@
+SimulationType                MonteCarlo
+NumberOfCycles                100000
+NumberOfInitializationCycles  50000
+PrintEvery                    100
+PrintPropertiesEvery          100
+Movies                         yes
+WriteMoviesEvery             100
+RestartFile 		     no
+
+Forcefield                    local
+UseChargesFromCIFFile         yes      
+CutOffVDW                      12.9
+
+ComputeRDF yes
+WriteRDFEvery 1000
+ComputeEndToEndDistanceHistogram yes
+ComputeDensityProfile3DVTKGrid yes
+WriteDensityProfile3DVTKGridEvery 500
+DensityProfile3DVTKGridPoints 50 50 50
+
+Framework 0
+FrameworkName IRMOF-1 
+UnitCells 1 1 1
+ExternalTemperature 300.0
+ExternalPressure   23299.51811
+ 
+Component 0 MoleculeName             C10 
+            MoleculeDefinition       local
+	    IdealGasRosenbluthWeight 6e-05
+	    TranslationProbability   1
+            RotationProbability      1
+	    RegrowProbability         1
+	    SwapProbability           1
+            ReinsertionProbability   1
+	    CBMCProbability 	     1
+
