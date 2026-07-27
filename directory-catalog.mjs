@@ -1,7 +1,7 @@
 import {parseSimulationInput} from './trajectory.mjs';
 
 const CHAIN=/^C\d+$/, RUN=/^\d+$/;
-const OUTPUTS={RadialDistributionFunctions:['rdf',/\.dat$/i],EndToEndDistanceHistograms:['end_to_end',/\.(?:dat|txt)$/i],Movies:['movie',/\.pdb$/i],VTK:['vtk',/\.vtk$/i]};
+const OUTPUTS={RadialDistributionFunctions:['rdf',/\.dat$/i],EndToEndDistanceHistograms:['end_to_end',/\.(?:dat|txt)$/i],Movies:['movie',/\.pdb$/i],VTK:['vtk',/\.vtk$/i],Output:['raspa_output',/^output_.*\.data$/i]};
 const pause=()=>new Promise(resolve=>setTimeout(resolve,0));
 const pathFile=(handle,path)=>({name:handle.name,path,handle,size:null,lastModified:null,async text(){return (await handle.getFile()).text()},async arrayBuffer(){return (await handle.getFile()).arrayBuffer()}});
 
@@ -31,7 +31,7 @@ export class DirectoryCatalogScanner {
     if(!this.cancelled){this.catalog.finished=true;this.emit('complete')}return this.catalog;
   }
   async indexRun(chain,run,handle){
-    const item={id:`${chain}/${run}`,chain,run,handle,simulation:null,simulationFile:null,dependencies:{},outputs:{rdf:[],end_to_end:[],movie:[],vtk:[]},diagnostics:[]};
+    const item={id:`${chain}/${run}`,chain,run,handle,simulation:null,simulationFile:null,dependencies:{},outputs:{raspa_output:[],rdf:[],end_to_end:[],movie:[],vtk:[]},diagnostics:[]};
     try{for await(const [name,child] of handle.entries()){
       if(child.kind==='file'&&name==='simulation.input'){const file=await child.getFile(),text=await file.text();this.catalog.stats.filesRead++;item.simulationFile=pathFile(child,`${item.id}/${name}`);item.simulation=await this.parseSimulation(text)}
       else if(child.kind==='file'&&(/\.cif$/i.test(name)||/^(?:pseudo_atoms|force_field(?:_mixing_rules)?)\.def$/i.test(name)||/\.def$/i.test(name)))item.dependencies[name]=pathFile(child,`${item.id}/${name}`);

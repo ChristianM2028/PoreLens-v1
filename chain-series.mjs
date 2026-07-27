@@ -1,6 +1,7 @@
 import { parseManifest, parseRdf, resolvePairName } from './importers.mjs';
 import { parseSimulationInput } from './trajectory.mjs';
 import { parseEndToEndDistribution } from './result-types.mjs';
+import { parseRaspaOutput } from './raspa-package.mjs';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;
@@ -64,12 +65,24 @@ export function matchRuns(runs, { mode, pressurePa, tolerancePa = 0, manual = {}
   return { matches, unmatched };
 }
 
+export function availableLoadingUnits(parsedOutputs,kind='absolute'){
+  const sets=parsedOutputs.map(x=>new Set(Object.keys(x.parsed.loadings?.[kind]||{})));return sets.length?[...sets.reduce((a,s)=>new Set([...a].filter(x=>s.has(x))))]:[];
+}
+
+/** Assemble every valid output file into pressure-sorted chain curves without pressure matching. */
+export function buildIsothermCurves(outputs,{kind='absolute',unit='molecules/unit cell'}={}){
+  const groups=new Map(),diagnostics=[];
+  for(const item of outputs){const p=item.parsed,loading=p.loadings?.[kind]?.[unit];if(!Number.isFinite(p.pressurePa)||!loading){diagnostics.push(`${item.entry.path}: missing ${kind} loading in ${unit} or pressure`);continue}const e=item.entry,key=`${e.datasetId}\0${e.component}`;if(!groups.has(key))groups.set(key,{...e,type:'isotherm',family:e.datasetId,sourcePath:null,visible:true,records:[]});groups.get(key).records.push({pressurePa:p.pressurePa,loading:loading.value,uncertainty:loading.uncertainty,loadingKind:kind,loadingUnit:unit,run:e.run,temperatureK:p.temperatureK??e.temperatureK,framework:p.framework??e.framework,componentName:p.component,sourcePath:e.path,pressureMismatch:Number.isFinite(e.pressurePa)&&Math.abs(e.pressurePa-p.pressurePa)>Math.max(1,Math.abs(p.pressurePa)*1e-6),temperatureMismatch:Number.isFinite(e.temperatureK)&&Number.isFinite(p.temperatureK)&&Math.abs(e.temperatureK-p.temperatureK)>1e-6});}
+  for(const curve of groups.values())curve.records.sort((a,b)=>a.pressurePa-b.pressurePa);
+  return {curves:[...groups.values()].sort((a,b)=>a.chainLength-b.chainLength),diagnostics};
+}
+
 export class ParsedResultCache {
   constructor({maxBytes=64*1024*1024,maxEntries=16}={}){ this.values = new Map();this.maxBytes=maxBytes;this.maxEntries=maxEntries;this.bytes=0; }
   async get(file, type) {
     const key = `${file.webkitRelativePath || file.name}\0${file.size}\0${file.lastModified}\0${type}`;
     if(this.values.has(key)){const hit=this.values.get(key);this.values.delete(key);this.values.set(key,hit);return hit.value}
-    const value=type === 'rdf' ? parseRdf(await file.text(), file.name) : parseEndToEndHistogram(await file.text(), file.name),bytes=Math.max(file.size||0,JSON.stringify(value).length*2);this.values.set(key,{value,bytes});this.bytes+=bytes;
+    const text=await file.text(),value=type === 'rdf' ? parseRdf(text,file.name) : type==='raspa_output'?parseRaspaOutput(text):parseEndToEndHistogram(text,file.name),bytes=Math.max(file.size||0,JSON.stringify(value).length*2);this.values.set(key,{value,bytes});this.bytes+=bytes;
     while(this.values.size>this.maxEntries||this.bytes>this.maxBytes){const oldest=this.values.keys().next().value,entry=this.values.get(oldest);this.values.delete(oldest);this.bytes-=entry.bytes}
     return value;
   }
@@ -90,11 +103,11 @@ export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
     const run = parts[parts.indexOf(component) + 1];
     if (!RUN_RE.test(run || '')) continue;
     const manifestRow = rowsByPath.get(relative) || manifest.rows.find(row => relative.endsWith(row.collected_relative_path.replaceAll('\\', '/')));
-    const isRdf=/\/RadialDistributionFunctions\//i.test(path)&&/\.dat$/i.test(file.name),isHistogram=/\/EndToEndDistanceHistograms\//i.test(path)&&/\.(dat|txt)$/i.test(file.name),isVtk=/\/VTK\//i.test(path)&&/\.vtk$/i.test(file.name),isMovie=/\/Movies\//i.test(path)&&/\.pdb$/i.test(file.name);
-    if (!isRdf && !isHistogram&&!isVtk&&!isMovie) continue;
+    const isRdf=/\/RadialDistributionFunctions\//i.test(path)&&/\.dat$/i.test(file.name),isHistogram=/\/EndToEndDistanceHistograms\//i.test(path)&&/\.(dat|txt)$/i.test(file.name),isVtk=/\/VTK\//i.test(path)&&/\.vtk$/i.test(file.name),isMovie=/\/Movies\//i.test(path)&&/\.pdb$/i.test(file.name),isOutput=/\/Output\//i.test(path)&&/^output_.*\.data$/i.test(file.name);
+    if (!isRdf && !isHistogram&&!isVtk&&!isMovie&&!isOutput) continue;
     const componentIndex=path.split('/').indexOf(component),runRoot=path.split('/').slice(0,componentIndex+2).join('/'),sim=runMetadata.get(runRoot);
     const definition=list.find(candidate=>{const p=(candidate.webkitRelativePath||candidate.name).replaceAll('\\','/');return p.startsWith(`${runRoot}/`)&&sim?.components?.some(c=>p.endsWith(`/${c.MoleculeName}.def`))});
-    results.push({ datasetId, family:sim?.components?.map(x=>x.MoleculeName).join('+')||datasetId,component,componentNames:sim?.components?.map(x=>x.MoleculeName)||[],chainLength:Number(component.slice(1)),run:String(manifestRow?.run??run),pressurePa:manifestRow?.pressure_pa??sim?.pressurePa??null,temperatureK:sim?.temperatureK??null,framework:sim?.framework??null,unitCells:sim?.unitCells??null,type:isRdf?'rdf':isHistogram?'end_to_end':isVtk?'vtk':'movie',filename:file.name,path:relative,file,componentDefinition:definition||null,manifest:manifestRow||null,provenance:{datasetId,path:relative,manifestRow:manifestRow||null,simulationInput:sim?`${runRoot}/simulation.input`:null,componentDefinition:definition?(definition.webkitRelativePath||definition.name):null}});
+    results.push({ datasetId, family:sim?.components?.map(x=>x.MoleculeName).join('+')||datasetId,component,componentNames:sim?.components?.map(x=>x.MoleculeName)||[],chainLength:Number(component.slice(1)),run:String(manifestRow?.run??run),pressurePa:manifestRow?.pressure_pa??sim?.pressurePa??null,temperatureK:sim?.temperatureK??null,framework:sim?.framework??null,unitCells:sim?.unitCells??null,type:isRdf?'rdf':isHistogram?'end_to_end':isVtk?'vtk':isMovie?'movie':'raspa_output',filename:file.name,path:relative,file,componentDefinition:definition||null,manifest:manifestRow||null,provenance:{datasetId,path:relative,manifestRow:manifestRow||null,simulationInput:sim?`${runRoot}/simulation.input`:null,componentDefinition:definition?(definition.webkitRelativePath||definition.name):null}});
   }
   for (const row of manifest.rows) if (!results.some(item => item.manifest === row)) diagnostics.push({ severity: 'warning', message: `Manifest target is not available to the plot catalog: ${row.collected_relative_path}` });
   results.sort((a,b)=>a.chainLength-b.chainLength||Number(a.run)-Number(b.run)||a.path.localeCompare(b.path));
@@ -105,7 +118,7 @@ export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
 export function buildHandleCatalog(catalog,{datasetId='dataset'}={}){const results=[];for(const run of catalog.runs)for(const [type,items] of Object.entries(run.outputs))for(const item of items)results.push({datasetId,family:run.simulation?.components?.map(x=>x.MoleculeName).join('+')||datasetId,component:run.chain,componentNames:run.simulation?.components?.map(x=>x.MoleculeName)||[],chainLength:Number(run.chain.slice(1)),run:run.run,pressurePa:run.simulation?.pressurePa??null,temperatureK:run.simulation?.temperatureK??null,framework:run.simulation?.framework??null,unitCells:run.simulation?.unitCells??null,type,filename:item.name,path:item.path,file:item.file,componentDefinition:Object.values(run.dependencies).find(x=>x.name===`${run.simulation?.components?.[0]?.MoleculeName}.def`)||null,manifest:null,provenance:{datasetId,path:item.path,simulationInput:run.simulationFile?.path||null}});return {datasetId,chains:[...new Set(catalog.runs.map(r=>r.chain))].map(component=>({component,chainLength:Number(component.slice(1))})),results,diagnostics:catalog.runs.flatMap(r=>r.diagnostics.map(message=>({severity:'warning',message}))),manifestPrimary:!!catalog.manifest}}
 
 export function plottedExport(curves, configuration) {
-  const data = curves.filter(curve => curve.visible !== false).flatMap(curve => curve.records.map(row => ({ dataset: curve.datasetId, family: curve.family, chain: curve.component, chain_length: curve.chainLength, run: curve.run, pressure_pa: curve.pressurePa, temperature_k:curve.temperatureK??null, framework:curve.framework??null, loading: curve.loading ?? null, source_file: curve.sourcePath, manifest_provenance:curve.manifest||null, result_type: curve.type, normalization:curve.normalizationMode??'native', x: row.distanceA, y: curve.type === 'rdf' ? row.gR : row.probabilityDensityPerA, x_unit: 'Å', y_unit: curve.type === 'rdf' ? 'dimensionless' : curve.normalizationMode==='stored'?'stored source units':'Å^-1' })));
+  const data = curves.filter(curve => curve.visible !== false).flatMap(curve => curve.records.map(row => curve.type==='isotherm'?({dataset:curve.datasetId,family:curve.family,chain:curve.component,chain_length:curve.chainLength,run:row.run,pressure_pa:row.pressurePa,temperature_k:row.temperatureK,framework:row.framework,loading_kind:row.loadingKind,loading_unit:row.loadingUnit,loading:row.loading,uncertainty:row.uncertainty,source_file:row.sourcePath}):({ dataset: curve.datasetId, family: curve.family, chain: curve.component, chain_length: curve.chainLength, run: curve.run, pressure_pa: curve.pressurePa, temperature_k:curve.temperatureK??null, framework:curve.framework??null, loading: curve.loading ?? null, source_file: curve.sourcePath, manifest_provenance:curve.manifest||null, result_type: curve.type, normalization:curve.normalizationMode??'native', x: row.distanceA, y: curve.type === 'rdf' ? row.gR : row.probabilityDensityPerA, x_unit: 'Å', y_unit: curve.type === 'rdf' ? 'dimensionless' : curve.normalizationMode==='stored'?'stored source units':'Å^-1' })));
   return { schema: 'porelens-chain-series/v1', configuration, data };
 }
 
