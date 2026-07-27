@@ -50,7 +50,23 @@ copying the reference scripts' system-specific workflow:
 ### Browser workflow
 
 Load an RDF manifest collection, create or import annotations, and choose
-**Movie / LJ analysis**. Select the matching run-package files, review the
+**Movie / LJ analysis**. Select one chain-series dataset directory (the fixed
+layout is `C<n>/<numeric-run>/`) or one run directory. PoreLens parses each
+`simulation.input`, matches numerically parsed all-components movie names below
+`Movies/`, and builds a cached dataset → family → chain → pressure/run → movie
+catalog. **Refresh Dataset** rescans the authorized selection; changing a
+dropdown does not. Browsers preserve relative paths during folder selection,
+and the interface explicitly asks for reselection when a prior directory grant
+is unavailable. Manual multi-file selection remains available only as a
+fallback for unusual layouts.
+
+Supporting CIF, molecule definitions, pseudoatoms, mixing rules, and overrides
+may remain in the run, dataset ancestors, `common_inputs`, or manifest-referenced
+paths. Candidates are content-parsed and fingerprinted; content-distinct
+ambiguities are reported instead of resolved by basename. The manifest remains
+authoritative for chain/run pressure mapping, while contradictions with
+`simulation.input` or movie metadata remain visible on the original numbered
+run. Review the
 parsed cutoff, potential mode, mixing rule, mapping count, diagnostics, and
 physics fingerprint, then select one or more annotations. Radial annotations
 require an explicit scope, pair criterion, reference population, and
