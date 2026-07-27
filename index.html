@@ -59,6 +59,26 @@
     </div>
   </section>
 
+  <section class="workspace chain-plotter" id="chainPlotter" hidden aria-labelledby="chain-plot-heading">
+    <div class="workspace-head"><div><p class="kicker">Catalog-linked exploration</p><h2 id="chain-plot-heading">Interactive chain-series plotter</h2></div><div class="analysis-actions"><button id="chainReset" class="quiet-button">Reset zoom</button><button id="chainSave" class="quiet-button">Save configuration</button><button id="chainExportCsv" class="quiet-button">Download plotted CSV</button><button id="chainExportJson" class="quiet-button">Download plotted JSON</button><button id="chainExportPng" class="quiet-button">Download PNG</button><button id="chainExportSvg" class="quiet-button">Download SVG</button></div></div>
+    <div class="control-panel chain-controls">
+      <label><span>Dataset(s)</span><select id="chainDatasets" multiple aria-label="Datasets"></select></label>
+      <label><span>Result type</span><select id="chainResult"><option value="rdf">RDF</option><option value="end_to_end">End-to-end histogram</option></select></label>
+      <label><span>Family</span><select id="chainFamily" multiple><option value="all">All loaded families</option></select></label>
+      <label><span>Chain lengths</span><select id="chainLengths" multiple></select></label>
+      <label><span>Pair / component</span><select id="chainPair"></select></label>
+      <label><span>Pressure matching</span><select id="chainMatch"><option value="exact">Exact simulated pressure</option><option value="nearest">Nearest within tolerance</option><option value="manual">Manual run per chain</option><option value="loading">Approximately equal loading</option></select></label>
+      <label><span>Target pressure (Pa)</span><input id="chainPressure" type="number" min="0" value="100000"></label>
+      <label><span>Tolerance (Pa)</span><input id="chainTolerance" type="number" min="0" value="0"></label>
+      <label><span>Manual runs</span><input id="chainManual" placeholder="C1:1, C2:7"></label><label><span>Target loading</span><input id="chainLoading" type="number" step="any" placeholder="requires parsed loading"></label><label><span>Comparison</span><select id="chainCompare"><option value="chains">Across chains</option><option value="pressures">Pressures within one chain</option><option value="families">Across families</option><option value="summary">Chain-series summary</option></select></label>
+      <label><span>Pressure axis</span><select id="chainAxis"><option value="linear">Linear</option><option value="log">Logarithmic</option></select></label>
+      <label><span>Normalization / units</span><select id="chainUnits"><option value="native">Native (g(r) or probability density Å⁻¹)</option></select></label>
+      <label class="toggle"><input id="chainAnnotations" type="checkbox" checked><span>Saved annotations</span></label>
+    </div>
+    <div id="chainMatchReport" class="selection-strip">Select a loaded dataset to build curves. Actual pressures are never substituted silently.</div>
+    <article class="plot-panel"><header><div><span class="figure-id">FIG CS</span><h3 id="chainPlotTitle">Chain-series overlay</h3></div><span class="plot-state">wheel to zoom · click curve for provenance</span></header><canvas id="chainCanvas" width="1200" height="500" tabindex="0" aria-label="Interactive chain-series curves"></canvas><div id="chainCurveControls" class="curve-controls"></div><p id="chainProvenance" class="plot-caption">Click a curve to inspect its chain, run, actual pressure, source, annotations, and available run actions.</p></article>
+  </section>
+
   <section class="workspace lj-workflow" id="ljAnalysis" hidden aria-labelledby="lj-heading">
     <div class="workspace-head"><div><p class="kicker">Annotation-driven reconstruction</p><h2 id="lj-heading">Movie / Lennard–Jones analysis</h2></div><button id="closeLjAnalysis" class="quiet-button">Close</button></div>
     <div class="lj-step"><h3>1 · Discover dataset or run</h3><p>Select a chain-series root (or one run folder). Relative paths are retained and nothing leaves this browser. The cached catalog is not rescanned when a selector changes.</p><div class="lj-import-actions"><label class="button secondary">Choose dataset / run folder<input id="ljDatasetFolder" type="file" webkitdirectory directory multiple></label><button id="refreshLjDataset" class="quiet-button" disabled>Refresh Dataset</button><label class="button secondary">Manual files (fallback)<input id="ljRunFiles" type="file" multiple></label></div><div id="ljPermissionState" class="plot-caption">No authorized folder. Reselect the folder if browser permission is lost.</div><div id="ljCatalogControls" class="lj-catalog" hidden><label>Dataset<select id="ljCatalogDataset"></select></label><label>Adsorbate family<select id="ljCatalogFamily"></select></label><label>Chain length<select id="ljCatalogChain"></select></label><label>Pressure / run<select id="ljCatalogRun"></select></label><label>All-components movie<select id="ljCatalogMovie"></select></label></div><div id="ljMatchingAnnotations" class="lj-state empty">Matching annotations and physics inputs will appear after run selection.</div><div id="ljImportState" class="lj-state empty">No run package selected.</div><div id="ljAnnotationList" class="lj-annotations"></div></div>
@@ -83,4 +103,5 @@
 </main>
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
 <script type="module" src="app.js"></script>
+<script type="module" src="chain-plotter-ui.mjs"></script>
 </body></html>
