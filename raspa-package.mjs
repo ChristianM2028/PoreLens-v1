@@ -1,0 +1,35 @@
+import {parseSimulationInput,parsePdbMovie} from './trajectory.mjs';
+import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs';
+
+export function parseCif(text){
+  const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));
+  if([...lengths,...angles].some(x=>!Number.isFinite(x)))throw new Error('CIF unit-cell geometry is incomplete');
+  const lines=text.split(/\r?\n/),sites=[];
+  for(let i=0;i<lines.length;i++)if(lines[i].trim()==='loop_'){const headers=[];let j=i+1;while(lines[j]?.trim().startsWith('_'))headers.push(lines[j++].trim());const label=headers.indexOf('_atom_site_label'),type=headers.indexOf('_atom_site_type_symbol'),x=headers.indexOf('_atom_site_fract_x'),y=headers.indexOf('_atom_site_fract_y'),z=headers.indexOf('_atom_site_fract_z'),charge=headers.indexOf('_atom_site_charge');if([label,type,x,y,z].every(n=>n>=0)){for(;j<lines.length;j++){const line=lines[j].trim();if(!line||line.startsWith('#'))continue;if(line==='loop_'||line.startsWith('_'))break;const p=line.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)||[];if(p.length<headers.length)break;sites.push({label:p[label],cifType:p[type],fractional:[Number(p[x]),Number(p[y]),Number(p[z])],charge:charge>=0?Number(p[charge]):null});}break;}}
+  if(!sites.length)throw new Error('CIF framework atom mapping is absent');return {lengthsA:lengths,anglesDeg:angles,matrix:cellMatrix(lengths,angles),asymmetricSites:sites};
+}
+
+export function parseRaspaOutput(text){
+  const version=text.match(/RASPA\s+(?:version\s*)?([\d.]+)/i)?.[1]||null,completed=/Simulation finished|End of simulation|Finishing simulation/i.test(text),warnings=[...text.matchAll(/^.*warning.*$/gim)].map(x=>x[0].trim());
+  const host=[...text.matchAll(/Host[- ]Adsorbate[^\n]*?(-?[\d.]+)\s*(?:\+\/-|\u00b1)\s*([\d.]+)/gi)].at(-1),guest=[...text.matchAll(/Adsorbate[- ]Adsorbate[^\n]*?(-?[\d.]+)\s*(?:\+\/-|\u00b1)\s*([\d.]+)/gi)].at(-1);
+  return {version,completed,warnings,energies:{hostAdsorbate:host?{mean:Number(host[1]),uncertainty:Number(host[2])}:null,adsorbateAdsorbate:guest?{mean:Number(guest[1]),uncertainty:Number(guest[2])}:null}};
+}
+
+const required={simulation:'simulation.input',pseudoatoms:'pseudo_atoms.def',mixing:'force_field_mixing_rules.def',cif:'.cif',molecule:'.def',movie:'.pdb'};
+const find=(files,test)=>files.find(f=>test(f.name||f.path||''));
+/** Audit a set of {name,text} files without inventing missing model information. */
+export async function importRunPackage(files,{annotationSidecar=null,manifestFingerprint=null}={}){
+  const diagnostics=[],get=test=>find(files,test),sim=get(n=>/simulation\.input$/i.test(n)),pseudo=get(n=>/pseudo_atoms\.def$/i.test(n)),mix=get(n=>/force_field_mixing_rules\.def$/i.test(n)),override=get(n=>/(^|\/)force_field\.def$/i.test(n)),cif=get(n=>/\.cif$/i.test(n)),movie=get(n=>/\.pdb$/i.test(n)),output=get(n=>/\.data$/i.test(n));
+  const simParsed=sim?parseSimulationInput(sim.text):null,molecule=get(n=>/\.def$/i.test(n)&&!/pseudo_atoms|mixing_rules|force_field/i.test(n));
+  for(const [kind,name] of Object.entries(required))if(!({simulation:sim,pseudoatoms:pseudo,mixing:mix,cif,molecule,movie})[kind])diagnostics.push({severity:kind==='movie'?'warning':'error',code:`missing_${kind}`,message:`Missing ${name}; ${kind==='movie'?'trajectory-dependent analysis is unavailable':'quantitative LJ attribution is disabled'}.`});
+  let parsed={};try{parsed={simulation:simParsed,pseudoatoms:pseudo&&parsePseudoAtoms(pseudo.text),forceField:mix&&parseMixingRules(mix.text),overrides:override?parsePairOverrides(override.text):new Map(),cif:cif&&parseCif(cif.text),topology:molecule&&parseMoleculeDefinition(molecule.text),output:output&&parseRaspaOutput(output.text)};}catch(error){diagnostics.push({severity:'error',code:'contradictory_physics',message:error.message});}
+  if(parsed.forceField)parsed.forceField.overrides=parsed.overrides;
+  if(movie&&parsed.topology)try{parsed.movie=parsePdbMovie(movie.text,{sitesPerMolecule:parsed.topology.sitesPerMolecule,siteTypes:parsed.topology.sites.map(x=>x.type)});if(!parsed.movie.roleSpecificAnalysisEnabled)throw new Error('Movie-to-topology site ordering could not be validated');}catch(error){diagnostics.push({severity:'error',code:'movie_topology_mismatch',message:error.message});}
+  if(parsed.cif&&parsed.forceField){parsed.frameworkTypeMapping=new Map();for(const site of parsed.cif.asymmetricSites){const candidates=[site.label,site.cifType,`${site.cifType}_`].filter(x=>parsed.forceField.parameters.has(x));if(candidates.length!==1)diagnostics.push({severity:'error',code:'framework_mapping_ambiguous',message:`Framework label ${site.label} resolves to ${candidates.length} force-field types (${candidates.join(', ')||'none'}).`});else parsed.frameworkTypeMapping.set(site.label,candidates[0]);}}
+  if(parsed.topology&&parsed.forceField)for(const site of parsed.topology.sites)if(!parsed.forceField.parameters.has(site.type))diagnostics.push({severity:'error',code:'guest_parameter_missing',message:`No LJ parameters for guest site type ${site.type}.`});
+  if(parsed.simulation&&!Number.isFinite(parsed.simulation.vdwCutoffA))diagnostics.push({severity:'error',code:'missing_cutoff',message:'CutOffVDW is required; no default was substituted.'});
+  if(annotationSidecar&&manifestFingerprint){for(const [slot,d] of Object.entries(annotationSidecar.datasets||{}))if(d.manifestFingerprint!==manifestFingerprint)diagnostics.push({severity:'error',code:'annotation_manifest_mismatch',message:`Annotation dataset ${slot} does not match the imported manifest fingerprint.`});}
+  const essential=!!(parsed.movie&&parsed.simulation&&parsed.pseudoatoms&&parsed.forceField&&parsed.cif&&parsed.topology&&parsed.frameworkTypeMapping&&Number.isFinite(parsed.simulation.vdwCutoffA))&&!diagnostics.some(x=>x.severity==='error');
+  const fingerprint=parsed.forceField&&parsed.simulation&&parsed.cif&&parsed.topology?await physicsFingerprint({cutoffA:parsed.simulation.vdwCutoffA,useChargesFromCif:parsed.simulation.useChargesFromCif,unitCells:parsed.simulation.unitCells,forceField:parsed.forceField,cif:parsed.cif,topology:parsed.topology}):null;
+  return {files:{simulation:sim?.name||null,pseudoatoms:pseudo?.name||null,mixing:mix?.name||null,override:override?.name||null,cif:cif?.name||null,molecule:molecule?.name||null,movie:movie?.name||null,output:output?.name||null},parsed,physicsFingerprint:fingerprint,capabilities:{rdfAndAnnotations:true,moviePlayback:!!movie,quantitativeLJ:essential},diagnostics};
+}
