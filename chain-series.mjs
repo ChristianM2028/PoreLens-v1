@@ -65,13 +65,15 @@ export function matchRuns(runs, { mode, pressurePa, tolerancePa = 0, manual = {}
 }
 
 export class ParsedResultCache {
-  constructor(){ this.values = new Map(); }
+  constructor({maxBytes=64*1024*1024,maxEntries=16}={}){ this.values = new Map();this.maxBytes=maxBytes;this.maxEntries=maxEntries;this.bytes=0; }
   async get(file, type) {
     const key = `${file.webkitRelativePath || file.name}\0${file.size}\0${file.lastModified}\0${type}`;
-    if (!this.values.has(key)) this.values.set(key, type === 'rdf' ? parseRdf(await file.text(), file.name) : parseEndToEndHistogram(await file.text(), file.name));
-    return this.values.get(key);
+    if(this.values.has(key)){const hit=this.values.get(key);this.values.delete(key);this.values.set(key,hit);return hit.value}
+    const value=type === 'rdf' ? parseRdf(await file.text(), file.name) : parseEndToEndHistogram(await file.text(), file.name),bytes=Math.max(file.size||0,JSON.stringify(value).length*2);this.values.set(key,{value,bytes});this.bytes+=bytes;
+    while(this.values.size>this.maxEntries||this.bytes>this.maxBytes){const oldest=this.values.keys().next().value,entry=this.values.get(oldest);this.values.delete(oldest);this.bytes-=entry.bytes}
+    return value;
   }
-  clear(){ this.values.clear(); }
+  clear(){ this.values.clear();this.bytes=0; }
 }
 
 export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
@@ -98,6 +100,9 @@ export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
   results.sort((a,b)=>a.chainLength-b.chainLength||Number(a.run)-Number(b.run)||a.path.localeCompare(b.path));
   return { datasetId, chains, results, diagnostics, manifestPrimary: !!manifestFile };
 }
+
+/** Adapt the incremental handle catalog without reading an output file. */
+export function buildHandleCatalog(catalog,{datasetId='dataset'}={}){const results=[];for(const run of catalog.runs)for(const [type,items] of Object.entries(run.outputs))for(const item of items)results.push({datasetId,family:run.simulation?.components?.map(x=>x.MoleculeName).join('+')||datasetId,component:run.chain,componentNames:run.simulation?.components?.map(x=>x.MoleculeName)||[],chainLength:Number(run.chain.slice(1)),run:run.run,pressurePa:run.simulation?.pressurePa??null,temperatureK:run.simulation?.temperatureK??null,framework:run.simulation?.framework??null,unitCells:run.simulation?.unitCells??null,type,filename:item.name,path:item.path,file:item.file,componentDefinition:Object.values(run.dependencies).find(x=>x.name===`${run.simulation?.components?.[0]?.MoleculeName}.def`)||null,manifest:null,provenance:{datasetId,path:item.path,simulationInput:run.simulationFile?.path||null}});return {datasetId,chains:[...new Set(catalog.runs.map(r=>r.chain))].map(component=>({component,chainLength:Number(component.slice(1))})),results,diagnostics:catalog.runs.flatMap(r=>r.diagnostics.map(message=>({severity:'warning',message}))),manifestPrimary:!!catalog.manifest}}
 
 export function plottedExport(curves, configuration) {
   const data = curves.filter(curve => curve.visible !== false).flatMap(curve => curve.records.map(row => ({ dataset: curve.datasetId, family: curve.family, chain: curve.component, chain_length: curve.chainLength, run: curve.run, pressure_pa: curve.pressurePa, temperature_k:curve.temperatureK??null, framework:curve.framework??null, loading: curve.loading ?? null, source_file: curve.sourcePath, manifest_provenance:curve.manifest||null, result_type: curve.type, normalization:curve.normalizationMode??'native', x: row.distanceA, y: curve.type === 'rdf' ? row.gR : row.probabilityDensityPerA, x_unit: 'Å', y_unit: curve.type === 'rdf' ? 'dimensionless' : curve.normalizationMode==='stored'?'stored source units':'Å^-1' })));
