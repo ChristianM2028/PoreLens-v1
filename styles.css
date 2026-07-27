@@ -27,3 +27,9 @@ main{max-width:1800px;margin:auto;padding:16px 24px 28px}.dataset-manager,.works
 @media(max-width:850px){.lj-config{grid-template-columns:1fr 1fr}.lj-table-tools{align-items:stretch;flex-direction:column}.lj-table-tools label{min-width:0;width:100%}}
 .lj-import-actions{display:flex;gap:7px;flex-wrap:wrap}.lj-catalog{display:grid;grid-template-columns:1fr 1fr 1fr 1.4fr 1.4fr;gap:8px;margin-top:10px}.lj-catalog label{display:grid;gap:4px;color:var(--muted);font-size:10px;font-weight:600}.lj-catalog select{height:32px;border:1px solid var(--line-dark);background:#fff;padding:5px;font:11px var(--mono)}
 @media(max-width:850px){.lj-catalog{grid-template-columns:1fr 1fr}}
+
+.chain-plotter .chain-controls { grid-template-columns: repeat(auto-fit,minmax(155px,1fr)); }
+.chain-controls select[multiple] { min-height: 5.2rem; }
+.curve-controls { display:flex; flex-wrap:wrap; gap:.55rem 1rem; padding:.8rem 1rem; border-top:1px solid var(--line, #dbe0dd); }
+.curve-toggle { display:flex; align-items:center; gap:.4rem; font:12px ui-monospace,monospace; cursor:pointer; }
+.curve-toggle i { width:1rem; height:3px; display:inline-block; }
