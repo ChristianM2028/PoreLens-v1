@@ -50,3 +50,21 @@ test('assembles pressure-sorted isotherms from all output files and preserves un
 });
 
 test('catalogs output_ data files as RASPA outputs',async()=>{const file=(path,text='x')=>({name:path.split('/').at(-1),webkitRelativePath:path,text:async()=>text,size:text.length,lastModified:1});const sim='ExternalTemperature 300\nExternalPressure 100\n';const catalog=await buildChainCatalog([file('root/C1/1/simulation.input',sim),file('root/C1/1/Output/System_0/output_MOF_300_100.data','External temperature: 300 [K]\nExternal Pressure: 100 [Pa]\n')]);assert.equal(catalog.results[0].type,'raspa_output');});
+
+test('valid six-line final loading block remains plottable beside malformed output',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const {parseRaspaOutput}=await import('./raspa-package.mjs');
+  const {buildIsothermCurves,availableLoadingUnits}=await import('./chain-series.mjs');
+  const fixture=name=>readFile(new URL(`./test/fixtures/raspa-output/${name}`,import.meta.url),'utf8');
+  const valid=parseRaspaOutput(`External Pressure: 23299.5 [Pa]\n${await fixture('final-average-loading-six-lines.data')}`);
+  const malformed=parseRaspaOutput(await fixture('malformed-loading.data'));
+  const entry=(run,path)=>({datasetId:'PFA',component:'C10',chainLength:10,run,path});
+  const outputs=[{entry:entry('1','valid.data'),parsed:valid},{entry:entry('2','malformed.data'),parsed:malformed}];
+  assert.equal(valid.loadings.absolute['molecules/unit cell'].value,37.57272);
+  assert.deepEqual(availableLoadingUnits(outputs),['molecules/unit cell','cm^3 (STP)/cm^3 framework','cm^3 (STP)/gr framework','milligram/gram framework','mol/kg framework','molecules/system']);
+  const plotted=buildIsothermCurves(outputs);
+  assert.equal(plotted.curves.length,1);
+  assert.equal(plotted.curves[0].records.length,1);
+  assert.equal(plotted.curves[0].records[0].sourcePath,'valid.data');
+  assert.match(plotted.diagnostics.join(' '),/malformed\.data/);
+});
