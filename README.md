@@ -103,6 +103,11 @@ RASPA output totals can also differ due to sampling, electrostatics, framework
 treatment, and excluded intramolecular terms. CIF symmetry operations used by
 the representative fixture are expanded and deduplicated; arbitrary CIF
 expression dialects, Ewald/electrostatic reconstruction, flexible frameworks, changing cells,
+The milestone does not claim a RASPA total potential: tail corrections are not
+localized, rounded PDB coordinates can perturb steep repulsions, and compatible
+RASPA output totals can also differ due to sampling, electrostatics, framework
+treatment, and excluded intramolecular terms. General CIF symmetry expansion,
+Ewald/electrostatic reconstruction, flexible frameworks, changing cells,
 anisotropic or non-LJ potentials, and tail-correction attribution remain
 unsupported. The included two-frame trimmed PDB preserves one 25-molecule and
 one 26-molecule frame, lossy all-C labels, absent molecule delimiters, and
