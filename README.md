@@ -41,6 +41,32 @@ copying the reference scripts' system-specific workflow:
   simulated run/pressure identities. Results are versioned and explicitly
   labeled as reconstructed coordinate-based pairwise LJ, with JSON-ready data
   and a pair contribution CSV export.
+- `lj-workflow.mjs` executes validated framewise selections and reference
+  populations, normalization, guest–framework/guest–guest separation, block
+  uncertainty, and pressure grouping. `lj-ui.mjs` exposes that workflow in the
+  browser with progress, unavailable/error/success states, sortable results,
+  progressive diagnostics, and JSON/CSV downloads.
+
+### Browser workflow
+
+Load an RDF manifest collection, create or import annotations, and choose
+**Movie / LJ analysis**. Select the matching run-package files, review the
+parsed cutoff, potential mode, mixing rule, mapping count, diagnostics, and
+physics fingerprint, then select one or more annotations. Radial annotations
+require an explicit scope, pair criterion, reference population, and
+normalization; pressure-only annotations require an explicit reference and
+normalization. The Run button stays disabled until the package and choices are
+valid. Results show selected/reference populations, normalized energies,
+guest–framework and guest–guest counts, block standard errors, pressure rows,
+filterable/sortable pair contributions, provenance, mappings, limitations, and
+download controls.
+
+Run packages may be selected separately from the RDF collection so a missing
+large trajectory does not prevent annotation browsing. The imported
+`simulation.input` pressure must exactly match the annotated simulated
+pressure. A package without a movie, an unresolved RDF pair, ambiguous mapping,
+or incomplete force field produces an unavailable or failure state instead of
+a numerical result.
 
 ### Reference-script audit
 
@@ -71,6 +97,12 @@ and relevant exclusions must resolve without ambiguity. Output `.data`, RDF
 manifest/files, and the annotation sidecar are required for source validation
 and aggregate comparison when those capabilities are requested.
 
+The workflow does not claim a RASPA total potential: tail corrections are not
+localized, rounded PDB coordinates can perturb steep repulsions, and compatible
+RASPA output totals can also differ due to sampling, electrostatics, framework
+treatment, and excluded intramolecular terms. CIF symmetry operations used by
+the representative fixture are expanded and deduplicated; arbitrary CIF
+expression dialects, Ewald/electrostatic reconstruction, flexible frameworks, changing cells,
 The milestone does not claim a RASPA total potential: tail corrections are not
 localized, rounded PDB coordinates can perturb steep repulsions, and compatible
 RASPA output totals can also differ due to sampling, electrostatics, framework

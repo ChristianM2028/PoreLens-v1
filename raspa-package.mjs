@@ -6,6 +6,15 @@ export function parseCif(text){
   if([...lengths,...angles].some(x=>!Number.isFinite(x)))throw new Error('CIF unit-cell geometry is incomplete');
   const lines=text.split(/\r?\n/),sites=[];
   for(let i=0;i<lines.length;i++)if(lines[i].trim()==='loop_'){const headers=[];let j=i+1;while(lines[j]?.trim().startsWith('_'))headers.push(lines[j++].trim());const label=headers.indexOf('_atom_site_label'),type=headers.indexOf('_atom_site_type_symbol'),x=headers.indexOf('_atom_site_fract_x'),y=headers.indexOf('_atom_site_fract_y'),z=headers.indexOf('_atom_site_fract_z'),charge=headers.indexOf('_atom_site_charge');if([label,type,x,y,z].every(n=>n>=0)){for(;j<lines.length;j++){const line=lines[j].trim();if(!line||line.startsWith('#'))continue;if(line==='loop_'||line.startsWith('_'))break;const p=line.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)||[];if(p.length<headers.length)break;sites.push({label:p[label],cifType:p[type],fractional:[Number(p[x]),Number(p[y]),Number(p[z])],charge:charge>=0?Number(p[charge]):null});}break;}}
+  if(!sites.length)throw new Error('CIF framework atom mapping is absent');
+  const operations=[];const marker=lines.findIndex(x=>['_symmetry_equiv_pos_as_xyz','_space_group_symop_operation_xyz'].includes(x.trim()));if(marker>=0)for(let i=marker+1;i<lines.length;i++){const v=lines[i].trim();if(!v)continue;if(v==='loop_'||v.startsWith('_'))break;if(/^['"]/.test(v))operations.push(v.replace(/^['"]|['"]$/g,''));}
+  if(!operations.length)operations.push('x,y,z');
+  return {lengthsA:lengths,anglesDeg:angles,matrix:cellMatrix(lengths,angles),asymmetricSites:sites,symmetryOperations:operations};
+}
+
+function symmetryValue(expression,xyz){const compact=expression.replace(/\s/g,'').replace(/-/g,'+-'),terms=compact.split('+').filter(Boolean);let value=0;for(const term of terms){const sign=term.startsWith('-')?-1:1,t=term.replace(/^-/,'');if(['x','y','z'].includes(t))value+=sign*xyz[['x','y','z'].indexOf(t)];else if(/^\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?$/.test(t)){const [a,b=1]=t.split('/').map(Number);value+=sign*a/b;}else throw new Error(`Unsupported CIF symmetry term ${expression}`);}return ((value%1)+1)%1;}
+export function expandFramework(cif,typeMapping,unitCells=[1,1,1]){const atoms=[],seen=new Set(),base=cif.lengthsA;for(const site of cif.asymmetricSites)for(const op of cif.symmetryOperations){const parts=op.split(',');if(parts.length!==3)throw new Error(`Invalid CIF symmetry operation ${op}`);const frac=parts.map(x=>symmetryValue(x,site.fractional));const key=`${site.label}:${frac.map(x=>Math.round(x*1e8)).join(':')}`;if(seen.has(key))continue;seen.add(key);for(let ix=0;ix<unitCells[0];ix++)for(let iy=0;iy<unitCells[1];iy++)for(let iz=0;iz<unitCells[2];iz++)atoms.push({index:atoms.length,label:site.label,type:typeMapping.get(site.label),x:(frac[0]+ix)*base[0],y:(frac[1]+iy)*base[1],z:(frac[2]+iz)*base[2]});}const lengths=base.map((x,i)=>x*unitCells[i]);return {atoms,matrix:cellMatrix(lengths,cif.anglesDeg),lengthsA:lengths};}
+
   if(!sites.length)throw new Error('CIF framework atom mapping is absent');return {lengthsA:lengths,anglesDeg:angles,matrix:cellMatrix(lengths,angles),asymmetricSites:sites};
 }
 
