@@ -49,16 +49,33 @@ export function validateMovieTopology({simulation,componentDefinitionName,topolo
   if(!frameAtomCounts?.length||frameAtomCounts.some(count=>!Number.isInteger(count)||count%topology.sitesPerMolecule!==0))throw new Error('At least one parsed frame does not consist of whole contiguous molecule blocks');
   const degree=Array(topology.sitesPerMolecule).fill(0);for(const [a,b] of topology.bonds){degree[a]++;degree[b]++;}
   const counts=new Map();for(const site of topology.sites)counts.set(site.type,(counts.get(site.type)||0)+1);
-  return {validated:true,componentName:component.MoleculeName,sitesPerMolecule:topology.sitesPerMolecule,siteTypes:topology.sites.map(x=>x.type),siteRoles:degree.map(value=>value===1?'terminal':'internal'),typeCounts:Object.fromEntries(counts),moleculeCounts:frameAtomCounts.map(x=>x/topology.sitesPerMolecule)};
+  return {validated:true,siteMappingValidated:true,bondConnectivityValidated:true,bondCount:topology.bonds.length,componentName:component.MoleculeName,sitesPerMolecule:topology.sitesPerMolecule,siteTypes:topology.sites.map(x=>x.type),siteRoles:degree.map(value=>value===1?'terminal':'internal'),typeCounts:Object.fromEntries(counts),moleculeCounts:frameAtomCounts.map(x=>x/topology.sitesPerMolecule)};
 }
 
 /** Byte/character ranges for complete PDB models; callers decode only the selected range. */
 export function indexPdbFrames(text){
-  const frames=[];let start=-1,model=null;const re=/^(MODEL\s+([^\r\n]+)|ENDMDL)\s*$/gm;let match;
+  const frames=[];let start=-1,model=null;const diagnostics=[];const re=/^(MODEL\s+([^\r\n]+)|ENDMDL)\s*$/gm;let match;
   while((match=re.exec(text))){if(match[1].startsWith('MODEL')){start=match.index;model=Number(match[2].trim())}else if(start>=0){frames.push({model:Number.isFinite(model)?model:frames.length+1,start,end:re.lastIndex});start=-1;}}
-  if(start>=0)throw new Error('PDB movie is missing ENDMDL');if(!frames.length)throw new Error('PDB movie contains no complete models');return frames;
+  if(start>=0)diagnostics.push({code:'incomplete_trailing_model',model:Number.isFinite(model)?model:null,message:'Skipped an incomplete trailing MODEL without a matching ENDMDL.'});
+  if(!frames.length)throw new Error('PDB movie contains no complete models');
+  // Arrays keep existing callers cheap while exposing non-fatal indexing diagnostics.
+  Object.defineProperty(frames,'diagnostics',{value:diagnostics,enumerable:false});return frames;
 }
 export function decodeIndexedPdbFrame(text,indexEntry,options={}){return parsePdbMovie(text.slice(indexEntry.start,indexEntry.end),options).frames[0]}
+
+/** One-at-a-time frame preparation with stale-result rejection and atomic commits. */
+export class SerializedFrameScheduler{
+  constructor({prepare,commit,onError=()=>{}}){this.prepare=prepare;this.commit=commit;this.onError=onError;this.generation=0;this.inFlight=false;this.pending=null;this.active=false;}
+  cancel(){this.generation++;this.pending=null;this.active=false;}
+  request(index){this.pending=index;const generation=this.generation;if(!this.inFlight)this.drain(generation);}
+  async drain(generation){if(this.inFlight||this.pending==null)return;this.inFlight=true;const index=this.pending;this.pending=null;
+    try{const prepared=await this.prepare(index,generation);if(generation===this.generation&&prepared!=null)this.commit(prepared,index);}
+    catch(error){if(generation===this.generation)this.onError(error,index);}
+    finally{this.inFlight=false;if(generation===this.generation&&this.pending!=null)this.drain(generation);}
+  }
+  play(next,delay){if(this.active)return;this.active=true;const generation=this.generation;const tick=()=>{if(!this.active||generation!==this.generation)return;this.request(next());setTimeout(tick,delay())};tick();}
+  pause(){this.active=false;}
+}
 
 export function minimumImageDisplacement(a,b,cell){
   return [a.x-b.x,a.y-b.y,a.z-b.z].map((delta,i)=>delta-Math.round(delta/cell[i])*cell[i]);
