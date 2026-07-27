@@ -26,3 +26,17 @@ test('peak tracking leaves a gap instead of switching to a distant shoulder',()=
 test('representative simulation settings are preserved rather than normalized',async()=>{const input=parseSimulationInput(await fixture('./test/fixtures/representative_run/simulation.input'));assert.deepEqual({cycles:input.productionCycles,initialization:input.initializationCycles,pressure:input.pressurePa,cutoff:input.vdwCutoffA,component:input.component.MoleculeName},{cycles:100000,initialization:50000,pressure:23299.51811,cutoff:12.9,component:'C10'})});
 test('representative lossy PDB reconstructs molecules only with explicit topology',async()=>{const movie=parsePdbMovie(await fixture('./test/fixtures/representative_run/Movie_IRMOF-1_1.1.1_300.000000_23299.518110_allcomponents.pdb'),{sitesPerMolecule:10,siteTypes:['CF3_sp3',...Array(8).fill('CF2_sp3'),'CF3_sp3']});assert.equal(movie.frames.length,1000);assert.equal(movie.lossyAtomLabels,true);assert.equal(movie.roleSpecificAnalysisEnabled,true);assert.ok([25,26].includes(movie.frames[0].atoms.length/10));assert.equal(movie.frames[0].atoms[9].siteType,'CF3_sp3');assert.ok(movie.frames.some(frame=>frame.atoms.some(atom=>atom.x<0||atom.x>frame.cell[0]))) });
 test('minimum-image distances and contact bands handle out-of-cell coordinates',()=>{const a={x:26,y:0,z:0},b={x:1,y:0,z:0},cell=[25.832,25.832,25.832];assert.ok(Math.abs(minimumImageDistance(a,b,cell)-.832)<1e-12);assert.equal(contactsInBand([a],[b],cell,.8,.9).length,1)});
+
+test('validates referenced PFA topology, pseudoatoms, bonds, and changing complete blocks',async()=>{
+  const {validateMovieTopology}=await import('./trajectory.mjs');
+  const {parseMoleculeDefinition,parsePseudoAtoms}=await import('./raspa-physics.mjs');
+  const simulation=parseSimulationInput('Component 0 MoleculeName C10_PFA\n MoleculeDefinition local');
+  const atoms=['CF3_sp3',...Array(8).fill('CF2_sp3'),'CF3_sp3'];
+  const definition=`# Number Of Atoms\n10\n# atomic positions\n${atoms.map((x,i)=>`${i} ${x}`).join('\n')}\n# Bond stretch: atom n1-n2, type, parameters\n${Array.from({length:9},(_,i)=>`${i} ${i+1} FIXED_BOND 1.5`).join('\n')}\n# end`;
+  const pseudo=parsePseudoAtoms('CF3_sp3 yes C C 0 69 0 0\nCF2_sp3 yes C C 0 50 0 0');
+  const result=validateMovieTopology({simulation,componentDefinitionName:'C10_PFA.def',topology:parseMoleculeDefinition(definition),pseudoatoms:pseudo,frameAtomCounts:[250,260]});
+  assert.deepEqual(result.typeCounts,{CF3_sp3:2,CF2_sp3:8});assert.deepEqual(result.moleculeCounts,[25,26]);assert.equal(result.siteRoles[0],'terminal');assert.equal(result.siteRoles[5],'internal');
+  assert.throws(()=>validateMovieTopology({simulation:{...simulation,components:[...simulation.components,{MoleculeName:'other'}]},componentDefinitionName:'C10_PFA.def',topology:parseMoleculeDefinition(definition),pseudoatoms:pseudo,frameAtomCounts:[250]}),/ambiguous/);
+  assert.throws(()=>validateMovieTopology({simulation,componentDefinitionName:'wrong.def',topology:parseMoleculeDefinition(definition),pseudoatoms:pseudo,frameAtomCounts:[250]}),/referenced/);
+  assert.throws(()=>validateMovieTopology({simulation,componentDefinitionName:'C10_PFA.def',topology:parseMoleculeDefinition(definition),pseudoatoms:pseudo,frameAtomCounts:[251]}),/whole contiguous/);
+});

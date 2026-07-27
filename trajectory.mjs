@@ -36,6 +36,22 @@ export function parsePdbMovie(text,{sitesPerMolecule=null,siteTypes=null}={}){
   return {frames,lossyAtomLabels:new Set(frames.flatMap(f=>f.atoms.map(a=>a.atomName))).size===1,roleSpecificAnalysisEnabled:sitesPerMolecule!==null&&siteTypes?.length===sitesPerMolecule};
 }
 
+/** Validate the evidence needed to assign lossy PDB atoms by RASPA site order. */
+export function validateMovieTopology({simulation,componentDefinitionName,topology,pseudoatoms,frameAtomCounts}){
+  if(!simulation||!topology||!pseudoatoms)throw new Error('simulation.input, component .def, and pseudo_atoms.def are all required');
+  if(simulation.components.length!==1)throw new Error(`All-components movie is ambiguous for ${simulation.components.length} adsorbate components; select a component-specific trajectory or explicit mapping`);
+  const component=simulation.components[0],expected=`${component.MoleculeName}.def`;
+  if(componentDefinitionName?.split(/[\\/]/).at(-1)!==expected)throw new Error(`Component definition must be ${expected}, as referenced by simulation.input`);
+  if(topology.sites.length!==topology.sitesPerMolecule||topology.sites.some((site,index)=>site.index!==index))throw new Error('Template indices must be unique and complete from 0 through N-1');
+  for(const site of topology.sites)if(!pseudoatoms.has(site.type))throw new Error(`Required pseudoatom ${site.type} is missing from pseudo_atoms.def`);
+  for(const bond of topology.bonds||[])if(bond.some(index=>index<0||index>=topology.sitesPerMolecule))throw new Error('A bond references an invalid template index');
+  if(!(topology.bonds?.length))throw new Error('Bond connectivity is required for topology validation');
+  if(!frameAtomCounts?.length||frameAtomCounts.some(count=>!Number.isInteger(count)||count%topology.sitesPerMolecule!==0))throw new Error('At least one parsed frame does not consist of whole contiguous molecule blocks');
+  const degree=Array(topology.sitesPerMolecule).fill(0);for(const [a,b] of topology.bonds){degree[a]++;degree[b]++;}
+  const counts=new Map();for(const site of topology.sites)counts.set(site.type,(counts.get(site.type)||0)+1);
+  return {validated:true,componentName:component.MoleculeName,sitesPerMolecule:topology.sitesPerMolecule,siteTypes:topology.sites.map(x=>x.type),siteRoles:degree.map(value=>value===1?'terminal':'internal'),typeCounts:Object.fromEntries(counts),moleculeCounts:frameAtomCounts.map(x=>x/topology.sitesPerMolecule)};
+}
+
 /** Byte/character ranges for complete PDB models; callers decode only the selected range. */
 export function indexPdbFrames(text){
   const frames=[];let start=-1,model=null;const re=/^(MODEL\s+([^\r\n]+)|ENDMDL)\s*$/gm;let match;

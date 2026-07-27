@@ -45,7 +45,9 @@ export function parseMoleculeDefinition(text){
   if(!sites.length||sites.some((x,i)=>x.index!==i||!x.type))throw new Error('Ambiguous molecule site ordering');
   const countMatch=text.match(/# Number Of Atoms\s*\r?\n\s*(\d+)/i);if(!countMatch||Number(countMatch[1])!==sites.length)throw new Error('Molecule atom count contradicts site list');
   const intra=[];const intraMarker=lines.findIndex(x=>/# Intra VDW:/i.test(x));if(intraMarker>=0)for(let i=intraMarker+1;i<lines.length;i++){const p=lines[i].trim().split(/\s+/);if(!/^\d+$/.test(p[0]||'')||!/^\d+$/.test(p[1]||''))break;intra.push([Number(p[0]),Number(p[1])]);}
-  return {sites,intraVdwPairs:intra,sitesPerMolecule:sites.length};
+  const bonds=[];const bondMarker=lines.findIndex(x=>/# Bond stretch:/i.test(x));if(bondMarker>=0)for(let i=bondMarker+1;i<lines.length;i++){const p=lines[i].trim().split(/\s+/);if(!/^\d+$/.test(p[0]||'')||!/^\d+$/.test(p[1]||''))break;bonds.push([Number(p[0]),Number(p[1])]);}
+  if(bonds.some(pair=>pair.some(index=>index<0||index>=sites.length)))throw new Error('Molecule bond references an invalid site index');
+  return {sites,bonds,intraVdwPairs:intra,sitesPerMolecule:sites.length};
 }
 
 export function cellMatrix(lengths,angles=[90,90,90]){const [a,b,c]=lengths,[al,be,ga]=angles.map(x=>x*Math.PI/180),cg=Math.cos(ga),sg=Math.sin(ga),cb=Math.cos(be),ca=Math.cos(al);if(!(a>0&&b>0&&c>0&&sg>1e-12))throw new Error('Invalid unit cell');return [[a,b*cg,c*cb],[0,b*sg,c*(ca-cb*cg)/sg],[0,0,Math.sqrt(Math.max(0,c*c-(c*cb)**2-(c*(ca-cb*cg)/sg)**2))]];}

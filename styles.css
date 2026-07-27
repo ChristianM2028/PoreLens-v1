@@ -49,3 +49,6 @@ main{max-width:1800px;margin:auto;padding:16px 24px 28px}.dataset-manager,.works
 .focused-workspace{min-height:22rem}
 .focused-controls{max-width:70rem;padding:1rem;border:1px solid #d8dfdb;background:#f8faf9}
 @media(max-width:1050px){.topbar{flex-wrap:wrap}.workspace-navigation{order:3;width:100%}}
+
+#movieTopology { white-space: pre-line; line-height: 1.45; }
+#movieTopologyFiles { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
