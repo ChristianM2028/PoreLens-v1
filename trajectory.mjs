@@ -36,6 +36,14 @@ export function parsePdbMovie(text,{sitesPerMolecule=null,siteTypes=null}={}){
   return {frames,lossyAtomLabels:new Set(frames.flatMap(f=>f.atoms.map(a=>a.atomName))).size===1,roleSpecificAnalysisEnabled:sitesPerMolecule!==null&&siteTypes?.length===sitesPerMolecule};
 }
 
+/** Byte/character ranges for complete PDB models; callers decode only the selected range. */
+export function indexPdbFrames(text){
+  const frames=[];let start=-1,model=null;const re=/^(MODEL\s+([^\r\n]+)|ENDMDL)\s*$/gm;let match;
+  while((match=re.exec(text))){if(match[1].startsWith('MODEL')){start=match.index;model=Number(match[2].trim())}else if(start>=0){frames.push({model:Number.isFinite(model)?model:frames.length+1,start,end:re.lastIndex});start=-1;}}
+  if(start>=0)throw new Error('PDB movie is missing ENDMDL');if(!frames.length)throw new Error('PDB movie contains no complete models');return frames;
+}
+export function decodeIndexedPdbFrame(text,indexEntry,options={}){return parsePdbMovie(text.slice(indexEntry.start,indexEntry.end),options).frames[0]}
+
 export function minimumImageDisplacement(a,b,cell){
   return [a.x-b.x,a.y-b.y,a.z-b.z].map((delta,i)=>delta-Math.round(delta/cell[i])*cell[i]);
 }

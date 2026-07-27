@@ -18,7 +18,16 @@ export function expandFramework(cif,typeMapping,unitCells=[1,1,1]){const atoms=[
 export function parseRaspaOutput(text){
   const version=text.match(/RASPA\s+(?:version\s*)?([\d.]+)/i)?.[1]||null,completed=/Simulation finished|End of simulation|Finishing simulation/i.test(text),warnings=[...text.matchAll(/^.*warning.*$/gim)].map(x=>x[0].trim());
   const host=[...text.matchAll(/Host[- ]Adsorbate[^\n]*?(-?[\d.]+)\s*(?:\+\/-|\u00b1)\s*([\d.]+)/gi)].at(-1),guest=[...text.matchAll(/Adsorbate[- ]Adsorbate[^\n]*?(-?[\d.]+)\s*(?:\+\/-|\u00b1)\s*([\d.]+)/gi)].at(-1);
-  return {version,completed,warnings,energies:{hostAdsorbate:host?{mean:Number(host[1]),uncertainty:Number(host[2])}:null,adsorbateAdsorbate:guest?{mean:Number(guest[1]),uncertainty:Number(guest[2])}:null}};
+  const lastNumber=(pattern)=>{const match=[...text.matchAll(pattern)].at(-1);return match?Number(match[1]):null};
+  const pressurePa=lastNumber(/^\s*External Pressure\s*:\s*([+\-\d.eE]+)\s*\[Pa\]/gim),temperatureK=lastNumber(/^\s*External temperature\s*:\s*([+\-\d.eE]+)\s*\[K\]/gim);
+  const component=[...text.matchAll(/^Component\s+\d+\s*\[([^\]]+)\]/gim)].at(-1)?.[1]?.trim()||null;
+  const framework=text.match(/^\s*FrameworkName\s+([^\s#]+)/mi)?.[1]||text.match(/^\s*Framework\s+\d+\s*\[([^\]]+)\]/mi)?.[1]||null;
+  const loadings={absolute:{},excess:{}};
+  for(const match of text.matchAll(/^\s*Average loading (absolute|excess)(?:\s*\[([^\]]+)\])?\s+([+\-\d.eE]+)\s*(?:\+\/-|\u00b1)\s*([+\-\d.eE]+)/gim)){
+    const kind=match[1].toLowerCase(),unit=(match[2]||'molecules/system').trim(),value=Number(match[3]),uncertainty=Number(match[4]);
+    if(Number.isFinite(value)&&Number.isFinite(uncertainty))loadings[kind][unit]={value,uncertainty};
+  }
+  return {version,completed,warnings,pressurePa,temperatureK,component,framework,loadings,energies:{hostAdsorbate:host?{mean:Number(host[1]),uncertainty:Number(host[2])}:null,adsorbateAdsorbate:guest?{mean:Number(guest[1]),uncertainty:Number(guest[2])}:null}};
 }
 
 const required={simulation:'simulation.input',pseudoatoms:'pseudo_atoms.def',mixing:'force_field_mixing_rules.def',cif:'.cif',molecule:'.def',movie:'.pdb'};
