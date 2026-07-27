@@ -20,6 +20,7 @@ test('peak annotations are absent when disabled and form one trace when enabled'
 test('rescaling changes pixels but neither source coordinates nor selection',()=>{const line=prepareRawLine([{distanceA:1,gR:2},{distanceA:2,gR:4}]), a=lineCommands(line,x=>x*10,y=>y*10), b=lineCommands(line,x=>x*20,y=>y*20);assert.deepEqual(line.map(x=>[x.distanceA,x.gR]),[[1,2],[2,4]]);assert.ok(a.concat(b).every(x=>x.command==='gap'||Number.isFinite(x.x+x.y)))});
 
 test('plot-specific CSS selectors do not combine heatmap and RDF annotation roles',async()=>{const {readFile}=await import('node:fs/promises'),css=await readFile(new URL('./styles.css',import.meta.url),'utf8');assert.match(css,/\.heatmap-panel>\.heatmap-canvas/);assert.match(css,/\.rdf-panel>\.rdf-canvas/);assert.doesNotMatch(css,/\.heatmap-canvas\s*,\s*\.rdf-canvas/)});
+test('hidden comparison heatmap does not reserve an empty grid row',async()=>{const {readFile}=await import('node:fs/promises'),css=await readFile(new URL('./styles.css',import.meta.url),'utf8');assert.match(css,/\.compare-plots>canvas\[hidden\]\{display:none\}/)});
 
 
 test('representative parsed RDF maps one-for-one to raw line coordinates',async()=>{const {readFile}=await import('node:fs/promises'),rdf=parseRdf(await readFile(new URL('./test/fixtures/representative_run/RDF_CF3_sp3_C1.dat',import.meta.url),'utf8')),line=prepareRawLine(rdf.records);assert.deepEqual(line.map(x=>[x.distanceA,x.gR]),rdf.records.map(x=>[x.distanceA,x.gR]));assert.ok(line.every(x=>x.valid))});
