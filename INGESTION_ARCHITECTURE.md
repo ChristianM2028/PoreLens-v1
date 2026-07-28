@@ -53,8 +53,12 @@ Responsibilities are separated as follows:
 * `cli.mjs` exposes the same normalized ingestion operation to humans and
   automation.
 
-The existing browser `FileList` import remains for manifest/RDF browsing and
-legacy browser-handle compatibility. It should be migrated to an adapter over
-this normalized contract once browsers provide or retain directory handles;
-new analysis code must consume `Dataset`/`SimulationRun` and must not introduce
-another filesystem walker.
+The static browser cannot invoke the Node/Python filesystem indexer. For the
+static application, `poreview/ingestion/browser/directory-handle-discovery.mjs`
+is therefore the authoritative directory-handle discovery implementation. It
+emits the same normalized run/RDF concepts while retaining authorized file
+handles for lazy reads. `catalog-adapter.mjs` is the single conversion boundary
+from those normalized records into the plotting workspace's manifest-shaped
+records. Persisted snapshots are metadata-only: the UI does not treat them as
+usable until the saved directory handle has been reauthorized and rescanned.
+The compatibility `FileList` manifest importer remains a separate fallback.
