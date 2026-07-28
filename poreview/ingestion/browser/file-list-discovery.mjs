@@ -43,4 +43,28 @@ export async function discoverChainSeries(files,{manifestRows=[],datasetName=nul
   runs.sort((a,b)=>a.chainLength-b.chainLength||Number(a.run)-Number(b.run));return {dataset:datasetName||root||'Selected dataset',root,runs,createdAt:new Date().toISOString()};
 }
 
-export function filesForCatalogRun(entry){return [entry.simulationFile,...Object.values(entry.outputs||{}).flat().map(x=>x.file),entry.dependencies.framework?.file,...Object.values(entry.dependencies.molecules).map(x=>x?.file),entry.dependencies.pseudoatoms?.file,entry.dependencies.mixing?.file,...entry.dependencies.overrides.map(x=>x.file)].filter(Boolean);}
+export function filesForCatalogRun(entry){
+  const dependencies=entry.dependencies||{}, outputs=Object.values(entry.outputs||{}).flat();
+  // Both directory-handle catalogs and compatibility-file catalogs expose the
+  // same authorized File facade, but their dependency indexes have different
+  // shapes.  Keep the facade lazy and never ask the user to authorize again.
+  const dependencyFiles=dependencies.molecules
+    ? [dependencies.framework?.file,...Object.values(dependencies.molecules).map(x=>x?.file),dependencies.pseudoatoms?.file,dependencies.mixing?.file,...(dependencies.overrides||[]).map(x=>x?.file)]
+    : Object.values(dependencies).map(x=>x?.file||x);
+  return [entry.simulationFile,...outputs.map(x=>x?.file||x),...dependencyFiles].filter(Boolean);
+}
+
+/** Resolve identity without nearest-pressure or numeric-run fallbacks. */
+export function exactAuthorizedCatalogRun(catalog,{datasetFingerprint,currentDatasetFingerprint,run,pressurePa}){
+  const diagnostics=[];
+  if(!datasetFingerprint||datasetFingerprint!==currentDatasetFingerprint)return {run:null,files:[],diagnostics:[{severity:'error',code:'dataset_identity_mismatch',message:'The annotation belongs to a different dataset identity. Re-select or reconcile that annotation; no run was substituted.'}]};
+  if(typeof run!=='string')return {run:null,files:[],diagnostics:[{severity:'error',code:'run_identity_not_string',message:'The annotation run identity must be a string; no numeric coercion or alternate run was used.'}]};
+  if(!Number.isFinite(pressurePa))return {run:null,files:[],diagnostics:[{severity:'error',code:'invalid_canonical_pressure',message:'The annotation has no finite canonical pressurePa.'}]};
+  const runMatches=(catalog?.runs||[]).filter(x=>String(x.run)===run);
+  if(!runMatches.length)return {run:null,files:[],diagnostics:[{severity:'error',code:'exact_run_missing',message:`Authorized dataset does not contain exact run “${run}”. No neighboring run was substituted.`}]};
+  const exact=runMatches.filter(x=>Number(x.pressurePa??x.simulation?.pressurePa)===pressurePa);
+  if(exact.length!==1)return {run:null,files:[],diagnostics:[{severity:'error',code:exact.length?'ambiguous_exact_run':'exact_pressure_mismatch',message:exact.length?'More than one authorized run has the exact run/pressure identity. Resolve the duplicate before analysis.':`Run “${run}” does not have canonical pressure ${pressurePa} Pa. No nearest pressure was substituted.`}]};
+  const files=filesForCatalogRun(exact[0]);
+  if(!files.length)diagnostics.push({severity:'error',code:'authorized_files_missing',message:'The exact run is indexed, but its authorized file handles are unavailable. Reauthorize the original dataset folder.'});
+  return {run:exact[0],files,diagnostics};
+}
