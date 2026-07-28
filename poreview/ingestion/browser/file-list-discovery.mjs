@@ -63,7 +63,14 @@ export function exactAuthorizedCatalogRun(catalog,{datasetFingerprint,currentDat
   const runMatches=(catalog?.runs||[]).filter(x=>String(x.run)===run);
   if(!runMatches.length)return {run:null,files:[],diagnostics:[{severity:'error',code:'exact_run_missing',message:`Authorized dataset does not contain exact run “${run}”. No neighboring run was substituted.`}]};
   const exact=runMatches.filter(x=>Number(x.pressurePa??x.simulation?.pressurePa)===pressurePa);
-  if(exact.length!==1)return {run:null,files:[],diagnostics:[{severity:'error',code:exact.length?'ambiguous_exact_run':'exact_pressure_mismatch',message:exact.length?'More than one authorized run has the exact run/pressure identity. Resolve the duplicate before analysis.':`Run “${run}” does not have canonical pressure ${pressurePa} Pa. No nearest pressure was substituted.`}]};
+  if(exact.length!==1){
+    const diagnostic={severity:'error',code:exact.length?'ambiguous_exact_run':'exact_pressure_mismatch',message:exact.length?'More than one authorized run has the exact run/pressure identity. Resolve the duplicate before analysis.':`Run “${run}” does not have canonical pressure ${pressurePa} Pa. No nearest pressure was substituted.`};
+    if(exact.length)diagnostic.candidates=exact.map(candidate=>{
+      const simulationInputPath=candidate.simulationFile?.path||candidate.simulationPath||(candidate.rootRelativePath?`${candidate.rootRelativePath}/simulation.input`:null);
+      return {id:candidate.id, ...(candidate.rootRelativePath?{rootRelativePath:candidate.rootRelativePath}:{}), ...(!candidate.rootRelativePath&&candidate.simulationPath?{simulationPath:candidate.simulationPath}:{}), chain:candidate.chain,run:String(candidate.run),pressurePa:Number(candidate.pressurePa??candidate.simulation?.pressurePa),simulationInputPath};
+    });
+    return {run:null,files:[],diagnostics:[diagnostic]};
+  }
   const files=filesForCatalogRun(exact[0]);
   if(!files.length)diagnostics.push({severity:'error',code:'authorized_files_missing',message:'The exact run is indexed, but its authorized file handles are unavailable. Reauthorize the original dataset folder.'});
   return {run:exact[0],files,diagnostics};

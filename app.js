@@ -45,12 +45,12 @@ window.addEventListener('porelens:catalog-updated',async event=>{if(!event.detai
 window.addEventListener('porelens:run-selected',async event=>{const {slot,chain,pressurePa}=event.detail;if(!ws.slots[slot]||!chain||!Number.isFinite(pressurePa))return;elements.datasetSelect.value=slot;elements.componentSelect.value=chain;await render();if([...elements.pressureSelect.options].some(x=>Number(x.value)===Number(pressurePa))){elements.pressureSelect.value=String(pressurePa);selectPressure()}});
 window.addEventListener('porelens:authorized-run-request',async event=>{
   const annotation=event.detail?.annotation,slot=annotation?.datasetSlot,authorized=authorizedDatasets.get(slot),currentFingerprint=ws.slots[slot]?.manifestFingerprint;
-  const fail=message=>window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation?.id,audit:{capabilities:{quantitativeLJ:false},diagnostics:[{severity:'error',message}]},run:null}}));
+  const fail=value=>{const diagnostics=Array.isArray(value)?value:[{severity:'error',message:value}];window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation?.id,audit:{capabilities:{quantitativeLJ:false},diagnostics},run:null}}))};
   if(!annotation||!authorized)return fail('The annotation dataset is not currently authorized. Reopen the original dataset; do not select another folder.');
   try{
     const catalog=authorized.catalog||await discoverChainSeries(authorized.files,{manifestRows:ws.slots[slot]?.rows||[],datasetName:ws.slots[slot]?.displayName});
     const match=exactAuthorizedCatalogRun(catalog,{datasetFingerprint:annotation.datasetFingerprint,currentDatasetFingerprint:currentFingerprint,run:annotation.run,pressurePa:Number(annotation.pressurePa)});
-    if(!match.run)return fail(match.diagnostics.map(x=>x.message).join(' '));
+    if(!match.run)return fail(match.diagnostics);
     const audit=await importRunPackage(match.files,{manifestFingerprint:currentFingerprint});
     window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation.id,audit,run:{...match.run,run:String(match.run.run),pressurePa:Number(match.run.pressurePa??match.run.simulation?.pressurePa)}}}));
   }catch(error){fail(`The exact authorized run could not be imported: ${error.message}`)}
