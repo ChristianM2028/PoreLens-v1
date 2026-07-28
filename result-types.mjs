@@ -74,3 +74,20 @@ export function inspectVoxel(grid,arrayName,x,y,z){const array=grid.arrays.find(
 export function vtkCompatibility(a,b,arrayA,arrayB){const mismatch=[];for(const key of ['dimensions','origin','spacing'])if(a[key].length!==b[key].length||a[key].some((v,i)=>Math.abs(v-b[key][i])>1e-10))mismatch.push(key);const aa=a.arrays.find(x=>x.name===arrayA),bb=b.arrays.find(x=>x.name===arrayB);if(!aa||!bb)mismatch.push('scalar array');if(arrayA!==arrayB)mismatch.push('scalar meaning');return {compatible:!mismatch.length,mismatch};}
 export function vtkDifference(a,b,arrayName){const check=vtkCompatibility(a,b,arrayName,arrayName);if(!check.compatible)throw new Error(`Incompatible grids: ${check.mismatch.join(', ')}`);const av=a.arrays.find(x=>x.name===arrayName),bv=b.arrays.find(x=>x.name===arrayName);return {...a,source:`difference(${a.source}, ${b.source})`,arrays:[{name:`${arrayName}_difference`,dataType:'double',values:av.values.map((v,i)=>v-bv.values[i])}]};}
 export function displayValues(values,{normalizeToMaximum=false,log=false}={}){let out=[...values];if(normalizeToMaximum){const max=Math.max(...out.map(Math.abs));out=out.map(v=>max?v/max:0)}if(log){if(out.some(v=>!(v>0)))throw new Error('Logarithmic mapping requires strictly positive values');out=out.map(Math.log10)}return out;}
+
+export const SPATIAL_CAPABILITY_LEVELS=Object.freeze(['context_only','identified_site_density','registered_framework_overlay','annotation_shell_overlay']);
+/** Conservative VTK gating: each higher overlay requires every preceding identity/registration fact. */
+export function spatialDensityCapability({scalarIdentity=null,cellMatches=false,frameworkExpanded=false,gridRegistered=false,annotation=null,pairDensityIdentity=false}={}){
+  const missing=[];let level='context_only';
+  if(!scalarIdentity)missing.push('explicit scalar identity');else level='identified_site_density';
+  if(!(cellMatches&&frameworkExpanded&&gridRegistered))missing.push('matching cell, expanded framework, grid origin/spacing, replication, and coordinate registration');
+  else if(scalarIdentity)level='registered_framework_overlay';
+  if(annotation&&pairDensityIdentity&&level==='registered_framework_overlay')level='annotation_shell_overlay';
+  else if(annotation)missing.push('validated annotated-pair scalar identity and registration');
+  return {level,missing,sourceScalarValuesModified:false,annotationShellIsGeometricGuide:level==='annotation_shell_overlay'};
+}
+
+export function vtkVisualizationState({grid,arrayName,run,display={}}){
+  if(!grid.arrays.some(x=>x.name===arrayName))throw new Error(`Unknown scalar array ${arrayName}`);
+  return {schema:'porelens.spatial-density-state',version:1,datasetFingerprint:run.datasetFingerprint,chain:run.chain,run:String(run.run),pressurePa:Number(run.pressurePa),source:grid.source,arrayName,grid:{dimensions:grid.dimensions,origin:grid.origin,spacing:grid.spacing},display:{view:display.view||'xy',slice:Number(display.slice||0),threshold:Number(display.threshold||0),opacity:Number(display.opacity??.8),colorMapping:display.colorMapping||'linear',normalizeToMaximum:!!display.normalizeToMaximum},sourceScalarValuesModified:false};
+}

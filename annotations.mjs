@@ -1,5 +1,8 @@
 export const ANNOTATION_FORMAT = 'porelens.annotations';
 export const ANNOTATION_VERSION = 1;
+export const TRAJECTORY_ANNOTATION_TYPES=Object.freeze(['span','region','ridge','pressure_point','pressure_region']);
+export const SELECTION_SCOPES=Object.freeze(['pair_only','anchor_site','whole_molecule']);
+export const PAIR_CRITERIA=Object.freeze(['any','nearest','all']);
 
 const canonical = value => JSON.stringify(value, Object.keys(value).sort());
 export function normalizedManifest(rows) {
@@ -18,7 +21,7 @@ export function snapPressure(items,pressurePa){const i=nearestIndex(items.map(x=
 export class AnnotationStore {
   constructor(clock=()=>new Date().toISOString()){this.items=[];this.dirty=false;this.clock=clock;}
   create(context,geometry,fields={}) {
-    const now=this.clock(), item={id:fields.id||crypto.randomUUID(),datasetSlot:context.datasetSlot,datasetFingerprint:context.datasetFingerprint,chainLength:context.chainLength,atomPair:context.atomPair,run:String(geometry.run??context.run),pressurePa:Number(geometry.pressurePa??context.pressurePa),rdfRelativePath:context.rdfRelativePath,rdfFingerprint:context.rdfFingerprint||null,type:geometry.type,distanceA:geometry.distanceA??null,startA:geometry.startA??null,endA:geometry.endA??null,pressureMinPa:geometry.pressureMinPa??Number(context.pressurePa),pressureMaxPa:geometry.pressureMaxPa??Number(context.pressurePa),pressurePoints:geometry.pressurePoints||null,ridge:geometry.ridge||null,gR:geometry.gR??null,label:fields.label||'',note:fields.note||'',category:fields.category||'feature',color:fields.color||null,provenance:fields.provenance||'manual',status:fields.status||'active',visible:fields.visible!==false,linkedId:fields.linkedId||null,createdAt:now,updatedAt:now};
+    const now=this.clock(), item={id:fields.id||crypto.randomUUID(),datasetSlot:context.datasetSlot,datasetFingerprint:context.datasetFingerprint,chainLength:context.chainLength,atomPair:context.atomPair,run:String(geometry.run??context.run),pressurePa:Number(geometry.pressurePa??context.pressurePa),rdfRelativePath:context.rdfRelativePath,rdfFingerprint:context.rdfFingerprint||null,type:geometry.type,distanceA:geometry.distanceA??null,startA:geometry.startA??null,endA:geometry.endA??null,pressureMinPa:geometry.pressureMinPa??Number(context.pressurePa),pressureMaxPa:geometry.pressureMaxPa??Number(context.pressurePa),pressurePoints:geometry.pressurePoints||null,ridge:geometry.ridge||null,gR:geometry.gR??null,scope:fields.scope||null,pairCriterion:fields.pairCriterion||null,reference:fields.reference||null,normalization:fields.normalization||null,label:fields.label||'',note:fields.note||'',category:fields.category||'feature',color:fields.color||null,provenance:fields.provenance||'manual',status:fields.status||'active',visible:fields.visible!==false,linkedId:fields.linkedId||null,createdAt:now,updatedAt:now};
     this.items.push(item);this.dirty=true;return item;
   }
   update(id,patch){const item=this.items.find(x=>x.id===id);if(!item)return null;Object.assign(item,patch,{id:item.id,createdAt:item.createdAt,updatedAt:this.clock()});this.dirty=true;return item;}
