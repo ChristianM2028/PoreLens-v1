@@ -32,22 +32,46 @@ export function parseRaspaOutput(text){
 
 const required={simulation:'simulation.input',pseudoatoms:'pseudo_atoms.def',mixing:'force_field_mixing_rules.def',cif:'.cif',molecule:'.def',movie:'.pdb'};
 const find=(files,test)=>files.find(f=>test(f.name||f.path||''));
+const javascriptType=value=>value===null?'null':Array.isArray(value)?'array':typeof value;
+
+/** Resolve browser Files, lazy path-file facades, and explicit {name, text} fixtures. */
+export async function normalizeRunPackageFile(file){
+  const name=file?.name||file?.path||file?.webkitRelativePath||'(unnamed file)';
+  const path=file?.path||file?.webkitRelativePath||file?.name||name;
+  try{
+    const resolver=file?.text;
+    const text=typeof resolver==='function'?await resolver.call(file):await resolver;
+    if(typeof text!=='string')return {source:file,name,path,text:null,resolutionDiagnostic:{severity:'error',code:'invalid_file_content',stage:'content_resolution',file:path,message:`Cannot parse ${path}: content resolver returned JavaScript type ${javascriptType(text)}; expected a string from text() or the explicit {name, text} contract.`}};
+    return {source:file,name,path,text,resolutionDiagnostic:null};
+  }catch(error){
+    return {source:file,name,path,text:null,resolutionDiagnostic:{severity:'error',code:'file_content_rejected',stage:'content_resolution',file:path,message:`Cannot read ${path} during content_resolution: ${error?.message||String(error)}; expected text() to resolve to a string.`}};
+  }
+}
 /** Audit a set of {name,text} files without inventing missing model information. */
 export async function importRunPackage(files,{annotationSidecar=null,manifestFingerprint=null}={}){
-  files=await Promise.all([...files].map(async file=>({...file,name:file.name,path:file.path||file.webkitRelativePath,text:typeof file.text==='function'?await file.text():file.text})));
-  const diagnostics=[],get=test=>find(files,test),sim=get(n=>/simulation\.input$/i.test(n)),pseudo=get(n=>/pseudo_atoms\.def$/i.test(n)),mix=get(n=>/force_field_mixing_rules\.def$/i.test(n)),override=get(n=>/(^|\/)force_field\.def$/i.test(n)),cif=get(n=>/\.cif$/i.test(n)),movie=get(n=>/\.pdb$/i.test(n)),output=get(n=>/\.data$/i.test(n));
-  const simParsed=sim?parseSimulationInput(sim.text):null,molecule=get(n=>/\.def$/i.test(n)&&!/pseudo_atoms|mixing_rules|force_field/i.test(n));
+  files=await Promise.all([...files].map(normalizeRunPackageFile));
+  const diagnostics=files.flatMap(file=>file.resolutionDiagnostic?[file.resolutionDiagnostic]:[]),get=test=>find(files,test),sim=get(n=>/simulation\.input$/i.test(n)),pseudo=get(n=>/pseudo_atoms\.def$/i.test(n)),mix=get(n=>/force_field_mixing_rules\.def$/i.test(n)),override=get(n=>/(^|\/)force_field\.def$/i.test(n)),cif=get(n=>/\.cif$/i.test(n)),movie=get(n=>/\.pdb$/i.test(n)),output=get(n=>/\.data$/i.test(n));
+  const molecule=get(n=>/\.def$/i.test(n)&&!/pseudo_atoms|mixing_rules|force_field/i.test(n));
   for(const [kind,name] of Object.entries(required))if(!({simulation:sim,pseudoatoms:pseudo,mixing:mix,cif,molecule,movie})[kind])diagnostics.push({severity:kind==='movie'?'warning':'error',code:`missing_${kind}`,message:`Missing ${name}; ${kind==='movie'?'trajectory-dependent analysis is unavailable':'quantitative LJ attribution is disabled'}.`});
-  let parsed={};try{parsed={simulation:simParsed,pseudoatoms:pseudo&&parsePseudoAtoms(pseudo.text),forceField:mix&&parseMixingRules(mix.text),overrides:override?parsePairOverrides(override.text):new Map(),cif:cif&&parseCif(cif.text),topology:molecule&&parseMoleculeDefinition(molecule.text),output:output&&parseRaspaOutput(output.text)};}catch(error){diagnostics.push({severity:'error',code:'contradictory_physics',message:error.message});}
+  const parsed={overrides:new Map()};
+  const parseFile=(key,file,stage,parser)=>{if(!file||file.resolutionDiagnostic)return null;try{return parsed[key]=parser(file.text);}catch(error){diagnostics.push({severity:'error',code:`invalid_${stage}`,stage,file:file.path,message:`Failed to parse ${file.path} during ${stage}: ${error.message}`});return null;}};
+  parseFile('simulation',sim,'simulation_input',parseSimulationInput);
+  parseFile('pseudoatoms',pseudo,'pseudo_atoms',parsePseudoAtoms);
+  parseFile('forceField',mix,'mixing_rules',parseMixingRules);
+  if(override)parseFile('overrides',override,'pair_overrides',parsePairOverrides);
+  parseFile('cif',cif,'cif',parseCif);
+  parseFile('topology',molecule,'molecule_topology',parseMoleculeDefinition);
+  parseFile('output',output,'raspa_output',parseRaspaOutput);
   if(parsed.forceField)parsed.forceField.overrides=parsed.overrides;
-  if(movie&&parsed.topology)try{parsed.movie=parsePdbMovie(movie.text,{sitesPerMolecule:parsed.topology.sitesPerMolecule,siteTypes:parsed.topology.sites.map(x=>x.type)});parsed.topologyValidation=validateMovieTopology({simulation:parsed.simulation,componentDefinitionName:molecule?.name,topology:parsed.topology,pseudoatoms:parsed.pseudoatoms,frameAtomCounts:parsed.movie.frames.map(frame=>frame.atoms.length)});if(!parsed.movie.roleSpecificAnalysisEnabled)throw new Error('Movie-to-topology site ordering could not be validated');const cells=new Set(parsed.movie.frames.map(frame=>frame.cell.join(',')));if(cells.size!==1)throw new Error('Changing movie cells are unsupported for quantitative reconstruction');}catch(error){diagnostics.push({severity:'error',code:'movie_topology_mismatch',message:error.message});}
+  if(movie&&!movie.resolutionDiagnostic)try{const options=parsed.topology?{sitesPerMolecule:parsed.topology.sitesPerMolecule,siteTypes:parsed.topology.sites.map(x=>x.type)}:{};parsed.movie=parsePdbMovie(movie.text,options);}catch(error){diagnostics.push({severity:'error',code:'invalid_pdb_movie',stage:'pdb_movie',file:movie.path,message:`Failed to parse ${movie.path} during pdb_movie: ${error.message}`});}
+  if(parsed.movie&&parsed.topology)try{parsed.topologyValidation=validateMovieTopology({simulation:parsed.simulation,componentDefinitionName:molecule?.name,topology:parsed.topology,pseudoatoms:parsed.pseudoatoms,frameAtomCounts:parsed.movie.frames.map(frame=>frame.atoms.length)});if(!parsed.movie.roleSpecificAnalysisEnabled)throw new Error('Movie-to-topology site ordering could not be validated');const cells=new Set(parsed.movie.frames.map(frame=>frame.cell.join(',')));if(cells.size!==1)throw new Error('Changing movie cells are unsupported for quantitative reconstruction');}catch(error){diagnostics.push({severity:'error',code:'movie_topology_mismatch',stage:'topology_validation',file:movie.path,message:`Failed to validate ${movie.path} during topology_validation: ${error.message}`});}
   if(parsed.cif&&parsed.forceField){parsed.frameworkTypeMapping=new Map();for(const site of parsed.cif.asymmetricSites){const candidates=[site.label,site.cifType,`${site.cifType}_`].filter(x=>parsed.forceField.parameters.has(x));if(candidates.length!==1)diagnostics.push({severity:'error',code:'framework_mapping_ambiguous',message:`Framework label ${site.label} resolves to ${candidates.length} force-field types (${candidates.join(', ')||'none'}).`});else parsed.frameworkTypeMapping.set(site.label,candidates[0]);}}
   if(parsed.topology&&parsed.forceField)for(const site of parsed.topology.sites)if(!parsed.forceField.parameters.has(site.type))diagnostics.push({severity:'error',code:'guest_parameter_missing',message:`No LJ parameters for guest site type ${site.type}.`});
   if(parsed.simulation&&!Number.isFinite(parsed.simulation.vdwCutoffA))diagnostics.push({severity:'error',code:'missing_cutoff',message:'CutOffVDW is required; no default was substituted.'});
   if(annotationSidecar&&manifestFingerprint){for(const [slot,d] of Object.entries(annotationSidecar.datasets||{}))if(d.manifestFingerprint!==manifestFingerprint)diagnostics.push({severity:'error',code:'annotation_manifest_mismatch',message:`Annotation dataset ${slot} does not match the imported manifest fingerprint.`});}
   if(parsed.cif&&parsed.frameworkTypeMapping&&parsed.simulation?.unitCells)try{parsed.expandedFramework=expandFramework(parsed.cif,parsed.frameworkTypeMapping,parsed.simulation.unitCells);}catch(error){diagnostics.push({severity:'error',code:'framework_expansion_unsupported',message:error.message});}
-  const geometric=!!(parsed.movie&&parsed.topologyValidation?.validated&&parsed.expandedFramework)&&!diagnostics.some(x=>x.severity==='error');
+  const geometric=!!(parsed.movie&&parsed.topologyValidation?.validated&&parsed.expandedFramework);
   const essential=geometric&&!!(parsed.simulation&&parsed.pseudoatoms&&parsed.forceField&&Number.isFinite(parsed.simulation.vdwCutoffA));
   const fingerprint=parsed.forceField&&parsed.simulation&&parsed.cif&&parsed.topology?await physicsFingerprint({cutoffA:parsed.simulation.vdwCutoffA,useChargesFromCif:parsed.simulation.useChargesFromCif,unitCells:parsed.simulation.unitCells,forceField:parsed.forceField,cif:parsed.cif,topology:parsed.topology}):null;
-  return {files:{simulation:sim?.name||null,pseudoatoms:pseudo?.name||null,mixing:mix?.name||null,override:override?.name||null,cif:cif?.name||null,molecule:molecule?.name||null,movie:movie?.name||null,output:output?.name||null},parsed,physicsFingerprint:fingerprint,capabilities:{rdfAndAnnotations:true,moviePlayback:!!movie,geometricSelection:geometric,quantitativeLJ:essential},diagnostics};
+  return {files:{simulation:sim?.path||null,pseudoatoms:pseudo?.path||null,mixing:mix?.path||null,override:override?.path||null,cif:cif?.path||null,molecule:molecule?.path||null,movie:movie?.path||null,output:output?.path||null},parsed,physicsFingerprint:fingerprint,capabilities:{rdfAndAnnotations:true,moviePlayback:!!parsed.movie,geometricSelection:geometric,quantitativeLJ:essential},diagnostics};
 }

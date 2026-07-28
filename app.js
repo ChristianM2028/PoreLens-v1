@@ -45,15 +45,15 @@ window.addEventListener('porelens:catalog-updated',async event=>{if(!event.detai
 window.addEventListener('porelens:run-selected',async event=>{const {slot,chain,pressurePa}=event.detail;if(!ws.slots[slot]||!chain||!Number.isFinite(pressurePa))return;elements.datasetSelect.value=slot;elements.componentSelect.value=chain;await render();if([...elements.pressureSelect.options].some(x=>Number(x.value)===Number(pressurePa))){elements.pressureSelect.value=String(pressurePa);selectPressure()}});
 window.addEventListener('porelens:authorized-run-request',async event=>{
   const annotation=event.detail?.annotation,slot=annotation?.datasetSlot,authorized=authorizedDatasets.get(slot),currentFingerprint=ws.slots[slot]?.manifestFingerprint;
-  const fail=message=>window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation?.id,audit:{capabilities:{quantitativeLJ:false},diagnostics:[{severity:'error',message}]},run:null}}));
+  const fail=diagnostic=>{const diagnostics=Array.isArray(diagnostic)?diagnostic:[typeof diagnostic==='string'?{severity:'error',code:'authorized_run_import_failed',stage:'run_authorization',file:null,message:diagnostic}:diagnostic];window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation?.id,audit:{capabilities:{quantitativeLJ:false},diagnostics},importDiagnostics:diagnostics,run:null}}));};
   if(!annotation||!authorized)return fail('The annotation dataset is not currently authorized. Reopen the original dataset; do not select another folder.');
   try{
     const catalog=authorized.catalog||await discoverChainSeries(authorized.files,{manifestRows:ws.slots[slot]?.rows||[],datasetName:ws.slots[slot]?.displayName});
     const match=exactAuthorizedCatalogRun(catalog,{datasetFingerprint:annotation.datasetFingerprint,currentDatasetFingerprint:currentFingerprint,chain:annotation.chainLength,run:annotation.run,pressurePa:Number(annotation.pressurePa)});
-    if(!match.run)return fail(match.diagnostics.map(x=>x.message).join(' '));
+    if(!match.run)return fail(match.diagnostics);
     const audit=await importRunPackage(match.files,{manifestFingerprint:currentFingerprint});
-    window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation.id,audit,run:{...match.run,run:String(match.run.run),pressurePa:Number(match.run.pressurePa??match.run.simulation?.pressurePa)}}}));
-  }catch(error){fail(`The exact authorized run could not be imported: ${error.message}`)}
+    window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation.id,audit,importDiagnostics:audit.diagnostics,run:{...match.run,run:String(match.run.run),pressurePa:Number(match.run.pressurePa??match.run.simulation?.pressurePa)}}}));
+  }catch(error){fail({severity:'error',code:'authorized_run_import_failed',stage:error.stage||'run_package_import',file:error.file||null,message:`The exact authorized run could not be imported${error.file?` from ${error.file}`:''} during ${error.stage||'run_package_import'}: ${error.message}`})}
 });
 [elements.datasetSelect,elements.componentSelect,elements.pairSelect].forEach(x=>x.onchange=()=>{diagnostics(elements.datasetSelect.value);render()});elements.pressureSelect.onchange=()=>selectPressure();[elements.maskPeaks,elements.showAnnotations,elements.showPeakTrace,elements.rdfDisplay,elements.smoothWindow,elements.rowDisplay,elements.thresholdMode,elements.threshold].forEach(x=>x.oninput=()=>selectPressure());
 ['compA','pairA','pressureA','compB','pairB','pressureB','nearestMatch','rdfCompareMode','colorMode','compareMask','differenceMap'].forEach(id=>elements[id].onchange=renderComparison);$('#heatmap').onclick=heatmapClick;$('#heatmap').onmousemove=heatmapHover;$('#heatmap').onmouseleave=()=>selectPressure(false);$('#heatmapA').onclick=e=>heatmapClick(e,'A');$('#heatmapB').onclick=e=>heatmapClick(e,'B');
