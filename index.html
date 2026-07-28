@@ -86,6 +86,7 @@
       <label data-chain-control="overlay"><span>Normalization / units</span><select id="chainUnits"><option value="stored">Stored source values</option><option value="probability">Normalized probability density (when valid)</option><option value="raw_density">Raw density (only identified raw weights)</option></select></label>
       <label class="toggle"><input id="chainAnnotations" type="checkbox" checked><span>Saved annotations</span></label>
     </div>
+    <div id="histogramChainSelections" class="histogram-chain-selections" hidden></div>
     <div id="chainMatchReport" class="selection-strip">Select a loaded dataset to build curves. Actual pressures are never substituted silently.</div>
     <article class="plot-panel"><header><div><span class="figure-id">FIG CS</span><h3 id="chainPlotTitle">Chain-series overlay</h3></div><span class="plot-state">wheel to zoom · click curve for provenance</span></header><canvas id="chainCanvas" width="1200" height="800" tabindex="0" aria-label="Interactive chain-series curves"></canvas><div id="chainCurveControls" class="curve-controls"></div><p id="chainProvenance" class="plot-caption">Click a curve to inspect its chain, run, actual pressure, source, annotations, and available run actions.</p></article>
     </div>

@@ -1,6 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { discoverChains, discoverPairs, filterPairs, matchRuns, parseEndToEndHistogram, plottedExport, exportCsv, buildChainCatalog } from './chain-series.mjs';
+import { discoverChains, discoverPairs, filterPairs, matchRuns, parseEndToEndHistogram, plottedExport, exportCsv, buildChainCatalog, parseHistogramFilename, reconcileHistogramPressure, histogramIdentity, updateHistogramSelections, ParsedResultCache } from './chain-series.mjs';
+
+test('parses only validated histogram filename pressures',()=>{
+  assert.deepEqual(parseHistogramFilename('Histogram_C10_0_Density_126896.dat'),{recognized:true,componentToken:'C10',componentIndex:0,filenamePressurePa:126896});
+  assert.equal(parseHistogramFilename('Histogram_PFA10_2_Density_12.625.dat').filenamePressurePa,12.625);
+  assert.equal(parseHistogramFilename('Histogram_C3_0_Density_1.2e+06.dat').filenamePressurePa,1.2e6);
+  assert.deepEqual(parseHistogramFilename('notes_pressure_123.dat'),{recognized:false,componentToken:null,componentIndex:null,filenamePressurePa:null});
+});
+
+test('reconciles filename pressure without replacing simulation metadata',()=>{
+  const metadata=parseHistogramFilename('Histogram_C10_0_Density_126896.dat');
+  assert.equal(reconcileHistogramPressure(126896,metadata,'simulation.input').pressureConsistent,true);
+  const conflict=reconcileHistogramPressure(125000,metadata,'simulation.input');
+  assert.equal(conflict.pressurePa,125000);assert.equal(conflict.pressureSource,'simulation.input');assert.equal(conflict.pressureConsistent,false);assert.ok(conflict.pressureMismatchAbsolutePa>0);assert.match(conflict.pressureDiagnostic,/disagrees/);
+  assert.equal(reconcileHistogramPressure(null,metadata).pressureSource,'histogram_filename_fallback');
+});
+
+test('per-chain histogram selections survive other changes and incremental additions',()=>{
+  const entry=(chain,run,path,pressurePa)=>({datasetId:'d',component:chain,run,path,filename:path,pressurePa});
+  const initial=[entry('C2','2','b.dat',200),entry('C2','1','a.dat',100),entry('C10','1','x.dat',100)];
+  let state=updateHistogramSelections(new Map(),initial);state.set('d\0C2',histogramIdentity(initial[0]));
+  state=updateHistogramSelections(state,[...initial,entry('C10','2','y.dat',200),entry('C3','1','z.dat',50)]);
+  assert.equal(state.get('d\0C2'),histogramIdentity(initial[0]));assert.equal(state.get('d\0C10'),histogramIdentity(initial[2]));assert.ok(state.has('d\0C3'));
+});
+
+test('result cache lazily reads selected histogram files only',async()=>{let reads=0;const file=name=>({name,path:name,size:3,lastModified:1,text:async()=>{reads++;return '0 0\n1 1'}}),cache=new ParsedResultCache();const files=[file('a.dat'),file('b.dat'),file('c.dat')];await cache.get(files[1],'end_to_end');assert.equal(reads,1);await cache.get(files[1],'end_to_end');assert.equal(reads,1)});
 
 test('discovers only immediate exact Cn directories in numeric order', () => {
   assert.deepEqual(discoverChains(['root/C10/1/a', 'root/C2/1/a', 'root/C1/1/a', 'root/C3_extra/1/a', 'root/x/C4/1/a']), [
@@ -68,3 +93,7 @@ test('valid six-line final loading block remains plottable beside malformed outp
   assert.equal(plotted.curves[0].records[0].sourcePath,'valid.data');
   assert.match(plotted.diagnostics.join(' '),/malformed\.data/);
 });
+
+test('catalog keeps several pressures and observables per chain with filename diagnostics',async()=>{const file=(path,text='0 0\n1 1')=>({name:path.split('/').at(-1),webkitRelativePath:path,text:async()=>text,size:text.length,lastModified:1}),files=[];for(const [chain,run,pressure] of [['C2','1',100],['C2','2',200],['C10','1',300],['C10','2',400]]){files.push(file(`root/${chain}/${run}/simulation.input`,`ExternalPressure ${pressure}\n`));files.push(file(`root/${chain}/${run}/EndToEndDistanceHistograms/System_0/Histogram_${chain}_0_Density_${pressure}.dat`));}files.push(file('root/C2/1/EndToEndDistanceHistograms/System_0/Histogram_C2_1_Density_999.dat'));const catalog=await buildChainCatalog(files,{datasetId:'fixture'}),histograms=catalog.results.filter(x=>x.type==='end_to_end');assert.equal(histograms.length,5);assert.deepEqual(histograms.filter(x=>x.component==='C10').map(x=>x.pressurePa),[300,400]);const conflict=histograms.find(x=>x.filenamePressurePa===999);assert.equal(conflict.pressurePa,100);assert.equal(conflict.pressureSource,'simulation.input');assert.equal(conflict.pressureConsistent,false);assert.ok(catalog.diagnostics.some(x=>x.code==='filename_pressure_mismatch'))});
+
+test('end-to-end exports reproduce displayed records and complete pressure provenance',()=>{const curve={visible:true,datasetId:'fixture',family:'PFA',component:'C10',chainLength:10,run:'7',pressurePa:126896,pressureSource:'simulation.input',filenamePressurePa:126000,pressureConsistent:false,pressureMismatchAbsolutePa:896,pressureMismatchRelative:896/126896,type:'end_to_end',sourcePath:'C10/7/Histogram_C10_0_Density_126000.dat',normalizationMode:'probability',records:[{distanceA:1.25,probabilityDensityPerA:.42}]};const row=plottedExport([curve],{}).data[0];assert.equal(row.dataset,'fixture');assert.equal(row.pressure_pa,126896);assert.equal(row.filename_pressure_pa,126000);assert.equal(row.distance_a,1.25);assert.equal(row.value,.42);assert.equal(row.normalization,'probability')});

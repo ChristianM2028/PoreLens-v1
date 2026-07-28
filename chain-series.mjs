@@ -6,6 +6,31 @@ import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isother
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;
+export const FILENAME_PRESSURE_RELATIVE_TOLERANCE = 1e-6;
+export const FILENAME_PRESSURE_ABSOLUTE_TOLERANCE_PA = 1e-6;
+
+/** Parse only RASPA's observed end-to-end histogram naming contract. */
+export function parseHistogramFilename(filename) {
+  const result={recognized:false,componentToken:null,componentIndex:null,filenamePressurePa:null};
+  const match=String(filename??'').match(/^Histogram_(.+)_([0-9]+)_Density_([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\.dat$/);
+  if(!match)return result;
+  const pressure=Number(match[3]);
+  if(!Number.isFinite(pressure)||pressure<=0)return result;
+  return {recognized:true,componentToken:match[1],componentIndex:Number(match[2]),filenamePressurePa:pressure};
+}
+
+export function reconcileHistogramPressure(authoritativePressurePa,filenameMetadata,authoritativeSource=null){
+  const authoritative=Number(authoritativePressurePa),filename=filenameMetadata?.filenamePressurePa;
+  const hasAuthoritative=Number.isFinite(authoritative)&&authoritative>0,hasFilename=filenameMetadata?.recognized&&Number.isFinite(filename)&&filename>0;
+  if(!hasAuthoritative)return {pressurePa:hasFilename?filename:null,pressureSource:hasFilename?'histogram_filename_fallback':'unavailable',filenamePressurePa:hasFilename?filename:null,pressureConsistent:null,pressureMismatchAbsolutePa:null,pressureMismatchRelative:null,pressureDiagnostic:null};
+  if(!hasFilename)return {pressurePa:authoritative,pressureSource:authoritativeSource||'authoritative_metadata',filenamePressurePa:null,pressureConsistent:null,pressureMismatchAbsolutePa:null,pressureMismatchRelative:null,pressureDiagnostic:null};
+  const absolute=Math.abs(authoritative-filename),relative=absolute/Math.max(Math.abs(authoritative),Math.abs(filename));
+  const consistent=absolute<=Math.max(FILENAME_PRESSURE_ABSOLUTE_TOLERANCE_PA,FILENAME_PRESSURE_RELATIVE_TOLERANCE*Math.max(Math.abs(authoritative),Math.abs(filename)));
+  return {pressurePa:authoritative,pressureSource:authoritativeSource||'authoritative_metadata',filenamePressurePa:filename,pressureConsistent:consistent,pressureMismatchAbsolutePa:absolute,pressureMismatchRelative:relative,pressureDiagnostic:consistent?null:`Histogram filename pressure ${filename} Pa disagrees with ${authoritativeSource||'authoritative metadata'} pressure ${authoritative} Pa (tolerance: max ${FILENAME_PRESSURE_ABSOLUTE_TOLERANCE_PA} Pa absolute or ${FILENAME_PRESSURE_RELATIVE_TOLERANCE} relative).`};
+}
+
+export function histogramIdentity(entry){return `${entry.datasetId}\0${entry.component}\0${entry.run}\0${entry.path||entry.filename}`}
+export function updateHistogramSelections(previous,entries){const next=new Map(previous);for(const entry of entries){const group=`${entry.datasetId}\0${entry.component}`;if(!next.has(group))next.set(group,histogramIdentity(entry));else if(!entries.some(candidate=>`${candidate.datasetId}\0${candidate.component}`===group&&histogramIdentity(candidate)===next.get(group)))next.set(group,histogramIdentity(entry));}return next}
 
 export function discoverChains(paths) {
   const found = new Map();
@@ -112,7 +137,10 @@ export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
     const componentIndex=path.split('/').indexOf(component),runRoot=path.split('/').slice(0,componentIndex+2).join('/'),sim=runMetadata.get(runRoot);
     const definition=list.find(candidate=>{const p=(candidate.webkitRelativePath||candidate.name).replaceAll('\\','/');return p.startsWith(`${runRoot}/`)&&sim?.components?.some(c=>p.endsWith(`/${c.MoleculeName}.def`))});
     const simulationFile=list.find(candidate=>(candidate.webkitRelativePath||candidate.name).replaceAll('\\','/')===`${runRoot}/simulation.input`),pseudoatomsFile=list.find(candidate=>(candidate.webkitRelativePath||candidate.name).replaceAll('\\','/').startsWith(`${runRoot}/`)&&candidate.name==='pseudo_atoms.def');
-    results.push({ datasetId, family:sim?.components?.map(x=>x.MoleculeName).join('+')||datasetId,component,componentNames:sim?.components?.map(x=>x.MoleculeName)||[],chainLength:Number(component.slice(1)),run:String(manifestRow?.run??run),pressurePa:manifestRow?.pressure_pa??sim?.pressurePa??null,temperatureK:sim?.temperatureK??null,framework:sim?.framework??null,unitCells:sim?.unitCells??null,type:isRdf?'rdf':isHistogram?'end_to_end':isVtk?'vtk':isMovie?'movie':'raspa_output',filename:file.name,path:relative,file,simulationFile,componentDefinition:definition||null,pseudoatomsFile:pseudoatomsFile||null,manifest:manifestRow||null,provenance:{datasetId,path:relative,manifestRow:manifestRow||null,simulationInput:sim?`${runRoot}/simulation.input`:null,componentDefinition:definition?(definition.webkitRelativePath||definition.name):null}});
+    const type=isRdf?'rdf':isHistogram?'end_to_end':isVtk?'vtk':isMovie?'movie':'raspa_output',filenameMetadata=isHistogram?parseHistogramFilename(file.name):null,authoritative=manifestRow?.pressure_pa??sim?.pressurePa??null,pressure=reconcileHistogramPressure(authoritative,filenameMetadata,manifestRow?'manifest':sim?'simulation.input':null);
+    const entry={ datasetId, family:sim?.components?.map(x=>x.MoleculeName).join('+')||datasetId,component,componentNames:sim?.components?.map(x=>x.MoleculeName)||[],chainLength:Number(component.slice(1)),run:String(manifestRow?.run??run),pressurePa:type==='end_to_end'?pressure.pressurePa:authoritative,temperatureK:sim?.temperatureK??null,framework:sim?.framework??null,unitCells:sim?.unitCells??null,type,filename:file.name,path:relative,file,simulationFile,componentDefinition:definition||null,pseudoatomsFile:pseudoatomsFile||null,manifest:manifestRow||null,provenance:{datasetId,path:relative,manifestRow:manifestRow||null,simulationInput:sim?`${runRoot}/simulation.input`:null,componentDefinition:definition?(definition.webkitRelativePath||definition.name):null}};
+    if(isHistogram){Object.assign(entry,filenameMetadata,pressure);entry.histogramIdentity=histogramIdentity(entry);if(pressure.pressureDiagnostic)diagnostics.push({severity:'warning',code:'filename_pressure_mismatch',path:relative,message:pressure.pressureDiagnostic});}
+    results.push(entry);
   }
   for (const row of manifest.rows) if (!results.some(item => item.manifest === row)) diagnostics.push({ severity: 'warning', message: `Manifest target is not available to the plot catalog: ${row.collected_relative_path}` });
   results.sort((a,b)=>a.chainLength-b.chainLength||Number(a.run)-Number(b.run)||a.path.localeCompare(b.path));
@@ -126,17 +154,18 @@ export function buildHandleCatalog(catalog,{datasetId='dataset'}={}){
   for(const run of catalog.runs||[]){
     const simulation=run.simulation||{},components=simulation.components?.map(x=>x.name??x.MoleculeName).filter(Boolean)||[],family=components.join('+')||datasetId;
     const definitions=run.moleculeDefinitions||[],common={datasetId,family,component:run.chain,componentNames:components,chainLength:Number(run.chain.slice(1)),run:String(run.run),pressurePa:simulation.pressurePa??null,temperatureK:simulation.temperatureK??null,framework:simulation.framework?.name??simulation.framework??null,unitCells:simulation.settings?.unitCells??simulation.unitCells??null,simulationFile:run.simulationFile,componentDefinition:definitions[0]?.file??null,moleculeDefinitions:definitions,pseudoatomsFile:Object.values(run.dependencies||{}).find(x=>x.name==='pseudo_atoms.def')??null,mixingRulesFile:Object.values(run.dependencies||{}).find(x=>x.name==='force_field_mixing_rules.def')??null,normalizedRun:run};
-    for(const [type,files] of Object.entries(run.outputs||{}))for(const output of files)results.push({...common,type,filename:output.name,path:output.path,file:output.file,provenance:{datasetId,path:output.path,simulationInput:run.simulationFile?.path??null,runId:run.id}});
+    for(const [type,files] of Object.entries(run.outputs||{}))for(const output of files){const metadata=type==='end_to_end'?parseHistogramFilename(output.name):null,pressure=reconcileHistogramPressure(common.pressurePa,metadata,Number.isFinite(common.pressurePa)?(catalog.manifest?'manifest':'simulation.input'):null),entry={...common,type,filename:output.name,path:output.path,file:output.file,provenance:{datasetId,path:output.path,simulationInput:run.simulationFile?.path??null,runId:run.id}};if(type==='end_to_end'){Object.assign(entry,metadata,pressure);entry.histogramIdentity=histogramIdentity(entry);}results.push(entry)}
   }
   results.sort((a,b)=>(a.chainLength??Infinity)-(b.chainLength??Infinity)||(a.pressurePa??Infinity)-(b.pressurePa??Infinity)||String(a.run??'').localeCompare(String(b.run??''),undefined,{numeric:true})||a.path.localeCompare(b.path));
   const chains=[...new Set((catalog.runs||[]).map(r=>r.chain).concat((catalog.summaries||[]).map(r=>r.chain)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).map(component=>({component,chainLength:Number(component.slice(1))}));
-  return {datasetId,chains,results,runs:catalog.runs||[],diagnostics:catalog.diagnostics||[],manifestPrimary:!!catalog.manifest};
+  const diagnostics=[...(catalog.diagnostics||[])];for(const entry of results)if(entry.pressureDiagnostic)diagnostics.push({severity:'warning',code:'filename_pressure_mismatch',path:entry.path,message:entry.pressureDiagnostic});
+  return {datasetId,chains,results,runs:catalog.runs||[],diagnostics,manifestPrimary:!!catalog.manifest};
 }
 
 export function buildSummaryIsothermCurves(parsedSummaries,{xKind='pressure'}={}){const curves=[],diagnostics=[];for(const {entry,parsed} of parsedSummaries){diagnostics.push(...parsed.diagnostics.map(x=>x.message));if(parsed.xKind!==xKind)continue;curves.push({...entry,type:'isotherm',family:entry.datasetId,sourcePath:entry.path,visible:true,loadingUnit:SUMMARY_LOADING_UNIT,xKind,records:parsed.records.map(row=>({...row,pressurePa:xKind==='pressure'?row.x:null,fugacityPa:xKind==='fugacity'?row.x:null}))})}curves.sort((a,b)=>a.chainLength-b.chainLength);return {curves,diagnostics}}
 
 export function plottedExport(curves, configuration) {
-  const data = curves.filter(curve => curve.visible !== false).flatMap(curve => curve.records.map(row => curve.type==='isotherm'?({dataset:curve.datasetId,family:curve.family,chain:curve.component,chain_length:curve.chainLength,x_kind:row.xKind,x_pa:row.x,pressure_pa:row.xKind==='pressure'?row.x:null,fugacity_pa:row.xKind==='fugacity'?row.x:null,loading_kind:row.loadingKind,loading_unit:row.loadingUnit,loading:row.loading,uncertainty:row.uncertainty,source_file:row.sourcePath,source_line:row.lineNumber}):({ dataset: curve.datasetId, family: curve.family, chain: curve.component, chain_length: curve.chainLength, run: curve.run, pressure_pa: curve.pressurePa, temperature_k:curve.temperatureK??null, framework:curve.framework??null, loading: curve.loading ?? null, source_file: curve.sourcePath, manifest_provenance:curve.manifest||null, result_type: curve.type, normalization:curve.normalizationMode??'native', x: row.distanceA, y: curve.type === 'rdf' ? row.gR : row.probabilityDensityPerA, x_unit: 'Å', y_unit: curve.type === 'rdf' ? 'dimensionless' : curve.normalizationMode==='stored'?'stored source units':'Å^-1' })));
+  const data = curves.filter(curve => curve.visible !== false).flatMap(curve => curve.records.map(row => curve.type==='isotherm'?({dataset:curve.datasetId,family:curve.family,chain:curve.component,chain_length:curve.chainLength,x_kind:row.xKind,x_pa:row.x,pressure_pa:row.xKind==='pressure'?row.x:null,fugacity_pa:row.xKind==='fugacity'?row.x:null,loading_kind:row.loadingKind,loading_unit:row.loadingUnit,loading:row.loading,uncertainty:row.uncertainty,source_file:row.sourcePath,source_line:row.lineNumber}):({ dataset: curve.datasetId, family: curve.family, chain: curve.component, chain_length: curve.chainLength, run: curve.run, pressure_pa: curve.pressurePa, pressure_source:curve.pressureSource??null,filename_pressure_pa:curve.filenamePressurePa??null,pressure_consistent:curve.pressureConsistent??null,pressure_mismatch_absolute_pa:curve.pressureMismatchAbsolutePa??null,pressure_mismatch_relative:curve.pressureMismatchRelative??null, temperature_k:curve.temperatureK??null, framework:curve.framework??null, loading: curve.loading ?? null, source_file: curve.sourcePath, manifest_provenance:curve.manifest||null, result_type: curve.type, normalization:curve.normalizationMode??'native', distance_a: row.distanceA, value: curve.type === 'rdf' ? row.gR : row.probabilityDensityPerA, x_unit: 'Å', y_unit: curve.type === 'rdf' ? 'dimensionless' : curve.normalizationMode==='stored'?'stored source units':'Å^-1' })));
   return { schema: 'porelens-chain-series/v1', configuration, data };
 }
 
