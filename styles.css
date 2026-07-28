@@ -52,3 +52,6 @@ main{max-width:1800px;margin:auto;padding:16px 24px 28px}.dataset-manager,.works
 
 #movieTopology { white-space: pre-line; line-height: 1.45; }
 #movieTopologyFiles { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
+/* Shared publication figure geometry; drawing values live in plot-theme.mjs. */
+#chainCanvas{height:auto;min-height:560px;max-height:800px;aspect-ratio:3/2;max-width:1200px;margin-inline:auto;background:#fff}
+@media(max-width:850px){#chainCanvas{min-height:520px;aspect-ratio:4/3}.curve-controls{max-height:9rem;overflow:auto}}
