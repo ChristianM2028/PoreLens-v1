@@ -49,7 +49,7 @@ window.addEventListener('porelens:authorized-run-request',async event=>{
   if(!annotation||!authorized)return fail('The annotation dataset is not currently authorized. Reopen the original dataset; do not select another folder.');
   try{
     const catalog=authorized.catalog||await discoverChainSeries(authorized.files,{manifestRows:ws.slots[slot]?.rows||[],datasetName:ws.slots[slot]?.displayName});
-    const match=exactAuthorizedCatalogRun(catalog,{datasetFingerprint:annotation.datasetFingerprint,currentDatasetFingerprint:currentFingerprint,run:annotation.run,pressurePa:Number(annotation.pressurePa)});
+    const match=exactAuthorizedCatalogRun(catalog,{datasetFingerprint:annotation.datasetFingerprint,currentDatasetFingerprint:currentFingerprint,chain:annotation.chainLength,run:annotation.run,pressurePa:Number(annotation.pressurePa)});
     if(!match.run)return fail(match.diagnostics.map(x=>x.message).join(' '));
     const audit=await importRunPackage(match.files,{manifestFingerprint:currentFingerprint});
     window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation.id,audit,run:{...match.run,run:String(match.run.run),pressurePa:Number(match.run.pressurePa??match.run.simulation?.pressurePa)}}}));
