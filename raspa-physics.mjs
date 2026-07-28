@@ -55,6 +55,8 @@ const inv3=m=>{const [a,b,c]=m[0],[d,e,f]=m[1],[g,h,i]=m[2],det=a*(e*i-f*h)-b*(d
 const mv=(m,v)=>m.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
 export function minimumImageVector(a,b,matrix){const frac=mv(inv3(matrix),[a.x-b.x,a.y-b.y,a.z-b.z]).map(x=>x-Math.round(x));return mv(matrix,frac);}
 export const periodicDistance=(a,b,matrix)=>Math.hypot(...minimumImageVector(a,b,matrix));
+/** Return the auditable periodic partner, not only its scalar distance. */
+export function minimumImageGeometry(a,b,matrix){const direct=[a.x-b.x,a.y-b.y,a.z-b.z],fractional=mv(inv3(matrix),direct),fractionalTranslation=fractional.map(x=>Math.round(x)?-Math.round(x):0),vector=mv(matrix,fractional.map((x,i)=>x+fractionalTranslation[i])),cartesianTranslationA=mv(matrix,fractionalTranslation);return {vector,distanceA:Math.hypot(...vector),fractionalTranslation,cartesianTranslationA,partner:{x:b.x-cartesianTranslationA[0],y:b.y-cartesianTranslationA[1],z:b.z-cartesianTranslationA[2]}};}
 
 export async function physicsFingerprint(parts){
   const stable=v=>v instanceof Map?[...v].sort(([a],[b])=>a.localeCompare(b)).map(([k,x])=>[k,stable(x)]):Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v;

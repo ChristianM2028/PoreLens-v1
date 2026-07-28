@@ -32,6 +32,6 @@ function activate(id,{scroll=false}={}){
 }
 document.querySelectorAll('[data-workspace]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();activate(link.dataset.workspace,{scroll:true});history.replaceState(null,'',link.getAttribute('href'))}));
 document.querySelectorAll('[data-rdf-subview]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-rdf-subview]').forEach(x=>x.setAttribute('aria-selected',String(x===button)));const target=button.dataset.rdfSubview==='heatmaps'?'#heatmap':'#realRdfCanvas';document.querySelector(target)?.scrollIntoView({behavior:'smooth',block:'center'})}));
-const hashMap={'#adsorption-isotherms':'isotherm','#rdf-workspace':'rdf','#end-to-end-histograms':'end_to_end','#trajectory-energetics':'trajectory_energetics','#spatial-density':'spatial_density'};
+const hashMap={'#adsorption-isotherms':'isotherm','#rdf-workspace':'rdf','#end-to-end-histograms':'end_to_end','#trajectory-energetics':'trajectory_energetics'};
 activate(hashMap[location.hash]||'isotherm');
 export {controller,activate,attachChainRenderer};

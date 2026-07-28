@@ -38,8 +38,9 @@ test('nested arbitrary chains and nonconsecutive runs are discovered without cod
   assert.deepEqual(buildHandleCatalog(catalog).chains.map(x=>x.component),['C9','C10']);
 });
 
-test('browser markup exposes focused capabilities and provenance drawer',async()=>{
+test('browser markup exposes one synchronized evidence workspace and provenance drawer',async()=>{
   const html=await readFile(join(process.cwd(),'index.html'),'utf8');
-  for(const id of ['trajectory-energetics','spatial-density','runProvenanceDrawer','spatialDataset','spatialRun','spatialFile'])assert.match(html,new RegExp(`id="${id}"`));
+  for(const id of ['trajectory-energetics','runProvenanceDrawer','spatialFile','spatialCanvas','structureCanvas','moleculeContributions'])assert.match(html,new RegExp(`id="${id}"`));
+  assert.doesNotMatch(html,/id="spatial-density"|id="spatialDataset"|id="spatialRun"/);
   assert.doesNotMatch(html,/data-output-link|moviePlay|moviePrevious|movieNext/);
 });
