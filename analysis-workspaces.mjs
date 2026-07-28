@@ -1,5 +1,5 @@
 /** Independent UI state containers for each scientific workspace. */
-export const WORKSPACE_IDS=['isotherm','rdf','end_to_end','trajectory_energetics','spatial_density'];
+export const WORKSPACE_IDS=['isotherm','rdf','end_to_end','trajectory_energetics'];
 export class AnalysisWorkspaces {
   constructor(){this.active='isotherm';this.states=Object.fromEntries(WORKSPACE_IDS.map(id=>[id,{selection:{},error:null,loading:false}]));}
   activate(id){if(!WORKSPACE_IDS.includes(id))throw new Error(`Unknown analysis workspace ${id}`);this.active=id;return this.state(id)}
@@ -10,4 +10,4 @@ export class AnalysisWorkspaces {
   begin(id){this.patch(id,{error:null,loading:true})}
   complete(id){this.patch(id,{error:null,loading:false})}
 }
-export function capabilityState(results=[]){const types=new Set(results.map(x=>x.type));return {isotherm:types.has('isotherm_summary'),rdf:types.has('rdf'),end_to_end:types.has('end_to_end'),trajectory_energetics:types.has('movie'),spatial_density:types.has('vtk')};}
+export function capabilityState(results=[]){const types=new Set(results.map(x=>x.type));return {isotherm:types.has('isotherm_summary'),rdf:types.has('rdf'),end_to_end:types.has('end_to_end'),trajectory_energetics:types.has('movie')||types.has('vtk')};}
