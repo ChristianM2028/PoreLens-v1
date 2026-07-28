@@ -1,5 +1,6 @@
 import {parseSimulationInput,parsePdbMovie,validateMovieTopology} from './trajectory.mjs';
 import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs';
+import {isAllComponentsMovieBasename} from './movie-filename.mjs';
 
 export function parseCif(text){
   const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));
@@ -50,9 +51,10 @@ export async function normalizeRunPackageFile(file){
 /** Audit a set of {name,text} files without inventing missing model information. */
 export async function importRunPackage(files,{annotationSidecar=null,manifestFingerprint=null}={}){
   files=await Promise.all([...files].map(normalizeRunPackageFile));
-  const diagnostics=files.flatMap(file=>file.resolutionDiagnostic?[file.resolutionDiagnostic]:[]),get=test=>find(files,test),sim=get(n=>/simulation\.input$/i.test(n)),pseudo=get(n=>/pseudo_atoms\.def$/i.test(n)),mix=get(n=>/force_field_mixing_rules\.def$/i.test(n)),override=get(n=>/(^|\/)force_field\.def$/i.test(n)),cif=get(n=>/\.cif$/i.test(n)),movie=get(n=>/\.pdb$/i.test(n)),output=get(n=>/\.data$/i.test(n));
+  const diagnostics=files.flatMap(file=>file.resolutionDiagnostic?[file.resolutionDiagnostic]:[]),get=test=>find(files,test),sim=get(n=>/simulation\.input$/i.test(n)),pseudo=get(n=>/pseudo_atoms\.def$/i.test(n)),mix=get(n=>/force_field_mixing_rules\.def$/i.test(n)),override=get(n=>/(^|\/)force_field\.def$/i.test(n)),cif=get(n=>/\.cif$/i.test(n)),movieCandidates=files.filter(file=>isAllComponentsMovieBasename(file.path||file.name)),movie=movieCandidates.length===1?movieCandidates[0]:null,output=get(n=>/\.data$/i.test(n));
+  if(movieCandidates.length>1)diagnostics.push({severity:'error',code:'ambiguous_movie',message:`Multiple Movie/AllComponents PDB candidates require explicit resolution: ${movieCandidates.map(file=>file.path).join(', ')}`,candidates:movieCandidates.map(file=>file.path)});
   const molecule=get(n=>/\.def$/i.test(n)&&!/pseudo_atoms|mixing_rules|force_field/i.test(n));
-  for(const [kind,name] of Object.entries(required))if(!({simulation:sim,pseudoatoms:pseudo,mixing:mix,cif,molecule,movie})[kind])diagnostics.push({severity:kind==='movie'?'warning':'error',code:`missing_${kind}`,message:`Missing ${name}; ${kind==='movie'?'trajectory-dependent analysis is unavailable':'quantitative LJ attribution is disabled'}.`});
+  for(const [kind,name] of Object.entries(required))if(!({simulation:sim,pseudoatoms:pseudo,mixing:mix,cif,molecule,movie:movieCandidates[0]})[kind])diagnostics.push({severity:kind==='movie'?'warning':'error',code:`missing_${kind}`,message:`Missing ${name}; ${kind==='movie'?'trajectory-dependent analysis is unavailable':'quantitative LJ attribution is disabled'}.`});
   const parsed={overrides:new Map()};
   const parseFile=(key,file,stage,parser)=>{if(!file||file.resolutionDiagnostic)return null;try{return parsed[key]=parser(file.text);}catch(error){diagnostics.push({severity:'error',code:`invalid_${stage}`,stage,file:file.path,message:`Failed to parse ${file.path} during ${stage}: ${error.message}`});return null;}};
   parseFile('simulation',sim,'simulation_input',parseSimulationInput);
