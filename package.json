@@ -1,0 +1,8 @@
+{
+  "name": "poreview",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "poreview": "./poreview/cli.mjs" },
+  "scripts": { "test": "node --test", "scan": "node poreview/cli.mjs scan" }
+}

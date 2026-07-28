@@ -22,6 +22,28 @@ Then open `http://127.0.0.1:8000`. Selected files stay in the browser; there is 
 node --test
 ```
 
+## Campaign ingestion and audit CLI
+
+The standalone `poreview/ingestion` package discovers runs by recursively
+finding `simulation.input`, not by requiring `C<n>/<number>` names. It parses
+run settings and component blocks, resolves definitions with explicit and
+content-adjacent evidence, indexes RDF/end-to-end/VTK outputs semantically,
+and writes a regenerable metadata-only `.poreview/index.json`. VTK records are
+header-indexed and their large arrays remain lazy.
+
+```bash
+npm run scan -- /path/to/dataset --report
+# machine-readable audit
+node poreview/cli.mjs scan /path/to/dataset --json
+```
+
+Missing definitions and optional output folders produce per-run diagnostics;
+they do not remove a partially completed run from the dataset. Repeated scans
+compare file size and modification-time fingerprints (with optional hashes for
+small files) and mark unchanged normalized run metadata as cache-reused. See
+`INGESTION_ARCHITECTURE.md` for the pre-change scanner audit, responsibility
+boundaries, and current browser-adapter status.
+
 ## Annotation-driven movie LJ milestone
 
 The first movie-analysis layer is implemented as pure ES modules rather than
