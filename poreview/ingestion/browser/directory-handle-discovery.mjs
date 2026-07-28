@@ -1,4 +1,4 @@
-import {parseSimulationInput} from '../../../trajectory.mjs';
+import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../../parsers/index.mjs';
 
 const CHAIN=/^C\d+$/i, RUN=/^\d+(?:_|$)/;
 const SUMMARIES=new Map([['final_abs_pressure_up','pressure'],['final_abs_fug_up','fugacity']]);
@@ -25,28 +25,46 @@ export class DirectoryCatalogScanner {
   async yieldIfNeeded(force=false){if(force||++this.cursor%this.batchSize===0){this.catalog.stats.yields++;this.emit();await pause()}}
   async init(){
     this.initialized=true;
-    for await(const [name,handle] of this.root.entries()){
+    await this.discoverRoot(this.root,'');
+  }
+  async discoverRoot(directory,prefix){
+    for await(const [name,handle] of directory.entries()){
+      const rootPath=prefix?`${prefix}/${name}`:name;
       if(handle.kind==='file'&&/^manifest(?:\.csv)?$/i.test(name)&&!this.catalog.manifest){const file=await handle.getFile();this.catalog.manifest={path:name,handle,file:pathFile(handle,name),text:await file.text()};this.catalog.stats.filesRead++}
       else if(handle.kind==='directory'&&CHAIN.test(name)){this.catalog.stats.chains++;for await(const [childName,child] of handle.entries()){
-        const path=`${name}/${childName}`;
+        const path=`${rootPath}/${childName}`;
         if(child.kind==='file'&&SUMMARIES.has(childName)){this.catalog.summaries.push({type:'isotherm_summary',xKind:SUMMARIES.get(childName),chain:name,chainLength:Number(name.slice(1)),name:childName,path,file:pathFile(child,path),handle:child});this.catalog.stats.summaries++}
-        else if(child.kind==='directory'&&RUN.test(childName))this.queue.push({chain:name,run:childName,handle:child});
+        else if(child.kind==='directory'&&RUN.test(childName))this.queue.push({chain:name,run:childName,handle:child,prefix:rootPath});
         else this.ignored(path,child.kind==='directory'?'directory is not a numbered simulation run':'unrecognized chain-level file');
         await this.yieldIfNeeded();if(this.cancelled)return;
-      }} else this.ignored(name,handle.kind==='directory'?'directory is not a Cn chain directory':'unrecognized dataset-root file');
+      }} else if(handle.kind==='directory')await this.discoverRoot(handle,rootPath);
+      else this.ignored(rootPath,'unrecognized dataset-root file');
       await this.yieldIfNeeded();if(this.cancelled)return;
     }
   }
   async scan(){
     if(!this.initialized)await this.init();
-    while(this.queue.length&&!this.cancelled){const item=this.queue.shift();await this.indexRun(item.chain,item.run,item.handle);await this.yieldIfNeeded(true)}
+    while(this.queue.length&&!this.cancelled){const item=this.queue.shift();await this.indexRun(item.chain,item.run,item.handle,item.prefix);await this.yieldIfNeeded(true)}
     if(!this.cancelled){const rdfDirectories=this.catalog.runs.filter(r=>r.rdfDirectories>0).length;if(rdfDirectories&&!this.catalog.stats.rdfs)this.diagnostic('error','rdf_directories_empty','RadialDistributionFunctions directories were found, but no RDF files were indexed.');if(this.catalog.stats.ignored&&!this.catalog.stats.rdfs)this.diagnostic('error','no_rdf_selector_records',`${this.catalog.stats.ignored} files were ignored and no RDF records can reach the selector model.`);this.catalog.finished=true;this.emit(this.catalog.stats.failures?'complete-with-errors':'complete')}return this.catalog;
   }
-  async indexRun(chain,run,handle){
-    const item={id:`${chain}/${run}`,chain,run,handle,simulation:null,simulationFile:null,dependencies:{},outputs:{raspa_output:[],rdf:[],end_to_end:[],movie:[],vtk:[]},rdfDirectories:0,diagnostics:[]};
-    try{await this.walkRun(handle,item.id,item)}catch(error){item.diagnostics.push(error.message);this.diagnostic('error','run_scan_failed',error.message,item.id)}
+  async indexRun(chain,run,handle,prefix=chain){
+    const item={id:`${chain}/${run}`,rootRelativePath:`${prefix}/${run}`,chain,run,handle,simulation:null,simulationFile:null,dependencies:{},pseudoAtoms:null,forceFieldParameters:null,moleculeDefinitions:[],outputs:{raspa_output:[],rdf:[],end_to_end:[],movie:[],vtk:[]},rdfDirectories:0,diagnostics:[]};
+    try{await this.walkRun(handle,item.rootRelativePath,item)}catch(error){item.diagnostics.push(error.message);this.diagnostic('error','run_scan_failed',error.message,item.id)}
     if(!item.simulation){item.diagnostics.push('simulation.input is missing or invalid');this.diagnostic('warning','missing_simulation_input','simulation.input is missing or invalid',item.id)}
+    else await this.parseRunDefinitions(item);
     this.catalog.runs.push(item);this.catalog.stats.runs++;this.emit('run');
+  }
+  async parseRunDefinitions(item){
+    const dependency=name=>Object.values(item.dependencies).find(file=>file.name.toLowerCase()===name.toLowerCase());
+    const read=async file=>{this.catalog.stats.filesRead++;return file.text()};
+    try{const pseudo=dependency('pseudo_atoms.def');if(pseudo)item.pseudoAtoms=parsePseudoAtoms(await read(pseudo),pseudo.path)}catch(error){item.diagnostics.push(`pseudo_atoms.def: ${error.message}`)}
+    try{const mixing=dependency('force_field_mixing_rules.def');if(mixing)item.forceFieldParameters=parseMixingRules(await read(mixing),mixing.path)}catch(error){item.diagnostics.push(`force_field_mixing_rules.def: ${error.message}`)}
+    for(const component of item.simulation.components||[]){
+      const candidates=[`${component.name}.def`,component.moleculeDefinition].filter(x=>x&&/\.def$/i.test(x));
+      const file=candidates.map(dependency).find(Boolean);
+      if(!file){item.diagnostics.push(`molecule definition missing for component ${component.name}`);continue}
+      try{item.moleculeDefinitions.push({component:component.name,path:file.path,file,parsed:parseMoleculeDefinition(await read(file),file.path)})}catch(error){item.diagnostics.push(`${file.name}: ${error.message}`)}
+    }
   }
   async walkRun(directory,base,item){for await(const [name,child] of directory.entries()){
       const path=`${base}/${name}`;
