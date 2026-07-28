@@ -120,7 +120,18 @@ export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
 }
 
 /** Adapt the incremental handle catalog without reading an output file. */
-export function buildHandleCatalog(catalog,{datasetId='dataset'}={}){const results=(catalog.summaries||[]).map(item=>{item.file.xKind=item.xKind;return {datasetId,family:datasetId,component:item.chain,chainLength:item.chainLength,type:item.type,xKind:item.xKind,filename:item.name,path:item.path,file:item.file,provenance:{datasetId,path:item.path}}});return {datasetId,chains:[...new Set((catalog.summaries||[]).map(r=>r.chain))].map(component=>({component,chainLength:Number(component.slice(1))})),results,diagnostics:[],manifestPrimary:!!catalog.manifest}}
+export function buildHandleCatalog(catalog,{datasetId='dataset'}={}){
+  const summaries=(catalog.summaries||[]).map(item=>{item.file.xKind=item.xKind;return {datasetId,family:datasetId,component:item.chain,chainLength:item.chainLength,type:item.type,xKind:item.xKind,filename:item.name,path:item.path,file:item.file,provenance:{datasetId,path:item.path}}});
+  const results=[...summaries];
+  for(const run of catalog.runs||[]){
+    const simulation=run.simulation||{},components=simulation.components?.map(x=>x.name??x.MoleculeName).filter(Boolean)||[],family=components.join('+')||datasetId;
+    const definitions=run.moleculeDefinitions||[],common={datasetId,family,component:run.chain,componentNames:components,chainLength:Number(run.chain.slice(1)),run:String(run.run),pressurePa:simulation.pressurePa??null,temperatureK:simulation.temperatureK??null,framework:simulation.framework?.name??simulation.framework??null,unitCells:simulation.settings?.unitCells??simulation.unitCells??null,simulationFile:run.simulationFile,componentDefinition:definitions[0]?.file??null,moleculeDefinitions:definitions,pseudoatomsFile:Object.values(run.dependencies||{}).find(x=>x.name==='pseudo_atoms.def')??null,mixingRulesFile:Object.values(run.dependencies||{}).find(x=>x.name==='force_field_mixing_rules.def')??null,normalizedRun:run};
+    for(const [type,files] of Object.entries(run.outputs||{}))for(const output of files)results.push({...common,type,filename:output.name,path:output.path,file:output.file,provenance:{datasetId,path:output.path,simulationInput:run.simulationFile?.path??null,runId:run.id}});
+  }
+  results.sort((a,b)=>(a.chainLength??Infinity)-(b.chainLength??Infinity)||(a.pressurePa??Infinity)-(b.pressurePa??Infinity)||String(a.run??'').localeCompare(String(b.run??''),undefined,{numeric:true})||a.path.localeCompare(b.path));
+  const chains=[...new Set((catalog.runs||[]).map(r=>r.chain).concat((catalog.summaries||[]).map(r=>r.chain)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).map(component=>({component,chainLength:Number(component.slice(1))}));
+  return {datasetId,chains,results,runs:catalog.runs||[],diagnostics:catalog.diagnostics||[],manifestPrimary:!!catalog.manifest};
+}
 
 export function buildSummaryIsothermCurves(parsedSummaries,{xKind='pressure'}={}){const curves=[],diagnostics=[];for(const {entry,parsed} of parsedSummaries){diagnostics.push(...parsed.diagnostics.map(x=>x.message));if(parsed.xKind!==xKind)continue;curves.push({...entry,type:'isotherm',family:entry.datasetId,sourcePath:entry.path,visible:true,loadingUnit:SUMMARY_LOADING_UNIT,xKind,records:parsed.records.map(row=>({...row,pressurePa:xKind==='pressure'?row.x:null,fugacityPa:xKind==='fugacity'?row.x:null}))})}curves.sort((a,b)=>a.chainLength-b.chainLength);return {curves,diagnostics}}
 
