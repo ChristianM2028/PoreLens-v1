@@ -55,3 +55,5 @@ main{max-width:1800px;margin:auto;padding:16px 24px 28px}.dataset-manager,.works
 /* Shared publication figure geometry; drawing values live in plot-theme.mjs. */
 #chainCanvas{height:auto;min-height:560px;max-height:800px;aspect-ratio:3/2;max-width:1200px;margin-inline:auto;background:#fff}
 @media(max-width:850px){#chainCanvas{min-height:520px;aspect-ratio:4/3}.curve-controls{max-height:9rem;overflow:auto}}
+
+.histogram-chain-selections{overflow:auto;margin:.8rem 0;border:1px solid var(--line,#dbe0dd);background:#fff}.histogram-chain-selections table{width:100%;border-collapse:collapse}.histogram-chain-selections caption{text-align:left;padding:.75rem;font-weight:600}.histogram-chain-selections th,.histogram-chain-selections td{padding:.55rem .7rem;border-top:1px solid var(--line,#dbe0dd);text-align:left;vertical-align:middle}.histogram-chain-selections select{min-width:24rem;max-width:50vw}.pressure-warning{color:#9a4d00;font-weight:700}.pressure-source{display:block;color:var(--muted,#667);font-size:.8rem}
