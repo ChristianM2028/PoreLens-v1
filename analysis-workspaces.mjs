@@ -10,4 +10,4 @@ export class AnalysisWorkspaces {
   begin(id){this.patch(id,{error:null,loading:true})}
   complete(id){this.patch(id,{error:null,loading:false})}
 }
-export function capabilityState(results=[]){const types=new Set(results.map(x=>x.type));return {isotherm:types.has('raspa_output'),rdf:types.has('rdf'),end_to_end:types.has('end_to_end'),movie:types.has('movie'),vtk:types.has('vtk')};}
+export function capabilityState(results=[]){const types=new Set(results.map(x=>x.type));return {isotherm:types.has('isotherm_summary'),rdf:types.has('rdf'),end_to_end:types.has('end_to_end'),movie:types.has('movie'),vtk:types.has('vtk')};}
