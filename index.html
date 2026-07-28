@@ -69,7 +69,7 @@
 
   <section class="workspace chain-plotter analysis-workspace" id="adsorption-isotherms" data-analysis-workspace="isotherm" hidden aria-labelledby="chain-plot-heading">
     <div class="workspace-head"><div><p class="kicker">Catalog-linked exploration</p><h2 id="chain-plot-heading">Adsorption Isotherms</h2></div></div>
-    <div id="isothermChainUiHost" class="chain-ui-host">
+    <div id="isothermChainUiHost" class="chain-ui-host" data-chain-renderer-host="isotherm">
     <div id="sharedChainPlotUi">
     <div class="analysis-actions"><button id="chainReset" class="quiet-button">Reset zoom</button><button id="chainSave" class="quiet-button">Save configuration</button><button id="chainExportCsv" class="quiet-button">Download plotted CSV</button><button id="chainExportJson" class="quiet-button">Download plotted JSON</button><button id="chainExportPng" class="quiet-button">Download PNG</button><button id="chainExportSvg" class="quiet-button">Download SVG</button></div>
     <div class="control-panel chain-controls">
@@ -94,8 +94,8 @@
 
   <section class="workspace analysis-workspace focused-workspace" id="end-to-end-histograms" data-analysis-workspace="end_to_end" hidden aria-labelledby="end-to-end-heading">
     <div class="workspace-head"><div><p class="kicker">Run-native distributions</p><h2 id="end-to-end-heading">End-to-End Histograms</h2></div></div>
-    <div id="histogramControlsHost" class="chain-ui-host focused-controls"></div>
-    <div id="histogramWorkspaceStatus" class="selection-strip" role="status">No catalog has been loaded; end-to-end capability has not been evaluated.</div>
+    <div id="histogramControlsHost" class="chain-ui-host focused-controls" data-chain-renderer-host="end_to_end"></div>
+    <div id="histogramWorkspaceStatus" class="selection-strip" role="status" aria-live="polite">No catalog has been loaded; end-to-end capability has not been evaluated.</div>
   </section>
 
   <section class="workspace analysis-workspace focused-workspace" id="spatial-density" data-analysis-workspace="vtk" hidden aria-labelledby="vtk-heading">

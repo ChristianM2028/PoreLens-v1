@@ -101,7 +101,7 @@ export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
   for(const file of list){const path=(file.webkitRelativePath||file.name).replaceAll('\\','/'),parts=path.split('/').filter(Boolean),name=parts.at(-1),component=parts.at(-2);if(!CHAIN_RE.test(component||'')||!Object.values(SUMMARY_FILES).includes(name))continue;const xKind=Object.entries(SUMMARY_FILES).find(([,filename])=>filename===name)[0];file.xKind=xKind;results.push({datasetId,family:datasetId,component,chainLength:Number(component.slice(1)),type:'isotherm_summary',xKind,filename:name,path:parts.slice(-2).join('/'),file,provenance:{datasetId,path:parts.slice(-2).join('/')}})}
   for(const file of list){const path=(file.webkitRelativePath||file.name).replaceAll('\\','/');if(!/(^|\/)C\d+\/\d+\/simulation\.input$/i.test(path))continue;try{runMetadata.set(path.replace(/\/simulation\.input$/i,''),parseSimulationInput(await file.text()));}catch(error){diagnostics.push({severity:'warning',message:`Cannot parse ${path}: ${error.message}`});}}
   for (const file of list) {
-    const path = (file.webkitRelativePath || file.name).replaceAll('\\', '/'), relative = path.split('/').slice(1).join('/');
+    const path = (file.webkitRelativePath || file.name).replaceAll('\\', '/'), pathParts=path.split('/').filter(Boolean), componentOffset=pathParts.findIndex(part=>CHAIN_RE.test(part)), relative=(componentOffset>=0?pathParts.slice(componentOffset):pathParts).join('/');
     const parts = relative.split('/'), component = parts.find(part => CHAIN_RE.test(part));
     if (!component) continue;
     const run = parts[parts.indexOf(component) + 1];
