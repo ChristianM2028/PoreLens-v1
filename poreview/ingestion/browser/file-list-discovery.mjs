@@ -54,16 +54,27 @@ export function filesForCatalogRun(entry){
   return [entry.simulationFile,...outputs.map(x=>x?.file||x),...dependencyFiles].filter(Boolean);
 }
 
-/** Resolve identity without nearest-pressure or numeric-run fallbacks. */
-export function exactAuthorizedCatalogRun(catalog,{datasetFingerprint,currentDatasetFingerprint,run,pressurePa}){
+const canonicalChainIdentity=chain=>{
+  if(typeof chain==='number'&&Number.isFinite(chain))return `C${chain}`;
+  if(typeof chain==='string'&&chain.length)return /^\d+$/.test(chain)?`C${chain}`:chain;
+  return null;
+};
+const identityCandidate=entry=>({id:entry.id??null,rootRelativePath:entry.rootRelativePath??null,chain:entry.chain??null,run:entry.run??null,pressurePa:Number(entry.pressurePa??entry.simulation?.pressurePa)});
+
+/** Resolve the full dataset + chain/component + string-run + canonical-pressure identity without fallbacks. */
+export function exactAuthorizedCatalogRun(catalog,{datasetFingerprint,currentDatasetFingerprint,chain,run,pressurePa}){
   const diagnostics=[];
   if(!datasetFingerprint||datasetFingerprint!==currentDatasetFingerprint)return {run:null,files:[],diagnostics:[{severity:'error',code:'dataset_identity_mismatch',message:'The annotation belongs to a different dataset identity. Re-select or reconcile that annotation; no run was substituted.'}]};
+  const annotatedChain=canonicalChainIdentity(chain);
+  if(!annotatedChain)return {run:null,files:[],diagnostics:[{severity:'error',code:'chain_identity_missing',message:'The annotation has no chain/component identity. No run from another chain was substituted.'}]};
   if(typeof run!=='string')return {run:null,files:[],diagnostics:[{severity:'error',code:'run_identity_not_string',message:'The annotation run identity must be a string; no numeric coercion or alternate run was used.'}]};
   if(!Number.isFinite(pressurePa))return {run:null,files:[],diagnostics:[{severity:'error',code:'invalid_canonical_pressure',message:'The annotation has no finite canonical pressurePa.'}]};
-  const runMatches=(catalog?.runs||[]).filter(x=>String(x.run)===run);
-  if(!runMatches.length)return {run:null,files:[],diagnostics:[{severity:'error',code:'exact_run_missing',message:`Authorized dataset does not contain exact run “${run}”. No neighboring run was substituted.`}]};
+  const chainMatches=(catalog?.runs||[]).filter(x=>canonicalChainIdentity(x.chain)===annotatedChain);
+  if(!chainMatches.length)return {run:null,files:[],diagnostics:[{severity:'error',code:'exact_chain_missing',message:`Authorized dataset does not contain chain/component “${annotatedChain}”. No run from another chain was substituted.`}]};
+  const runMatches=chainMatches.filter(x=>String(x.run)===run);
+  if(!runMatches.length)return {run:null,files:[],diagnostics:[{severity:'error',code:'exact_run_missing',message:`Authorized chain/component “${annotatedChain}” does not contain exact run “${run}”. No neighboring run was substituted.`}]};
   const exact=runMatches.filter(x=>Number(x.pressurePa??x.simulation?.pressurePa)===pressurePa);
-  if(exact.length!==1)return {run:null,files:[],diagnostics:[{severity:'error',code:exact.length?'ambiguous_exact_run':'exact_pressure_mismatch',message:exact.length?'More than one authorized run has the exact run/pressure identity. Resolve the duplicate before analysis.':`Run “${run}” does not have canonical pressure ${pressurePa} Pa. No nearest pressure was substituted.`}]};
+  if(exact.length!==1)return {run:null,files:[],diagnostics:[{severity:'error',code:exact.length?'ambiguous_exact_run':'exact_pressure_mismatch',message:exact.length?`More than one authorized run has the full chain/component “${annotatedChain}”, string run “${run}”, and canonical pressure ${pressurePa} Pa identity. Resolve the duplicate before analysis.`:`Run “${run}” in chain/component “${annotatedChain}” does not have canonical pressure ${pressurePa} Pa. No nearest pressure was substituted.`,...(exact.length?{candidates:exact.map(identityCandidate)}:{})}]};
   const files=filesForCatalogRun(exact[0]);
   if(!files.length)diagnostics.push({severity:'error',code:'authorized_files_missing',message:'The exact run is indexed, but its authorized file handles are unavailable. Reauthorize the original dataset folder.'});
   return {run:exact[0],files,diagnostics};
