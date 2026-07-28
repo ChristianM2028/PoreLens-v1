@@ -1,7 +1,7 @@
 import {importRunPackage} from './raspa-package.mjs';
 import {resolvePairName} from './importers.mjs';
 import {analyzeMovieRun} from './lj-workflow.mjs';
-import {discoverChainSeries,filesForCatalogRun} from './run-discovery.mjs';
+import {discoverChainSeries,filesForCatalogRun} from './poreview/ingestion/browser/file-list-discovery.mjs';
 import {parseManifest} from './importers.mjs';
 
 export function analysisAvailability(audit){if(!audit)return {ready:false,message:'No run package selected.'};const errors=audit.diagnostics.filter(x=>x.severity==='error');if(!audit.capabilities.quantitativeLJ)return {ready:false,message:errors.map(x=>x.message).join(' ')||'Trajectory-dependent analysis is unavailable.'};return {ready:true,message:`Validated ${audit.parsed.movie.frames.length} movie frames. Physics fingerprint ${audit.physicsFingerprint}.`};}
