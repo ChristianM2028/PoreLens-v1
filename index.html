@@ -68,7 +68,10 @@
   </section>
 
   <section class="workspace chain-plotter analysis-workspace" id="adsorption-isotherms" data-analysis-workspace="isotherm" hidden aria-labelledby="chain-plot-heading">
-    <div class="workspace-head"><div><p class="kicker">Catalog-linked exploration</p><h2 id="chain-plot-heading">Adsorption Isotherms</h2></div><div class="analysis-actions"><button id="chainReset" class="quiet-button">Reset zoom</button><button id="chainSave" class="quiet-button">Save configuration</button><button id="chainExportCsv" class="quiet-button">Download plotted CSV</button><button id="chainExportJson" class="quiet-button">Download plotted JSON</button><button id="chainExportPng" class="quiet-button">Download PNG</button><button id="chainExportSvg" class="quiet-button">Download SVG</button></div></div>
+    <div class="workspace-head"><div><p class="kicker">Catalog-linked exploration</p><h2 id="chain-plot-heading">Adsorption Isotherms</h2></div></div>
+    <div id="isothermChainUiHost" class="chain-ui-host">
+    <div id="sharedChainPlotUi">
+    <div class="analysis-actions"><button id="chainReset" class="quiet-button">Reset zoom</button><button id="chainSave" class="quiet-button">Save configuration</button><button id="chainExportCsv" class="quiet-button">Download plotted CSV</button><button id="chainExportJson" class="quiet-button">Download plotted JSON</button><button id="chainExportPng" class="quiet-button">Download PNG</button><button id="chainExportSvg" class="quiet-button">Download SVG</button></div>
     <div class="control-panel chain-controls">
       <label><span>Dataset(s)</span><select id="chainDatasets" multiple aria-label="Datasets"></select></label>
       <input id="chainResult" type="hidden" value="isotherm">
@@ -85,12 +88,14 @@
     </div>
     <div id="chainMatchReport" class="selection-strip">Select a loaded dataset to build curves. Actual pressures are never substituted silently.</div>
     <article class="plot-panel"><header><div><span class="figure-id">FIG CS</span><h3 id="chainPlotTitle">Chain-series overlay</h3></div><span class="plot-state">wheel to zoom · click curve for provenance</span></header><canvas id="chainCanvas" width="1200" height="800" tabindex="0" aria-label="Interactive chain-series curves"></canvas><div id="chainCurveControls" class="curve-controls"></div><p id="chainProvenance" class="plot-caption">Click a curve to inspect its chain, run, actual pressure, source, annotations, and available run actions.</p></article>
+    </div>
+    </div>
   </section>
 
   <section class="workspace analysis-workspace focused-workspace" id="end-to-end-histograms" data-analysis-workspace="end_to_end" hidden aria-labelledby="end-to-end-heading">
     <div class="workspace-head"><div><p class="kicker">Run-native distributions</p><h2 id="end-to-end-heading">End-to-End Histograms</h2></div></div>
-    <div id="histogramControlsHost" class="focused-controls"><p>Choose datasets, chain lengths, pressure matching, normalization, and curve visibility here. RASPA EndToEndDistanceHistograms files remain the primary observable.</p></div>
-    <div id="histogramWorkspaceStatus" class="selection-strip">Load a dataset containing EndToEndDistanceHistograms to begin.</div>
+    <div id="histogramControlsHost" class="chain-ui-host focused-controls"></div>
+    <div id="histogramWorkspaceStatus" class="selection-strip" role="status">No catalog has been loaded; end-to-end capability has not been evaluated.</div>
   </section>
 
   <section class="workspace analysis-workspace focused-workspace" id="spatial-density" data-analysis-workspace="vtk" hidden aria-labelledby="vtk-heading">
