@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {DirectoryCatalogScanner,lightweightSnapshot} from './directory-catalog.mjs';
-import {normalizedCatalogToBrowserResult,hydrateRdfSeries,resolveCatalogPair} from './poreview/ingestion/browser/catalog-adapter.mjs';
+import {normalizedCatalogToBrowserResult,hydrateRdfSeries,resolveCatalogPair,deriveRdfSelectorState,normalizeRdfForUi} from './poreview/ingestion/browser/catalog-adapter.mjs';
 const file=(name,getText)=>({kind:'file',name,async getFile(){const text=getText();return {name,size:text.length,lastModified:1,text:async()=>text,arrayBuffer:async()=>new TextEncoder().encode(text).buffer}}});
 const dir=(name,children)=>({kind:'directory',name,async *entries(){for(const child of children)yield[child.name,child]}});
 const simulation=p=>`Framework 0\nFrameworkName IRMOF-1\nExternalTemperature 300\nExternalPressure ${p}\nComponent 0 MoleculeName PFA5\n`,rdf=()=>`# bin distance g(r) unnormalized distance histogram\n0 0.5 2 0.1\n1 1.0 3 0.2\n`;
@@ -9,3 +9,22 @@ test('browser handle scan populates normalized selectors and lazily reads unders
 test('refresh observes modified RDF and ignored files remain individually explainable',async()=>{const source=root(),first=await new DirectoryCatalogScanner(source.handle).scan();assert.deepEqual(first.ignoredFiles.map(x=>[x.relativePath,x.extension,x.parentOutputDirectory,x.reason]),[['C5/2_otherstuff/RadialDistributionFunctions/notes.md','.md','RadialDistributionFunctions','unsupported file for RadialDistributionFunctions']]);source.modify('# changed\n0 1 8 0.1\n1 2 9 0.2');const refreshed=normalizedCatalogToBrowserResult(await new DirectoryCatalogScanner(source.handle,{previous:first}).scan());const entry=refreshed.datasets.find(x=>x.runId==='2_otherstuff');await entry.loadRdf();assert.equal(entry.rdf.records[0].gR,8)});
 test('serialized catalog is metadata-only and restoration requires a reauthorized handle',async()=>{const denied=root('denied'),catalog=await new DirectoryCatalogScanner(denied.handle).scan(),snapshot=lightweightSnapshot(catalog);assert.equal(snapshot.authorized,false);assert.equal(snapshot.runs[0].outputs.rdf[0].handle,undefined);assert.equal(await denied.handle.queryPermission({mode:'read'}),'denied');assert.equal(snapshot.stats.rdfs,2)});
 test('RDF directories without accepted files produce an error-level diagnostic',async()=>{const handle=dir('bad',[dir('C1',[dir('1',[file('simulation.input',()=>simulation(1)),dir('RadialDistributionFunctions',[file('README.md',()=>'none')])])])]);const catalog=await new DirectoryCatalogScanner(handle).scan();assert.ok(catalog.diagnostics.some(x=>x.severity==='error'&&x.code==='rdf_directories_empty'));assert.ok(catalog.stats.failures>0)});
+
+test('typed browser catalog drives chain, pair, sorted pressure, lazy read, and refresh recomputation',async()=>{
+  const reads=[];
+  const record=(seriesName,pair,pressurePa,runId,g)=>({kind:'rdf',seriesName,pair,pressurePa,runId,relativePath:`${seriesName}/${runId}/RadialDistributionFunctions/${pair.join('_')}.dat`,fileHandleLookup:async path=>({async text(){reads.push(path);return `# bin distance g(r) unnormalized distance histogram\n0 0.5 ${g} 0.1\n1 1.0 ${g+1} 0.2\n`}})});
+  const catalog={name:'typed',rdfCount:4,rdfRecords:[record('C2',['CF3_sp3','O2'],200,'2',2),record('C1',['CH3_sp3','O1'],300,'3',3),record('C1',['CH3_sp3','O1'],100,'1',1),record('C1',['CH3_sp3','Zn1'],200,'2',4)],diagnostics:[]};
+  assert.equal(normalizeRdfForUi(catalog.rdfRecords[0],'A').datasetId,'A');
+  const first=normalizedCatalogToBrowserResult(catalog,{datasetId:'A'}),chains=deriveRdfSelectorState(first.datasets,{datasetId:'A'});
+  assert.deepEqual(chains.chains,['C1','C2']);
+  const c1=deriveRdfSelectorState(first.datasets,{datasetId:'A',chainKey:'C1'});
+  assert.deepEqual(c1.pairs,['CH3_sp3 ↔ O1','CH3_sp3 ↔ Zn1']);
+  const pair=deriveRdfSelectorState(first.datasets,{datasetId:'A',chainKey:'C1',pairKey:'CH3_sp3 ↔ O1'});
+  assert.deepEqual(pair.pressures,[100,300]);
+  const selected=first.datasets.find(x=>x.chainKey==='C1'&&x.pairKey==='CH3_sp3 ↔ O1'&&x.pressurePa===100);
+  await selected.loadRdf();
+  assert.deepEqual(reads,[selected.relativePath]);
+  assert.equal(selected.rdf.records[0].gR,1);
+  const refreshed=normalizedCatalogToBrowserResult({...catalog,rdfCount:1,rdfRecords:[record('C9',['CF3_sp3','O2'],50,'1',9)]},{datasetId:'A'});
+  assert.deepEqual(deriveRdfSelectorState(refreshed.datasets,{datasetId:'A'}).chains,['C9']);
+});
