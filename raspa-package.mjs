@@ -34,6 +34,7 @@ const required={simulation:'simulation.input',pseudoatoms:'pseudo_atoms.def',mix
 const find=(files,test)=>files.find(f=>test(f.name||f.path||''));
 /** Audit a set of {name,text} files without inventing missing model information. */
 export async function importRunPackage(files,{annotationSidecar=null,manifestFingerprint=null}={}){
+  files=await Promise.all([...files].map(async file=>({...file,name:file.name,path:file.path||file.webkitRelativePath,text:typeof file.text==='function'?await file.text():file.text})));
   const diagnostics=[],get=test=>find(files,test),sim=get(n=>/simulation\.input$/i.test(n)),pseudo=get(n=>/pseudo_atoms\.def$/i.test(n)),mix=get(n=>/force_field_mixing_rules\.def$/i.test(n)),override=get(n=>/(^|\/)force_field\.def$/i.test(n)),cif=get(n=>/\.cif$/i.test(n)),movie=get(n=>/\.pdb$/i.test(n)),output=get(n=>/\.data$/i.test(n));
   const simParsed=sim?parseSimulationInput(sim.text):null,molecule=get(n=>/\.def$/i.test(n)&&!/pseudo_atoms|mixing_rules|force_field/i.test(n));
   for(const [kind,name] of Object.entries(required))if(!({simulation:sim,pseudoatoms:pseudo,mixing:mix,cif,molecule,movie})[kind])diagnostics.push({severity:kind==='movie'?'warning':'error',code:`missing_${kind}`,message:`Missing ${name}; ${kind==='movie'?'trajectory-dependent analysis is unavailable':'quantitative LJ attribution is disabled'}.`});
