@@ -1,6 +1,7 @@
 import {parseSimulationInput} from '../../../trajectory.mjs';
 import {parseCif} from '../../../raspa-package.mjs';
 import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms} from '../../../raspa-physics.mjs';
+import {isAllComponentsMovieBasename} from '../../../movie-filename.mjs';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);
@@ -28,7 +29,7 @@ export async function discoverChainSeries(files,{manifestRows=[],datasetName=nul
   const runPattern=new RegExp(`^${root?root.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'/':''}(C\\d+)\/(\\d+)\/simulation\\.input$`,'i'),runs=[],manifest=manifestIndex(manifestRows);
   for(const simFile of all){const simPath=pathOf(simFile),match=simPath.match(runPattern),single=!first&&simPath.match(/^(\d+)\/simulation\.input$/i);if(!match&&!single)continue;const run=match?.[2]||single[1],runPath=dirname(simPath),diagnostics=[];let simulation;
     try{simulation=parseSimulationInput(await textOf(simFile));}catch(error){diagnostics.push({severity:'error',code:'invalid_simulation_input',message:error.message});continue;}const chain=match?.[1]||(/C\d+/i.test(simulation.component?.MoleculeName||'')?simulation.component.MoleculeName:'C?');
-    const movieCandidates=all.filter(f=>pathOf(f).startsWith(`${runPath}/Movies/`)&&/_allcomponents\.pdb$/i.test(pathOf(f))).map(file=>({file,path:pathOf(file),metadata:parseAllComponentsMovieFilename(pathOf(file))}));
+    const movieCandidates=all.filter(f=>pathOf(f).startsWith(`${runPath}/Movies/`)&&isAllComponentsMovieBasename(pathOf(f))).map(file=>({file,path:pathOf(file),metadata:parseAllComponentsMovieFilename(pathOf(file))}));
     const matchingMovies=movieCandidates.filter(x=>movieMatchesSimulation(x.metadata,simulation));let movie=null;if(matchingMovies.length===1)movie=matchingMovies[0];else diagnostics.push({severity:matchingMovies.length?'error':'warning',code:matchingMovies.length?'duplicate_movies':'missing_movie',message:matchingMovies.length?`Multiple numerically matching movies require selection: ${matchingMovies.map(x=>x.path).join(', ')}`:`No movie matches simulation.input. Candidates: ${movieCandidates.map(x=>x.path).join(', ')||'none'}.`,candidates:movieCandidates.map(x=>x.path)});
     for(const candidate of movieCandidates.filter(x=>!movieMatchesSimulation(x.metadata,simulation)))diagnostics.push({severity:'warning',code:'movie_metadata_mismatch',message:`${candidate.path} contradicts simulation.input metadata.`});
     const scopes=scopesFor(runPath,root),eligible=all.filter(f=>{const p=pathOf(f);return scopes.some(s=>p.startsWith(`${s}/`))||/(^|\/)common_inputs(\/|$)/i.test(p)||manifestRows.some(r=>[r.source_relative_path,r.collected_relative_path].some(v=>v&&p.endsWith(v)));}).sort((a,b)=>{const pa=pathOf(a),pb=pathOf(b);return (pa.startsWith(runPath)?0:1)-(pb.startsWith(runPath)?0:1)||pa.length-pb.length;});

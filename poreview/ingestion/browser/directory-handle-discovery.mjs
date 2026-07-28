@@ -1,8 +1,9 @@
 import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../../parsers/index.mjs';
+import {isAllComponentsMovieBasename} from '../../../movie-filename.mjs';
 
 const CHAIN=/^C\d+$/i, RUN=/^\d+(?:_|$)/;
 const SUMMARIES=new Map([['final_abs_pressure_up','pressure'],['final_abs_fug_up','fugacity']]);
-const OUTPUTS={RadialDistributionFunctions:['rdf',/\.(?:dat|txt|data)$/i],EndToEndDistanceHistograms:['end_to_end',/\.(?:dat|txt|data)$/i],Movies:['movie',/\.pdb$/i],VTK:['vtk',/\.(?:vtk|vti)$/i],Output:['raspa_output',/\.data$/i]};
+const OUTPUTS={RadialDistributionFunctions:['rdf',/\.(?:dat|txt|data)$/i],EndToEndDistanceHistograms:['end_to_end',/\.(?:dat|txt|data)$/i],Movies:['movie',isAllComponentsMovieBasename],VTK:['vtk',/\.(?:vtk|vti)$/i],Output:['raspa_output',/\.data$/i]};
 const pause=()=>new Promise(resolve=>setTimeout(resolve,0));
 const extension=name=>{const match=name.match(/(\.[^.]+)$/);return match?match[1].toLowerCase():''};
 const pathFile=(handle,path)=>({name:handle.name,path,handle,size:null,lastModified:null,async text(){return (await handle.getFile()).text()},async arrayBuffer(){return (await handle.getFile()).arrayBuffer()}});
@@ -80,7 +81,7 @@ export class DirectoryCatalogScanner {
     for await(const [name,handle] of directory.entries()){
       const childPath=`${path}/${name}`;
       if(handle.kind==='directory')await this.enumerateOutput(handle,childPath,[type,accept],run,parentOutputDirectory);
-      else if(accept.test(name)){run.outputs[type].push({type,name,path:childPath,file:pathFile(handle,childPath),handle});this.catalog.stats.outputs++;if(type==='rdf')this.catalog.stats.rdfs++;else if(type==='end_to_end')this.catalog.stats.endToEnd++;else if(type==='vtk')this.catalog.stats.vtk++}
+      else if(typeof accept==='function'?accept(name):accept.test(name)){run.outputs[type].push({type,name,path:childPath,file:pathFile(handle,childPath),handle});this.catalog.stats.outputs++;if(type==='rdf')this.catalog.stats.rdfs++;else if(type==='end_to_end')this.catalog.stats.endToEnd++;else if(type==='vtk')this.catalog.stats.vtk++}
       else this.ignored(childPath,`unsupported file for ${parentOutputDirectory}`,parentOutputDirectory);
       await this.yieldIfNeeded();if(this.cancelled)return;
     }
