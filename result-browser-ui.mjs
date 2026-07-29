@@ -12,4 +12,13 @@ export const provenanceComplete=p=>['dataset.fingerprint','run.id','run.pressure
 export function setupRunProvenanceDrawer(){const drawer=document.querySelector('#runProvenanceDrawer'),content=document.querySelector('#provenanceContent'),fileBox=document.querySelector('#provenanceFiles'),raw=document.querySelector('#provenanceRaw');if(!drawer)return null;let current=null;const open=provenance=>{current=provenance;content.textContent=JSON.stringify({...provenance,sourceFiles:undefined},null,2);fileBox.replaceChildren(...provenance.sourceFiles.map(source=>{const button=document.createElement('button');button.textContent=`${source.type}: ${source.path}`;button.onclick=async()=>{raw.hidden=false;raw.textContent=source.file?.text?await source.file.text():'Raw bytes are not currently authorized.'};return button}));drawer.hidden=false};document.querySelectorAll('[data-open-provenance]').forEach(button=>button.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('porelens:provenance-requested'))));document.querySelector('#closeProvenance').onclick=()=>drawer.hidden=true;window.addEventListener('porelens:open-provenance',event=>open(event.detail));return {open,close:()=>drawer.hidden=true,current:()=>current}}
 
 export {spatialDensityCapability,vtkVisualizationState};
-if(typeof document!=='undefined')setupRunProvenanceDrawer();
+let initializationPromise;
+export function initializeResultBrowser(){
+  if(initializationPromise)return initializationPromise;
+  initializationPromise=Promise.resolve().then(()=>{
+    const drawer=setupRunProvenanceDrawer();
+    if(!drawer)throw new Error('Run provenance drawer is missing from the document');
+    return {ok:true};
+  });
+  return initializationPromise;
+}
