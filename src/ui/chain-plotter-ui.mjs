@@ -1,7 +1,7 @@
-import { buildChainCatalog, buildHandleCatalog, ParsedResultCache, matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=porelens-20260729-spatial-registration-v1';
-import {logPlottableRecords} from '../core/isotherm-summary.mjs?rev=porelens-20260729-spatial-registration-v1';
-import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=porelens-20260729-spatial-registration-v1';
-import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,EXPORT_PRESETS} from './plot-theme.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { buildChainCatalog, buildHandleCatalog, ParsedResultCache, matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {logPlottableRecords} from '../core/isotherm-summary.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,EXPORT_PRESETS} from './plot-theme.mjs?rev=porelens-20260729-simulation-shape-v2';
 
 const $=s=>document.querySelector(s), cache=new ParsedResultCache(), catalogs=new Map(), catalogStates=new Map(),histogramSelections=new Map(),histogramVisibility=new Map(); let curves=[], zoom=1, renderGeneration=0;
 const ids=['chainErrors','chainPreset','chainDatasets','chainResult','chainLengths','chainPair','chainMatch','chainPressure','chainTolerance','chainCompare','chainXAxis','chainAxis','chainManual','chainLoading','chainAnnotations','chainUnits','chainLoadingKind','chainLoadingUnit','chainLines'];
