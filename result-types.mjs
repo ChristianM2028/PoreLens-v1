@@ -1,4 +1,4 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));

@@ -1,6 +1,6 @@
-import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs';
-import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs';
-import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from './movie-filename.mjs';
+import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from './movie-filename.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 export function parseCif(text){
   const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));

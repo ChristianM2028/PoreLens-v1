@@ -70,10 +70,10 @@ function loadFeature(feature,source){return import(source).catch(error=>{reportF
 // Each optional entry point is imported independently so one parser or renderer cannot
 // prevent the progressively enhanced shell from remaining usable.
 if(document.documentElement){
-  void loadFeature('rdf','./app.js');
-  void loadFeature('isotherms','./chain-plotter-ui.mjs');
-  void loadFeature('result-browser','./result-browser-ui.mjs');
-  void loadFeature('catalog','./directory-import-ui.mjs');
+  void loadFeature('rdf','./app.js?rev=porelens-20260729-indexed-pdb-v1');
+  void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=porelens-20260729-indexed-pdb-v1');
+  void loadFeature('result-browser','./result-browser-ui.mjs?rev=porelens-20260729-indexed-pdb-v1');
+  void loadFeature('catalog','./directory-import-ui.mjs?rev=porelens-20260729-indexed-pdb-v1');
 }
 
 export {controller,activate,activateLocation,attachChainRenderer,loadFeature,navigate,reportFeatureUnavailable};

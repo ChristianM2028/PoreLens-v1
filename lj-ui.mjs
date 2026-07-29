@@ -1,6 +1,6 @@
-import {resolvePairName} from './importers.mjs';
-import {analyzeMovieRun} from './lj-workflow.mjs';
-import {analysisRange} from './trajectory.mjs';
+import {resolvePairName} from './importers.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {analyzeMovieRun} from './lj-workflow.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {analysisRange} from './trajectory.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 const pairError=(code,message,value)=>Object.assign(new Error(message),{code,details:{value}});
 /** Resolve legacy UI values at the UI boundary and normalize RDF orientation. */

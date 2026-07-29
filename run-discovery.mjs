@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './poreview/ingestion/browser/file-list-discovery.mjs';
+export * from './poreview/ingestion/browser/file-list-discovery.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 /** Resolve annotations without pressure tolerances. Missing and ambiguous rows remain diagnostics. */
 export function resolveAnnotationRuns(annotation,runs,{datasetFingerprint=annotation.datasetFingerprint}={}){

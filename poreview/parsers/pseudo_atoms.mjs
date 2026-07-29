@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../ingestion/models.mjs';
-import { diagnostic } from '../ingestion/diagnostics.mjs';
+import { PseudoAtom } from '../ingestion/models.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import { diagnostic } from '../ingestion/diagnostics.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

@@ -1,6 +1,6 @@
-import {compileAnnotation,selectInteractionPairs,reconstructPairs,buildResult,resultCsv,summarize} from './movie-analysis.mjs';
-import {expandFramework} from './raspa-package.mjs';
-import {analysisRange,selectedPdbFrames} from './trajectory.mjs';
+import {compileAnnotation,selectInteractionPairs,reconstructPairs,buildResult,resultCsv,summarize} from './movie-analysis.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {expandFramework} from './raspa-package.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 function blockEstimate(values,blocks=5){if(values.length<2)return {blocks:values.length,standardError:null};const n=Math.min(blocks,values.length),means=[];for(let b=0;b<n;b++){const part=values.slice(Math.floor(b*values.length/n),Math.floor((b+1)*values.length/n));if(part.length)means.push(mean(part));}const m=mean(means),variance=means.reduce((s,x)=>s+(x-m)**2,0)/(means.length-1);return {blocks:means.length,standardError:Math.sqrt(variance/means.length)};}
