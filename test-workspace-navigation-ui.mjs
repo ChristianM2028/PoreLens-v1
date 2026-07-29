@@ -65,3 +65,24 @@ test('application has no stale #analysis visibility mechanism and documents file
   assert.match(html,/python3 -m http\.server 8000 --bind 127\.0\.0\.1/);
   assert.match(html,/http:\/\/127\.0\.0\.1:8000/);
 });
+
+test('HTML exposes Isotherms before enhancement and delegates optional features to the navigation bootstrap',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const [html,navigation,app]=await Promise.all([
+    readFile('index.html','utf8'),
+    readFile('workspace-navigation-ui.mjs','utf8'),
+    readFile('app.js','utf8')
+  ]);
+  assert.match(html,/data-workspace="isotherm" aria-current="page"/);
+  assert.match(html,/id="adsorption-isotherms" data-analysis-workspace="isotherm" aria-labelledby=/);
+  assert.doesNotMatch(html,/id="adsorption-isotherms"[^>]*\shidden(?:\s|>)/);
+  for(const id of ['rdf-workspace','end-to-end-histograms','trajectory-energetics'])assert.match(html,new RegExp(`id="${id}"[^>]*\\shidden(?:\\s|>)`));
+  assert.match(html,/import\('\.\/workspace-navigation-ui\.mjs'\)/);
+  for(const legacy of ['src="app.js"','src="chain-plotter-ui.mjs"','src="result-browser-ui.mjs"','src="directory-import-ui.mjs"'])assert.doesNotMatch(html,new RegExp(legacy));
+  assert.doesNotMatch(navigation,/^import\s/m);
+  assert.ok(navigation.indexOf("activate(hashMap[location.hash]||'isotherm')")<navigation.indexOf("loadFeature('rdf','./app.js')"));
+  assert.match(navigation,/reportFeatureUnavailable/);
+  assert.doesNotMatch(app,/^import \{ setupLjWorkflow \}/m);
+  assert.match(app,/import\('\.\/lj-ui\.mjs'\)/);
+  assert.match(html,/<script nomodule>/);
+});

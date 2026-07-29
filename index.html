@@ -19,7 +19,7 @@
   <a class="brand" href="#adsorption-isotherms" aria-label="PoreLens analysis workspaces"><span class="brand-mark">P</span><span>PoreLens</span><small>RDF workstation</small></a>
   <span class="local-status"><i></i> Local session · no telemetry</span>
   <nav class="workspace-navigation" aria-label="Analysis workspaces">
-    <a href="#adsorption-isotherms" data-workspace="isotherm">Adsorption Isotherms</a>
+    <a href="#adsorption-isotherms" data-workspace="isotherm" aria-current="page">Adsorption Isotherms</a>
     <a href="#rdf-workspace" data-workspace="rdf">RDFs &amp; Heatmaps</a>
     <a href="#end-to-end-histograms" data-workspace="end_to_end">End-to-End Histograms</a>
     <a href="#trajectory-energetics" data-workspace="trajectory_energetics">Trajectory Energetics &amp; Spatial Evidence</a>
@@ -74,7 +74,7 @@
     </div>
   </section>
 
-  <section class="workspace chain-plotter analysis-workspace" id="adsorption-isotherms" data-analysis-workspace="isotherm" hidden aria-labelledby="chain-plot-heading">
+  <section class="workspace chain-plotter analysis-workspace" id="adsorption-isotherms" data-analysis-workspace="isotherm" aria-labelledby="chain-plot-heading">
     <div class="workspace-head"><div><p class="kicker">Catalog-linked exploration</p><h2 id="chain-plot-heading">Adsorption Isotherms</h2></div></div>
     <div id="isothermChainUiHost" class="chain-ui-host" data-chain-renderer-host="isotherm">
     <div id="sharedChainPlotUi">
@@ -139,8 +139,13 @@
   </section>
 </main>
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
-<script type="module" src="app.js"></script>
-<script type="module" src="chain-plotter-ui.mjs"></script>
-<script type="module" src="result-browser-ui.mjs"></script>
-<script type="module" src="directory-import-ui.mjs"></script>
+<div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
+<script type="module">
+  import('./workspace-navigation-ui.mjs').catch(error => {
+    const message = document.getElementById('shellStartupFailure');
+    message.hidden = false;
+    message.append(document.createTextNode(` ${error.message}`));
+  });
+</script>
+<script nomodule>document.getElementById('shellStartupFailure').hidden = false;</script>
 </body></html>
