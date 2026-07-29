@@ -1,4 +1,5 @@
 import {AnalysisWorkspaces} from './analysis-workspaces.mjs';
+export {APPLICATION_VERSION} from './app-version.mjs';
 const controller=new AnalysisWorkspaces();
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
 const chainSelections=new Map();

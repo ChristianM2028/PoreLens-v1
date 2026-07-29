@@ -9,6 +9,7 @@ import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState
 import {discoverChainSeries,exactAuthorizedCatalogRun} from './poreview/ingestion/browser/file-list-discovery.mjs';
 import {importRunPackage} from './raspa-package.mjs';
 import {rdfAnnotationContext} from './annotation-context.mjs';
+export {APPLICATION_VERSION} from './app-version.mjs';
 
 const $=selector=>document.querySelector(selector), ws=new DatasetWorkspace();
 let navigateWorkspace=()=>{};
