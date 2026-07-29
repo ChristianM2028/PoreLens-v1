@@ -1,7 +1,32 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {analysisAvailability,configurationValid,contributionRows} from '../src/ui/lj-ui.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {analysisAvailability,configurationValid,contributionRows,renderStructureCanvas,selectEvidenceFrame} from '../src/ui/lj-ui.mjs';
 test('UI availability reports missing trajectory without losing annotation configuration',()=>{const audit={capabilities:{quantitativeLJ:false},diagnostics:[{severity:'warning',message:'Missing .pdb; trajectory-dependent analysis is unavailable.'}]};assert.equal(analysisAvailability(audit).ready,false);assert.match(analysisAvailability(audit).message,/trajectory-dependent/i);});
 test('Run gating requires explicit shell semantics, control, and normalization',()=>{const audit={capabilities:{quantitativeLJ:true},diagnostics:[],parsed:{movie:{frames:[{}]}},physicsFingerprint:'abc'},span={type:'span'};assert.equal(configurationValid({annotations:[span],scope:'',criterion:'',reference:'outside_roi',normalization:'per_pair'},audit),false);assert.equal(configurationValid({annotations:[span],scope:'anchor_site',criterion:'nearest',reference:'outside_roi',normalization:'per_pair'},audit),true);assert.equal(configurationValid({annotations:[{type:'pressure_point'}],scope:'',criterion:'',reference:'none',normalization:'per_frame'},audit),true);});
 test('contribution table filtering and sorting retain annotation provenance',()=>{const results=[{selection:{annotationId:'ann-1'},contributions:{selected:[{pair:'CH3_sp3 × O2',pairCount:4,energyKJMol:{mean:-2}},{pair:'CH3_sp3 × Zn1',pairCount:2,energyKJMol:{mean:1}}]}}];assert.equal(contributionRows(results,'O2','energy')[0].annotationId,'ann-1');assert.equal(contributionRows(results,'','count')[0].pairCount,4);});
+test('fixture evidence renders object-shaped minimum-image partner and identity',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const fixture=JSON.parse(await readFile(new URL('./fixtures/lj-ui/evidence-frame.json',import.meta.url),'utf8'));
+  const result={frames:[{frameIndex:fixture.frameIndex}],pairRows:{selected:[fixture.pair]}};
+  const evidence=selectEvidenceFrame(result,fixture.frameIndex),calls=[];
+  const context={clearRect(){},beginPath(){},arc(){},fill(){},moveTo(x,y){calls.push(['moveTo',x,y])},lineTo(x,y){calls.push(['lineTo',x,y])},stroke(){},fillText(...args){calls.push(['fillText',...args])}};
+  const canvas={width:320,height:180,dataset:{},getContext:()=>context};
+  assert.match(evidence.identityText,/Minimum-image partner \(10\.250, 1\.2500, 2\.2500\) Å; image \[1, 0, 0\]/);
+  assert.equal(renderStructureCanvas(canvas,evidence,[fixture]),true);
+  assert.equal(calls.some(([name])=>name==='lineTo'),true);
+  assert.equal(canvas.dataset.state,undefined);
+});
+test('malformed or absent evidence geometry renders a visible unavailable state',()=>{
+  const frame={frameIndex:0,atoms:[{x:1,y:2,z:3,moleculeIndex:0}]};
+  for(const periodicPartner of [undefined,{x:4,y:'bad',z:6}]){
+    const result={pairRows:{selected:[{frameIndex:0,guestAtomIndex:0,moleculeIndex:0,energyKJMol:-1,periodicPartner}]}};
+    const evidence=selectEvidenceFrame(result,0),labels=[];
+    const context={clearRect(){},fillText(text){labels.push(text)}};
+    const canvas={width:320,height:180,dataset:{},getContext:()=>context};
+    assert.match(evidence.identityText,/unavailable \(missing or malformed minimum-image geometry\)/);
+    assert.equal(renderStructureCanvas(canvas,evidence,[frame]),false);
+    assert.equal(canvas.dataset.state,'unavailable');
+    assert.match(labels[0],/Structure unavailable/);
+  }
+});
 test('workflow markup is annotation-first and reuses importer authorization',async()=>{const {readFile}=await import('node:fs/promises'),html=await readFile(new URL('../index.html',import.meta.url),'utf8');for(const id of ['trajectory-energetics','ljAnnotationList','ljScope','ljCriterion','ljReference','ljNormalization','runLjAnalysis','cancelLjAnalysis','ljProgress','ljSummary','ljContributionRows','ljPressureResults','ljDiagnostics','downloadLjJson','downloadLjCsv'])assert.match(html,new RegExp(`id="${id}"`));assert.doesNotMatch(html,/id="ljDatasetFolder"|id="ljRunFiles"|moviePlay|movieSpeed/);assert.match(html,/reconstructed coordinate-based pairwise LJ contributions under the validated simulated model/);});
 test('workspace uses its requested identity and has no legacy generic-output links',async()=>{const {readFile}=await import('node:fs/promises'),html=await readFile(new URL('../index.html',import.meta.url),'utf8'),chain=await readFile(new URL('../src/ui/chain-plotter-ui.mjs',import.meta.url),'utf8');assert.match(html,/Trajectory Energetics &amp; Spatial Evidence/);assert.doesNotMatch(chain,/#movies-lj|#ljAnalysis/);});
 import {exactAuthorizedCatalogRun} from '../src/import/browser/file-list-discovery.mjs';
