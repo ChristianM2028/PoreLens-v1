@@ -11,24 +11,10 @@ The analysis module provides pair-specific histogram-weight quality rules, cente
 ## Run locally
 
 ```bash
-npm start
+python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-Then open `http://127.0.0.1:8000`. The supported server binds to loopback by
-default and sends `Cache-Control: no-cache` for HTML and the complete unbundled
-JavaScript module graph. Startup-stage URLs also carry the shared application
-revision. Long-lived immutable caching is only safe for assets whose URL changes
-with their contents. Selected files stay in the browser; there is no upload,
-telemetry, or runtime web-font download.
-
-### Recover after an application update
-
-If startup reports **mixed application versions**, stop the local server and
-confirm that your terminal is in the intended repository checkout. Restart it
-with `npm start`, then close stale tabs and perform a cache-bypassing reload
-(`Ctrl+Shift+R` / `Cmd+Shift+R`) or clear this origin's cached site data. A normal
-reload can retain incompatible ES modules from an older application revision;
-do not interpret this deployment diagnostic as a dataset or extractor failure.
+Then open `http://127.0.0.1:8000`. Selected files stay in the browser; there is no upload, telemetry, or runtime web-font download.
 
 ## Test
 

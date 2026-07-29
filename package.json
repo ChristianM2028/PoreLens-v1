@@ -4,5 +4,5 @@
   "private": true,
   "type": "module",
   "bin": { "poreview": "./poreview/cli.mjs" },
-  "scripts": { "start": "node serve.mjs", "test": "node --test", "scan": "node poreview/cli.mjs scan" }
+  "scripts": { "test": "node --test", "scan": "node poreview/cli.mjs scan" }
 }

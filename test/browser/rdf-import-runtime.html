@@ -11,7 +11,7 @@ try {
   const w=frame.contentWindow,d=w.document;
   w.addEventListener('error',event=>errors.push(event.error?.stack||event.message));
   w.addEventListener('unhandledrejection',event=>errors.push(event.reason?.stack||String(event.reason)));
-  await waitFor(()=>w.porelensStartup && d.querySelector('#startupStatus [data-stage="navigation"][data-status="ready"]') && d.querySelector('#filesA').onchange);
+  await waitFor(()=>d.querySelector('[data-workspace="rdf"]').onclick!==undefined && d.querySelector('#filesA').onchange);
 
   const expected={isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms',trajectory_energetics:'#trajectory-energetics'};
   for(const [id,hash] of Object.entries(expected)){

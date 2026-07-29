@@ -34,8 +34,6 @@ test('workspace tabs create navigable history and follow back/forward hash chang
   Object.assign(globalThis,{document,window,location,history,requestAnimationFrame:callback=>callback(),CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail}}});
   try{
     const navigation=await import(`./workspace-navigation-ui.mjs?test=${Date.now()}`);
-    const initialized=navigation.initializeWorkspaceNavigation();
-    assert.equal(initialized.active,'isotherm');
     let prevented=false;
     listeners.get('rdf:click')({preventDefault(){prevented=true}});
     assert.equal(prevented,true);
