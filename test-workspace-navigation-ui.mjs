@@ -62,8 +62,8 @@ test('application has no stale #analysis visibility mechanism and documents file
   const [app,html]=await Promise.all([readFile('app.js','utf8'),readFile('index.html','utf8')]);
   assert.doesNotMatch(app,/querySelector\(['"`]#analysis|\$\(['"`]#analysis/);
   assert.match(html,/location\.protocol\s*===\s*['"]file:['"]/);
-  assert.match(html,/python3 -m http\.server 8000 --bind 127\.0\.0\.1/);
-  assert.match(html,/http:\/\/127\.0\.0\.1:8000/);
+  assert.match(html,/npm start/);
+  assert.match(html,/http:\/\/127\.0\.0\.1:4173/);
 });
 
 test('HTML exposes Isotherms before enhancement and delegates optional features to the navigation bootstrap',async()=>{
@@ -77,12 +77,12 @@ test('HTML exposes Isotherms before enhancement and delegates optional features 
   assert.match(html,/id="adsorption-isotherms" data-analysis-workspace="isotherm" aria-labelledby=/);
   assert.doesNotMatch(html,/id="adsorption-isotherms"[^>]*\shidden(?:\s|>)/);
   for(const id of ['rdf-workspace','end-to-end-histograms','trajectory-energetics'])assert.match(html,new RegExp(`id="${id}"[^>]*\\shidden(?:\\s|>)`));
-  assert.match(html,/import\('\.\/workspace-navigation-ui\.mjs'\)/);
+  assert.match(html,/import\('\.\/workspace-navigation-ui\.mjs\?rev=porelens-20260729-indexed-pdb-v1'\)/);
   for(const legacy of ['src="app.js"','src="chain-plotter-ui.mjs"','src="result-browser-ui.mjs"','src="directory-import-ui.mjs"'])assert.doesNotMatch(html,new RegExp(legacy));
   assert.doesNotMatch(navigation,/^import\s/m);
-  assert.ok(navigation.indexOf("activate(hashMap[location.hash]||'isotherm')")<navigation.indexOf("loadFeature('rdf','./app.js')"));
+  assert.ok(navigation.indexOf("activate(hashMap[location.hash]||'isotherm')")<navigation.indexOf("loadFeature('rdf','./app.js?rev=porelens-20260729-indexed-pdb-v1')"));
   assert.match(navigation,/reportFeatureUnavailable/);
   assert.doesNotMatch(app,/^import \{ setupLjWorkflow \}/m);
-  assert.match(app,/import\('\.\/lj-ui\.mjs'\)/);
+  assert.match(app,/import\('\.\/lj-ui\.mjs\?rev=porelens-20260729-indexed-pdb-v1'\)/);
   assert.match(html,/<script nomodule>/);
 });

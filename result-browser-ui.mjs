@@ -1,4 +1,4 @@
-import {spatialDensityCapability,vtkVisualizationState} from './result-types.mjs';
+import {spatialDensityCapability,vtkVisualizationState} from './result-types.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 export const PROVENANCE_SCHEMA='porelens.run-provenance';
 const value=(x,fallback=null)=>x??fallback;

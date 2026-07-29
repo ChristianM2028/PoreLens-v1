@@ -1,7 +1,7 @@
-import {parseSimulationInput} from '../../../trajectory.mjs';
-import {parseCif} from '../../../raspa-package.mjs';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms} from '../../../raspa-physics.mjs';
-import {isAllComponentsMovieBasename} from '../../../movie-filename.mjs';
+import {parseSimulationInput} from '../../../trajectory.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {parseCif} from '../../../raspa-package.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms} from '../../../raspa-physics.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {isAllComponentsMovieBasename} from '../../../movie-filename.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);

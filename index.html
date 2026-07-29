@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PoreLens — scientific analysis workspaces</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="porelens-revision" content="porelens-20260729-indexed-pdb-v1">
+  <link rel="stylesheet" href="styles.css?rev=porelens-20260729-indexed-pdb-v1">
 </head>
 <body>
 <div id="fileLaunchWarning" class="notice" role="alert" hidden>
   <strong>PoreLens cannot start from a <code>file://</code> URL.</strong>
-  Serve this directory over HTTP with <code>python3 -m http.server 8000 --bind 127.0.0.1</code>, then open
-  <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>.
+  From this repository run <code>npm start</code>, then open
+  <a href="http://127.0.0.1:4173">http://127.0.0.1:4173</a>.
 </div>
 <script>
   if (location.protocol === 'file:') document.getElementById('fileLaunchWarning').hidden = false;
@@ -141,7 +142,7 @@
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
 <div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
 <script type="module">
-  import('./workspace-navigation-ui.mjs').catch(error => {
+  import('./workspace-navigation-ui.mjs?rev=porelens-20260729-indexed-pdb-v1').catch(error => {
     const message = document.getElementById('shellStartupFailure');
     message.hidden = false;
     message.append(document.createTextNode(` ${error.message}`));

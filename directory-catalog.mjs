@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './poreview/ingestion/browser/directory-handle-discovery.mjs';
+export * from './poreview/ingestion/browser/directory-handle-discovery.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 /** Authorized-file index shared by every workspace; values stay lazy File/handle references. */
 export class AuthorizedRunCatalog {

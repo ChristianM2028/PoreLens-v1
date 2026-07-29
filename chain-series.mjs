@@ -1,8 +1,8 @@
-import { parseManifest, parseRdf, resolvePairName } from './importers.mjs';
-import { parseSimulationInput } from './trajectory.mjs';
-import { parseEndToEndDistribution } from './result-types.mjs';
-import { parseRaspaOutput } from './raspa-package.mjs';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs';
+import { parseManifest, parseRdf, resolvePairName } from './importers.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import { parseSimulationInput } from './trajectory.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;
