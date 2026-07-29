@@ -13,14 +13,21 @@ try {
   w.addEventListener('unhandledrejection',event=>errors.push(event.reason?.stack||String(event.reason)));
   await waitFor(()=>d.querySelector('[data-workspace="rdf"]').onclick!==undefined && d.querySelector('#filesA').onchange);
 
-  const expected={isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms',trajectory_energetics:'#trajectory-energetics'};
+  const expected={isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms'};
   for(const [id,hash] of Object.entries(expected)){
     d.querySelector(`[data-workspace="${id}"]`).click();
     await waitFor(()=>w.location.hash===hash&&visibleWorkspace(d)[0]?.dataset.analysisWorkspace===id);
     if(visibleWorkspace(d).length!==1)throw new Error(`${id} did not exclusively own workspace visibility`);
   }
-  w.history.back();await waitFor(()=>w.location.hash==='#end-to-end-histograms');
-  w.history.forward();await waitFor(()=>w.location.hash==='#trajectory-energetics');
+  d.querySelector('#openLjAnalysis').click();
+  await waitFor(()=>w.location.hash==='#trajectory-energetics'&&!d.querySelector('#trajectory-energetics').hidden&&d.querySelector('#trajectory-energetics').getAttribute('aria-expanded')==='true');
+  const buttonPanelState={hidden:d.querySelector('#trajectory-energetics').hidden,expanded:d.querySelector('#trajectory-energetics').getAttribute('aria-expanded'),workspace:visibleWorkspace(d)[0]?.dataset.analysisWorkspace};
+  w.history.back();await waitFor(()=>w.location.hash==='#end-to-end-histograms'&&d.querySelector('#trajectory-energetics').hidden);
+  w.history.forward();await waitFor(()=>w.location.hash==='#trajectory-energetics'&&!d.querySelector('#trajectory-energetics').hidden);
+  w.location.hash='#adsorption-isotherms';await waitFor(()=>d.querySelector('#trajectory-energetics').hidden);
+  w.location.hash='#trajectory-energetics';await waitFor(()=>!d.querySelector('#trajectory-energetics').hidden);
+  const directPanelState={hidden:d.querySelector('#trajectory-energetics').hidden,expanded:d.querySelector('#trajectory-energetics').getAttribute('aria-expanded'),workspace:visibleWorkspace(d)[0]?.dataset.analysisWorkspace};
+  if(JSON.stringify(buttonPanelState)!==JSON.stringify(directPanelState))throw new Error(`button and direct hash differ: ${JSON.stringify({buttonPanelState,directPanelState})}`);
 
   const manifest=await (await fetch('../../test/fixtures/collection/manifest.csv')).text();
   const rdf=await (await fetch('../../test/fixtures/collection/rdfs/RDF_CF3_sp3_O2.dat')).text();

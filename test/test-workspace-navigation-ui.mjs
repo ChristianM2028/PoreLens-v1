@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('workspace tabs create navigable history and follow back/forward hash changes',async()=>{
+async function navigationHarness(initialHash='#adsorption-isotherms'){
   const listeners=new Map(),windowListeners=new Map();
   const links=['isotherm','rdf','end_to_end'].map(workspace=>({
     dataset:{workspace},
@@ -13,7 +13,9 @@ test('workspace tabs create navigable history and follow back/forward hash chang
     removeAttribute(name){this.attributes.delete(name)}
   }));
   const sections=links.map(link=>({dataset:{analysisWorkspace:link.dataset.workspace},hidden:false}));
-  const location={hash:'#adsorption-isotherms'};
+  const evidencePanel={hidden:true,attributes:new Map([['aria-expanded','false']]),setAttribute(name,value){this.attributes.set(name,value)},getAttribute(name){return this.attributes.get(name)},scrollIntoView(){}};
+  const openButton={addEventListener(type,handler){listeners.set(`open:${type}`,handler)}};
+  const location={hash:initialHash};
   const history={entries:[],pushState(_state,_title,href){this.entries.push(href);location.hash=href},replaceState(_state,_title,href){this.entries.push(href);location.hash=href}};
   const document={
     querySelectorAll(selector){
@@ -23,6 +25,8 @@ test('workspace tabs create navigable history and follow back/forward hash chang
       return [];
     },
     querySelector(selector){
+      if(selector==='#trajectory-energetics')return evidencePanel;
+      if(selector==='#openLjAnalysis')return openButton;
       const match=selector.match(/^\[data-analysis-workspace="(.+)"\]$/);
       return match?{scrollIntoView(){},dataset:{analysisWorkspace:match[1]}}:null;
     }
@@ -32,8 +36,25 @@ test('workspace tabs create navigable history and follow back/forward hash chang
     dispatchEvent(){}
   };
   Object.assign(globalThis,{document,window,location,history,requestAnimationFrame:callback=>callback(),CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail}}});
+  const navigation=await import(`../src/ui/workspace-navigation-ui.mjs?test=${Date.now()}-${Math.random()}`);
+  return {listeners,windowListeners,links,sections,evidencePanel,location,history,navigation};
+}
+function cleanupNavigationHarness(){for(const key of ['document','window','location','history','requestAnimationFrame','CustomEvent'])delete globalThis[key]}
+
+test('initial trajectory evidence deep link activates RDF and expands its panel',async()=>{
   try{
-    const navigation=await import(`../src/ui/workspace-navigation-ui.mjs?test=${Date.now()}`);
+    const {navigation,sections,evidencePanel,history}=await navigationHarness('#trajectory-energetics');
+    assert.equal(navigation.controller.active,'rdf');
+    assert.equal(sections.find(x=>x.dataset.analysisWorkspace==='rdf').hidden,false);
+    assert.equal(evidencePanel.hidden,false);
+    assert.equal(evidencePanel.getAttribute('aria-expanded'),'true');
+    assert.deepEqual(history.entries,[]);
+  }finally{cleanupNavigationHarness()}
+});
+
+test('button navigation is reproducible through Back/Forward and leaving RDF hides evidence',async()=>{
+  try{
+    const {listeners,windowListeners,links,sections,evidencePanel,location,history,navigation}=await navigationHarness();
     let prevented=false;
     listeners.get('rdf:click')({preventDefault(){prevented=true}});
     assert.equal(prevented,true);
@@ -44,17 +65,28 @@ test('workspace tabs create navigable history and follow back/forward hash chang
     assert.equal(links.find(x=>x.dataset.workspace==='rdf').attributes.get('aria-current'),'page');
     assert.equal(links.find(x=>x.dataset.workspace==='isotherm').attributes.has('aria-current'),false);
 
+    listeners.get('open:click')();
+    assert.equal(location.hash,'#trajectory-energetics');
+    assert.equal(evidencePanel.hidden,false);
+    assert.equal(evidencePanel.getAttribute('aria-expanded'),'true');
+
+    location.hash='#rdf-workspace';
+    windowListeners.get('popstate')();
+    assert.equal(navigation.controller.active,'rdf');
+    assert.equal(evidencePanel.hidden,true);
+
+    location.hash='#trajectory-energetics';
+    windowListeners.get('popstate')();
+    assert.equal(navigation.controller.active,'rdf');
+    assert.equal(evidencePanel.hidden,false);
+
     location.hash='#adsorption-isotherms';
     windowListeners.get('popstate')();
     assert.equal(navigation.controller.active,'isotherm');
     assert.equal(sections.find(x=>x.dataset.analysisWorkspace==='isotherm').hidden,false);
-
-    location.hash='#trajectory-energetics';
-    windowListeners.get('hashchange')();
-    assert.equal(navigation.controller.active,'rdf');
-  }finally{
-    for(const key of ['document','window','location','history','requestAnimationFrame','CustomEvent'])delete globalThis[key];
-  }
+    assert.equal(evidencePanel.hidden,true);
+    assert.equal(evidencePanel.getAttribute('aria-expanded'),'false');
+  }finally{cleanupNavigationHarness()}
 });
 
 test('application has no stale #analysis visibility mechanism and documents file launch recovery',async()=>{
@@ -80,7 +112,8 @@ test('HTML exposes Isotherms before enhancement and delegates optional features 
   assert.match(html,/import\('\.\/src\/ui\/workspace-navigation-ui\.mjs\?rev=porelens-20260729-indexed-pdb-v1'\)/);
   for(const legacy of ['src="app.js"','src="chain-plotter-ui.mjs"','src="result-browser-ui.mjs"','src="directory-import-ui.mjs"'])assert.doesNotMatch(html,new RegExp(legacy));
   assert.doesNotMatch(navigation,/^import\s/m);
-  assert.ok(navigation.indexOf("activate(hashMap[location.hash]||'isotherm')")<navigation.indexOf("loadFeature('rdf','./app.js?rev=porelens-20260729-indexed-pdb-v1')"));
+  assert.ok(navigation.indexOf('if(!activateLocation())')<navigation.indexOf("loadFeature('rdf','./app.js?rev=porelens-20260729-indexed-pdb-v1')"));
+  assert.match(navigation,/rdfEvidence:\{hash:'#trajectory-energetics',workspace:'rdf',rdfEvidence:true\}/);
   assert.match(navigation,/reportFeatureUnavailable/);
   assert.doesNotMatch(app,/^import \{ setupLjWorkflow \}/m);
   assert.match(app,/import\('\.\/lj-ui\.mjs\?rev=porelens-20260729-indexed-pdb-v1'\)/);
