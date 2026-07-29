@@ -1,6 +1,6 @@
 // Compatibility entry point: keep the historical import path while exposing
 // the canonical typed representation, not a second divergent flat parser.
-export {parseSimulationInput} from '../import/parsers/simulation_input.mjs?rev=porelens-20260729-spatial-registration-v1';
+export {parseSimulationInput} from '../import/parsers/simulation_input.mjs?rev=porelens-20260729-simulation-shape-v2';
 
 export function parsePdbMovie(text,{sitesPerMolecule=null,siteTypes=null}={}){
   const frames=[]; let frame=null;

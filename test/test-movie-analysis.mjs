@@ -55,3 +55,20 @@ test('conditional decomposition classifies inclusive nearest partners and averag
   const anchors=classifyNearestAnchors({guests,framework,guestType:'G',frameworkLabel:'Zn1',boundsA:[1,1],matrix});assert.deepEqual(anchors.map(x=>x.population),['inside','outside']);assert.equal(anchors[0].nearestFrameworkAtomIndex,10);
   const rows=reconstructConditionalPairs({anchors,guests,framework,model,cutoffA:3,matrix});assert.ok(rows.some(x=>x.frameworkStructuralLabel==='O1'));assert.ok(rows.some(x=>x.frameworkStructuralLabel==='O2'));assert.ok(rows.every(x=>x.epsilonK===4&&x.sigmaA===2&&x.cutoffTreatment==='truncated'));  const d=aggregateConditionalDecomposition({anchors,rawPairRows:rows,blockCount:2,frameIndices:[0,1]});const o1=d.summaries.find(x=>x.level==='structural_label'&&x.key==='O1'),o2=d.summaries.find(x=>x.level==='structural_label'&&x.key==='O2');assert.ok(o1&&o2);assert.equal(o1.insideCount,1);assert.equal(o1.outsideCount,1);assert.equal(d.uncertainty.blocks.length,2);assert.ok(d.perAnchorTotals.some(x=>x.level==='atom_index'&&x.key==='11'));assert.equal(d.normalization,'per guest-anchor observation (pair energies summed before conditional averaging)');
 });
+
+import {normalizeSimulationShape} from '../src/core/raspa-package.mjs';
+test('simulation shape boundary preserves current settings and normalizes only recognized legacy fields',()=>{
+  const current={framework:{name:'IRMOF-1'},settings:{cutoffA:12.9,unitCells:[1,1,1],movie:{writeEvery:100}}};
+  const unchanged=normalizeSimulationShape(current,{file:'run/simulation.input'});
+  assert.equal(unchanged.simulation,current);assert.equal(unchanged.diagnostic,null);
+  const legacy=normalizeSimulationShape({framework:'IRMOF-1',vdwCutoffA:12.8,unitCells:[2,1,1],useChargesFromCif:false,movieWriteInterval:250,temperatureK:300},{file:'legacy/simulation.input'});
+  assert.deepEqual(legacy.simulation,{framework:{name:'IRMOF-1'},temperatureK:300,settings:{cutoffA:12.8,unitCells:[2,1,1],useChargesFromCif:false,movie:{writeEvery:250}}});
+  assert.equal(legacy.diagnostic.code,'legacy_simulation_shape_normalized');assert.equal(legacy.diagnostic.file,'legacy/simulation.input');assert.equal(legacy.diagnostic.detectedSchema,'legacy_flat');
+});
+test('unrecognized and cutoff-free simulation shapes disable energetics without fabricating a cutoff',async()=>{
+  const invalid=normalizeSimulationShape({framework:{name:'IRMOF-1'}},{file:'bad/simulation.input'});
+  assert.equal(invalid.simulation,null);assert.equal(invalid.diagnostic.code,'incompatible_simulation_shape');
+  const simulation=(await fixture('simulation.input')).replace(/^CutOffVDW.*$/mi,'');
+  const audit=await importRunPackage([{name:'simulation.input',path:'screenshot/exact/run/simulation.input',text:simulation}]);
+  assert.equal(audit.parsed.simulation.settings.cutoffA,null);assert.equal(audit.capabilities.quantitativeLJ,false);assert.equal(audit.physicsFingerprint,null);assert.ok(audit.diagnostics.some(x=>x.code==='missing_cutoff'));assert.doesNotThrow(()=>audit.capabilities.quantitativeLJ);
+});

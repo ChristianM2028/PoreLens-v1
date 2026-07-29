@@ -1,7 +1,7 @@
-import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=porelens-20260729-spatial-registration-v1';
-import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=porelens-20260729-spatial-registration-v1';
-import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=porelens-20260729-spatial-registration-v1';
-import {parsePdbCryst1} from './spatial-registration.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {parsePdbCryst1} from './spatial-registration.mjs?rev=porelens-20260729-simulation-shape-v2';
 
 export function parseCif(text){
   const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));
@@ -52,6 +52,27 @@ export async function normalizeRunPackageFile(file){
     return {source:file,name,path,text:null,resolutionDiagnostic:{severity:'error',code:'file_content_rejected',stage:'content_resolution',file:path,message:`Cannot read ${path} during content_resolution: ${error?.message||String(error)}; expected text() to resolve to a string.`}};
   }
 }
+
+/**
+ * Normalize the one known pre-settings simulation contract at the parser boundary.
+ * Missing legacy values deliberately remain missing: this adapter is structural,
+ * not a source of scientific defaults.
+ */
+export function normalizeSimulationShape(simulation,{file=null}={}){
+  if(simulation&&typeof simulation==='object'&&!Array.isArray(simulation)&&simulation.settings&&typeof simulation.settings==='object'&&!Array.isArray(simulation.settings))return {simulation,diagnostic:null,schema:'settings'};
+  const legacyKeys=['vdwCutoffA','unitCells','useChargesFromCif','movieWriteInterval'];
+  const legacy=simulation&&typeof simulation==='object'&&!Array.isArray(simulation)&&(legacyKeys.some(key=>Object.hasOwn(simulation,key))||typeof simulation.framework==='string');
+  if(legacy){
+    const {vdwCutoffA,unitCells,useChargesFromCif,movieWriteInterval,framework,...rest}=simulation;
+    const settings={};
+    if(vdwCutoffA!==undefined)settings.cutoffA=vdwCutoffA;
+    if(unitCells!==undefined)settings.unitCells=unitCells;
+    if(useChargesFromCif!==undefined)settings.useChargesFromCif=useChargesFromCif;
+    if(movieWriteInterval!==undefined)settings.movie={writeEvery:movieWriteInterval};
+    return {simulation:{...rest,framework:typeof framework==='string'?{name:framework}:framework,settings},schema:'legacy_flat',diagnostic:{severity:'warning',code:'legacy_simulation_shape_normalized',stage:'simulation_shape_normalization',file,message:`Normalized legacy flat simulation parser result from ${file||'simulation.input'} without supplying missing scientific settings.`,detectedSchema:'legacy_flat'}};
+  }
+  return {simulation:null,schema:'unrecognized',diagnostic:{severity:'error',code:'incompatible_simulation_shape',stage:'simulation_shape_normalization',file,message:`Simulation parser result from ${file||'simulation.input'} has neither the settings contract nor the recognized legacy flat contract; dependent energetic capabilities are disabled.`,detectedSchema:'unrecognized'}};
+}
 /** Audit a set of {name,text} files without inventing missing model information. */
 export async function importRunPackage(files,{annotationSidecar=null,manifestFingerprint=null,annotationPressurePa=null,manifestPressurePa=null}={}){
   files=await Promise.all([...files].map(normalizeRunPackageFile));
@@ -61,6 +82,12 @@ export async function importRunPackage(files,{annotationSidecar=null,manifestFin
   const parsed={overrides:new Map()};
   const parseFile=(key,file,stage,parser)=>{if(!file||file.resolutionDiagnostic)return null;try{return parsed[key]=parser(file.text);}catch(error){diagnostics.push({severity:'error',code:`invalid_${stage}`,stage,file:file.path,message:`Failed to parse ${file.path} during ${stage}: ${error.message}`});return null;}};
   parseFile('simulation',sim,'simulation_input',parseSimulationInput);
+  if(sim&&!sim.resolutionDiagnostic){const normalized=normalizeSimulationShape(parsed.simulation,{file:sim.path});parsed.simulation=normalized.simulation;if(normalized.diagnostic)diagnostics.push(normalized.diagnostic);}
+  const simulationSettings=parsed.simulation?.settings;
+  const cutoffA=Number.isFinite(simulationSettings?.cutoffA)?simulationSettings.cutoffA:null;
+  const unitCells=Array.isArray(simulationSettings?.unitCells)?simulationSettings.unitCells:null;
+  const useChargesFromCif=typeof simulationSettings?.useChargesFromCif==='boolean'?simulationSettings.useChargesFromCif:null;
+  const movieSettings=simulationSettings?.movie&&typeof simulationSettings.movie==='object'?simulationSettings.movie:null;
   // RASPA serializes these values as decimal text.  Half a typical final decimal
   // place plus a 1e-10 relative allowance accepts harmless formatting/rounding,
   // while (for example) a one-pascal change at 1e9 Pa remains a mismatch.
@@ -83,11 +110,11 @@ export async function importRunPackage(files,{annotationSidecar=null,manifestFin
   if(parsed.movie&&parsed.topology)try{parsed.topologyValidation=validateMovieTopology({simulation:parsed.simulation,componentDefinitionName:molecule?.name,topology:parsed.topology,pseudoatoms:parsed.pseudoatoms,frameAtomCounts:parsed.movie.frames.map(frame=>frame.atomCount)});if(!parsed.movie.roleSpecificAnalysisEnabled)throw new Error('Movie-to-topology site ordering could not be validated');}catch(error){diagnostics.push({severity:'error',code:'movie_topology_mismatch',stage:'topology_validation',file:movie.path,message:`Failed to validate ${movie.path} during topology_validation: ${error.message}`});}
   if(parsed.cif&&parsed.forceField){parsed.frameworkTypeMapping=new Map();for(const site of parsed.cif.asymmetricSites){const candidates=[site.label,site.cifType,`${site.cifType}_`].filter(x=>parsed.forceField.parameters.has(x));if(candidates.length!==1)diagnostics.push({severity:'error',code:'framework_mapping_ambiguous',message:`Framework label ${site.label} resolves to ${candidates.length} force-field types (${candidates.join(', ')||'none'}).`});else parsed.frameworkTypeMapping.set(site.label,candidates[0]);}}
   if(parsed.topology&&parsed.forceField)for(const site of parsed.topology.sites)if(!parsed.forceField.parameters.has(site.type))diagnostics.push({severity:'error',code:'guest_parameter_missing',message:`No LJ parameters for guest site type ${site.type}.`});
-  if(parsed.simulation&&!Number.isFinite(parsed.simulation.settings.cutoffA))diagnostics.push({severity:'error',code:'missing_cutoff',message:'CutOffVDW is required; no default was substituted.'});
+  if(parsed.simulation&&!Number.isFinite(cutoffA))diagnostics.push({severity:'error',code:'missing_cutoff',message:'CutOffVDW is required; no default was substituted.'});
   if(annotationSidecar&&manifestFingerprint){for(const [slot,d] of Object.entries(annotationSidecar.datasets||{}))if(d.manifestFingerprint!==manifestFingerprint)diagnostics.push({severity:'error',code:'annotation_manifest_mismatch',message:`Annotation dataset ${slot} does not match the imported manifest fingerprint.`});}
-  if(parsed.cif&&parsed.frameworkTypeMapping&&parsed.simulation?.settings?.unitCells)try{parsed.expandedFramework=expandFramework(parsed.cif,parsed.frameworkTypeMapping,parsed.simulation.settings.unitCells);}catch(error){diagnostics.push({severity:'error',code:'framework_expansion_unsupported',message:error.message});}
+  if(parsed.cif&&parsed.frameworkTypeMapping&&unitCells)try{parsed.expandedFramework=expandFramework(parsed.cif,parsed.frameworkTypeMapping,unitCells);}catch(error){diagnostics.push({severity:'error',code:'framework_expansion_unsupported',message:error.message});}
   const geometric=!!(parsed.movie&&parsed.topologyValidation?.validated&&parsed.expandedFramework);
-  const essential=geometric&&!!(parsed.simulation&&parsed.pseudoatoms&&parsed.forceField&&Number.isFinite(parsed.simulation.settings.cutoffA));
-  const fingerprint=parsed.forceField&&parsed.simulation&&parsed.cif&&parsed.topology?await physicsFingerprint({cutoffA:parsed.simulation.settings.cutoffA,useChargesFromCif:parsed.simulation.settings.useChargesFromCif,unitCells:parsed.simulation.settings.unitCells,forceField:parsed.forceField,cif:parsed.cif,topology:parsed.topology}):null;
+  const essential=geometric&&!!(parsed.simulation&&parsed.pseudoatoms&&parsed.forceField&&Number.isFinite(cutoffA));
+  const fingerprint=Number.isFinite(cutoffA)&&parsed.forceField&&parsed.simulation&&parsed.cif&&parsed.topology?await physicsFingerprint({cutoffA,useChargesFromCif,unitCells,forceField:parsed.forceField,cif:parsed.cif,topology:parsed.topology}):null;
   return {files:{simulation:sim?.path||null,pseudoatoms:pseudo?.path||null,mixing:mix?.path||null,override:override?.path||null,cif:cif?.path||null,molecule:molecule?.path||null,movie:movie?.path||null,output:output?.path||null},parsed,physicsFingerprint:fingerprint,capabilities:{rdfAndAnnotations:true,moviePlayback:!!parsed.movie,geometricSelection:geometric,quantitativeLJ:essential},diagnostics};
 }
