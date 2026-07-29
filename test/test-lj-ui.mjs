@@ -1,4 +1,5 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {analysisAvailability,configurationValid,contributionRows,renderStructureCanvas,selectEvidenceFrame} from '../src/ui/lj-ui.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {analysisAvailability,configurationValid,contributionRows,decodeEvidenceFrame,EvidenceFrameDecoder,renderStructureCanvas,selectEvidenceFrame} from '../src/ui/lj-ui.mjs';
+import {indexPdbSource} from '../src/core/trajectory.mjs';
 test('UI availability reports missing trajectory without losing annotation configuration',()=>{const audit={capabilities:{quantitativeLJ:false},diagnostics:[{severity:'warning',message:'Missing .pdb; trajectory-dependent analysis is unavailable.'}]};assert.equal(analysisAvailability(audit).ready,false);assert.match(analysisAvailability(audit).message,/trajectory-dependent/i);});
 test('Run gating requires explicit shell semantics, control, and normalization',()=>{const audit={capabilities:{quantitativeLJ:true},diagnostics:[],parsed:{movie:{frames:[{}]}},physicsFingerprint:'abc'},span={type:'span'};assert.equal(configurationValid({annotations:[span],scope:'',criterion:'',reference:'outside_roi',normalization:'per_pair'},audit),false);assert.equal(configurationValid({annotations:[span],scope:'anchor_site',criterion:'nearest',reference:'outside_roi',normalization:'per_pair'},audit),true);assert.equal(configurationValid({annotations:[{type:'pressure_point'}],scope:'',criterion:'',reference:'none',normalization:'per_frame'},audit),true);});
 test('contribution table filtering and sorting retain annotation provenance',()=>{const results=[{selection:{annotationId:'ann-1'},contributions:{selected:[{pair:'CH3_sp3 × O2',pairCount:4,energyKJMol:{mean:-2}},{pair:'CH3_sp3 × Zn1',pairCount:2,energyKJMol:{mean:1}}]}}];assert.equal(contributionRows(results,'O2','energy')[0].annotationId,'ann-1');assert.equal(contributionRows(results,'','count')[0].pairCount,4);});
@@ -26,6 +27,27 @@ test('malformed or absent evidence geometry renders a visible unavailable state'
     assert.equal(canvas.dataset.state,'unavailable');
     assert.match(labels[0],/Structure unavailable/);
   }
+});
+test('indexed frame metadata is diagnosed rather than treated as coordinates',()=>{
+  const evidence=selectEvidenceFrame({pairRows:{selected:[{frameIndex:0,guestAtomIndex:0,moleculeIndex:0,energyKJMol:-1,periodicPartner:{x:2,y:3,z:4}}]}},0),labels=[];
+  const canvas={width:320,height:180,dataset:{},getContext:()=>({clearRect(){},fillText(text){labels.push(text)}})};
+  assert.doesNotThrow(()=>assert.equal(renderStructureCanvas(canvas,evidence,[{frameIndex:0,model:1,start:0,end:99,atomCount:250,atoms:{length:250}}]),false));
+  assert.match(canvas.dataset.message,/indexed metadata, not decoded coordinates/);
+  assert.match(labels[0],/Structure unavailable/);
+});
+test('indexed fixture evidence decodes topology roles and renders atom coordinates',async()=>{
+  const {readFile}=await import('node:fs/promises'),text=await readFile(new URL('./fixtures/trimmed-movie-25-26.pdb',import.meta.url),'utf8'),movie=await indexPdbSource(new Blob([text]));
+  const topology={sites:[{type:'CF3_sp3'},...Array.from({length:8},()=>({type:'CF2_sp3'})),{type:'CF3_sp3'}]},frame=await decodeEvidenceFrame(movie,topology,1),calls=[];
+  const evidence=selectEvidenceFrame({pairRows:{selected:[{frameIndex:1,guestAtomIndex:0,moleculeIndex:0,energyKJMol:-1,periodicPartner:{x:2,y:3,z:4},periodicImage:[0,0,0]}]}},1);
+  const canvas={width:320,height:180,dataset:{},getContext:()=>({clearRect(){},beginPath(){},arc(x,y){calls.push([x,y])},fill(){},moveTo(){},lineTo(){},stroke(){},fillText(){}})};
+  assert.equal(frame.atoms.length,260);assert.equal(frame.atoms[0].siteType,'CF3_sp3');assert.equal(renderStructureCanvas(canvas,evidence,[frame]),true);assert.ok(calls.length>0);assert.ok(calls.every(point=>point.every(Number.isFinite)));
+});
+test('evidence decoding reports current failures and rejects stale consecutive selections',async()=>{
+  const events=[],pending=[];
+  const decoder=new EvidenceFrameDecoder({decode:(_movie,_topology,index)=>new Promise((resolve,reject)=>pending[index]={resolve,reject}),onPending:e=>events.push(['pending',e.frameIndex]),onFrame:(f,e)=>events.push(['frame',e.frameIndex,f]),onError:(error,e)=>events.push(['error',e.frameIndex,error.message])});
+  const first=decoder.select({}, {}, {frameIndex:0}),second=decoder.select({}, {}, {frameIndex:1});pending[1].resolve({atoms:[{x:1,y:2,z:3}]});await second;pending[0].resolve({atoms:[{x:9,y:9,z:9}]});await first;
+  assert.deepEqual(events.filter(([kind])=>kind==='frame').map(([,index])=>index),[1]);
+  const failed=decoder.select({}, {}, {frameIndex:2});pending[2].reject(new Error('fixture decode failed'));assert.equal(await failed,false);assert.deepEqual(events.at(-1),['error',2,'fixture decode failed']);
 });
 test('workflow markup is annotation-first and reuses importer authorization',async()=>{const {readFile}=await import('node:fs/promises'),html=await readFile(new URL('../index.html',import.meta.url),'utf8');for(const id of ['trajectory-energetics','ljAnnotationList','ljScope','ljCriterion','ljReference','ljNormalization','runLjAnalysis','cancelLjAnalysis','ljProgress','ljSummary','ljContributionRows','ljPressureResults','ljDiagnostics','downloadLjJson','downloadLjCsv'])assert.match(html,new RegExp(`id="${id}"`));assert.doesNotMatch(html,/id="ljDatasetFolder"|id="ljRunFiles"|moviePlay|movieSpeed/);assert.match(html,/reconstructed coordinate-based pairwise LJ contributions under the validated simulated model/);});
 test('workspace uses its requested identity and has no legacy generic-output links',async()=>{const {readFile}=await import('node:fs/promises'),html=await readFile(new URL('../index.html',import.meta.url),'utf8'),chain=await readFile(new URL('../src/ui/chain-plotter-ui.mjs',import.meta.url),'utf8');assert.match(html,/Trajectory Energetics &amp; Spatial Evidence/);assert.doesNotMatch(chain,/#movies-lj|#ljAnalysis/);});
