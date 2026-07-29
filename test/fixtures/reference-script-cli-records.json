@@ -1,0 +1,18 @@
+{
+  "overall": [
+    {"chemistry": "pfa", "detail_marker": "OVERALL_DETAIL_RECORD"}
+  ],
+  "conditional": [
+    {"chemistry": "pfa", "metric": "fixture metric", "detail_marker": "CONDITIONAL_DETAIL_RECORD"}
+  ],
+  "integrated": [
+    {
+      "chemistry": "pfa",
+      "atom_type": "O2",
+      "delta_N_inside_minus_outside": 0.125,
+      "delta_U_inside_minus_outside_kJmol": -0.75,
+      "delta_U_95ci_low_kJmol": -1.0,
+      "delta_U_95ci_high_kJmol": -0.5
+    }
+  ]
+}
