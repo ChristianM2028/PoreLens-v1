@@ -5,12 +5,13 @@ const scopes=new Set(['pair_only','anchor_site','whole_molecule']),criteria=new 
 export function compileAnnotation(annotation,choice,runs){
   if(!annotation?.id)throw new Error('Annotation identity is required');
   const shell=['span','region','ridge'].includes(annotation.type);
+  if(shell&&(!Array.isArray(annotation.atomPair)||annotation.atomPair.length!==2||annotation.atomPair.some(x=>typeof x!=='string'||!x.trim())))throw Object.assign(new Error('Radial annotation atomPair must be exactly two nonempty strings'),{code:'invalid_atom_pair',details:{value:annotation.atomPair}});
   if(shell&&(!scopes.has(choice?.scope)||!criteria.has(choice?.pairCriterion)||!choice?.reference?.type))throw new Error('Radial annotations require explicit scope, pair criterion, and reference population');
   const pressureOnly=['pressure_point','pressure_region'].includes(annotation.type);
   if(!shell&&!pressureOnly&&!choice?.globalAnalysis)throw new Error('Annotation has neither shell nor pressure; explicit global analysis is required');
   const selectedRuns=runs.filter(r=>pressureOnly?(annotation.type==='pressure_point'?r.run===String(annotation.run)&&r.pressurePa===Number(annotation.pressurePa):(annotation.pressurePoints||[]).some(p=>String(p.run)===String(r.run)&&Number(p.pressurePa)===r.pressurePa)):annotation.type==='ridge'||annotation.type==='region'?r.pressurePa>=annotation.pressureMinPa&&r.pressurePa<=annotation.pressureMaxPa:r.run===String(annotation.run)&&r.pressurePa===Number(annotation.pressurePa));
   if(!selectedRuns.length)throw new Error('Annotation does not exactly identify an available simulated run');
-  return {annotationId:annotation.id,annotationType:annotation.type,runs:selectedRuns.map(r=>({run:String(r.run),pressurePa:r.pressurePa})),pair:annotation.atomPair||null,shellA:shell?[Number(annotation.startA),Number(annotation.endA)]:null,scope:shell?choice.scope:'whole_ensemble',pairCriterion:shell?choice.pairCriterion:null,reference:choice.reference||null,source:{datasetFingerprint:annotation.datasetFingerprint,rdfFingerprint:annotation.rdfFingerprint,rdfRelativePath:annotation.rdfRelativePath}};
+  return {annotationId:annotation.id,annotationType:annotation.type,runs:selectedRuns.map(r=>({run:String(r.run),pressurePa:r.pressurePa})),pair:annotation.atomPair||null,shellA:shell?[Number(annotation.startA),Number(annotation.endA)]:null,scope:shell?choice.scope:'whole_ensemble',pairCriterion:shell?choice.pairCriterion:null,reference:choice.reference||null,source:{datasetFingerprint:annotation.datasetFingerprint,rdfFingerprint:annotation.rdfFingerprint,rdfFilename:annotation.rdfFilename||null,rdfRelativePath:annotation.rdfRelativePath,originalPair:annotation.originalAtomPair||annotation.atomPair||null}};
 }
 
 export function matchingAnchors(guests,partners,selection,distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)){
@@ -18,7 +19,11 @@ export function matchingAnchors(guests,partners,selection,distance=(a,b)=>Math.h
 }
 export function selectInteractionPairs({guests,framework,selection,matrix}){
   if(selection.scope==='whole_ensemble')return guests.flatMap((g,gi)=>framework.map((f,fi)=>({g,f,gi,fi})));
-  const annotatedGuest=selection.pair?.[0],annotatedFramework=selection.pair?.[1],anchors=guests.filter(g=>g.type===annotatedGuest),partners=framework.filter(f=>f.label===annotatedFramework||f.type===annotatedFramework),anchorIndices=new Set(matchingAnchors(anchors,partners,selection,(a,b)=>periodicDistance(a,b,matrix)).map(i=>anchors[i].index));
+  if(!Array.isArray(selection.pair)||selection.pair.length!==2||selection.pair.some(x=>typeof x!=='string'||!x.trim()))throw Object.assign(new Error('Interaction selection pair must be exactly two nonempty strings'),{code:'invalid_atom_pair',details:{value:selection.pair}});
+  const [annotatedGuest,annotatedFramework]=selection.pair,anchors=guests.filter(g=>g.type===annotatedGuest),partners=framework.filter(f=>f.label===annotatedFramework);
+  if(!anchors.length)throw Object.assign(new Error(`Guest pseudoatom type ${annotatedGuest} is absent from the molecule topology`),{code:'guest_type_absent',details:{guestType:annotatedGuest}});
+  if(!partners.length)throw Object.assign(new Error(`Framework structural label ${annotatedFramework} is absent from the expanded framework`),{code:'framework_label_absent',details:{frameworkLabel:annotatedFramework}});
+  const anchorIndices=new Set(matchingAnchors(anchors,partners,selection,(a,b)=>periodicDistance(a,b,matrix)).map(i=>anchors[i].index));
   if(selection.scope==='pair_only')return guests.filter(g=>anchorIndices.has(g.index)).flatMap(g=>partners.filter(f=>{const d=periodicDistance(g,f,matrix);return d>=selection.shellA[0]&&d<=selection.shellA[1]}).map(f=>({g,f})));
   const chosen=selection.scope==='anchor_site'?guests.filter(g=>anchorIndices.has(g.index)):guests.filter(g=>anchors.some(a=>anchorIndices.has(a.index)&&a.moleculeIndex===g.moleculeIndex));return chosen.flatMap(g=>framework.map(f=>({g,f})));
 }

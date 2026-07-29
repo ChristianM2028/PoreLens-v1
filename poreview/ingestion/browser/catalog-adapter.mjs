@@ -21,6 +21,7 @@ function pairIdentity(record,path){
   const resolved=resolveCatalogPair(first(record,['filename','name','relativePath','relative_path','path'])||path);
   return resolved[1]?resolved.join(' ↔ '):null;
 }
+function sourceFilename(record,path){return String(first(record,['filename','name','rdfFilename','rdf_filename'])??String(path).split('/').at(-1)??'');}
 
 function readableFile(record){
   const lookup=first(record,['fileHandleLookup','file_handle_lookup','lookup']);
@@ -35,13 +36,14 @@ export function normalizeRdfForUi(rdfRecord,datasetSlot){
   if(!rdfRecord||!isRdf(rdfRecord))return null;
   const path=String(first(rdfRecord,['relativePath','relative_path','collectedRelativePath','collected_relative_path','path'])??'');
   const chainKey=String(first(rdfRecord,['chainKey','chain_key','chain','chainId','chain_id','seriesName','series_name','componentName','component_name','component'])??'').trim()||null;
-  const pairKey=pairIdentity(rdfRecord,path);
+  const pairKey=pairIdentity(rdfRecord,path),filename=sourceFilename(rdfRecord,path);
   const pressurePa=Number(first(rdfRecord,['pressurePa','pressure_pa','pressure']));
   const runId=String(first(rdfRecord,['runId','run_id','run'])??'');
   const file=readableFile(rdfRecord),lookup=first(rdfRecord,['fileHandleLookup','file_handle_lookup','lookup'])||{rootRelativePath:path,fileHandle:rdfRecord.handle??null};
-  const normalized={datasetId:String(datasetSlot),chainKey,chainLabel:String(first(rdfRecord,['chainLabel','chain_label'])??chainKey??''),pairKey,pairLabel:String(first(rdfRecord,['pairLabel','pair_label'])??pairKey??''),pressurePa,temperatureK:Number(first(rdfRecord,['temperatureK','temperature_k'])),runId,relativePath:path,fileHandleLookup:lookup,sourceRecord:rdfRecord,resultType:'rdf',rdf:null};
-  normalized.manifest={n_value:Number(String(chainKey||'').replace(/^C/i,'')),component:chainKey,run:runId,pressure_pa:pressurePa,pressure_bar:pressurePa/100000,rdf_filename:pairKey,source_relative_path:path,collected_relative_path:path,size_bytes:null,sha256:''};
-  normalized.lookup=lookup;normalized.path=path;normalized.pair=Array.isArray(rdfRecord.pair)?rdfRecord.pair:resolveCatalogPair(first(rdfRecord,['filename','name'])||path);
+  const pair=Array.isArray(rdfRecord.pair)&&rdfRecord.pair.length===2?[...rdfRecord.pair]:resolveCatalogPair(filename||path);
+  const normalized={datasetId:String(datasetSlot),chainKey,chainLabel:String(first(rdfRecord,['chainLabel','chain_label'])??chainKey??''),pairKey,pairLabel:String(first(rdfRecord,['pairLabel','pair_label'])??pairKey??''),pair,pressurePa,temperatureK:Number(first(rdfRecord,['temperatureK','temperature_k'])),runId,relativePath:path,fileHandleLookup:lookup,sourceRecord:rdfRecord,resultType:'rdf',rdf:null};
+  normalized.manifest={n_value:Number(String(chainKey||'').replace(/^C/i,'')),component:chainKey,run:runId,pressure_pa:pressurePa,pressure_bar:pressurePa/100000,rdf_filename:filename,source_relative_path:path,collected_relative_path:path,size_bytes:null,sha256:''};
+  normalized.lookup=lookup;normalized.path=path;
   normalized.loadRdf=async()=>{if(normalized.rdf)return normalized.rdf;let source=file;if(!source&&typeof lookup==='function')source=await lookup(path);if(!source&&typeof lookup?.getFile==='function')source=lookup;if(!source&&lookup?.fileHandle)source=lookup.fileHandle;if(source?.getFile)source=await source.getFile();if(!source?.text)throw new Error(`Directory authorization is unavailable for ${path}`);normalized.rdf=parseRdf(await source.text(),path);return normalized.rdf};
   return normalized;
 }
