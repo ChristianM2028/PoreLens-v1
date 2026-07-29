@@ -46,6 +46,10 @@ function navigate(id,{scroll=false,replace=false}={}){
   if(location.hash!==hash)history[replace?'replaceState':'pushState'](null,'',hash);
   activate(id,{scroll});
 }
+let initializationPromise;
+export function initializeWorkspaceNavigation(){
+if(initializationPromise)return initializationPromise;
+initializationPromise=(async()=>{
 document.querySelectorAll('[data-workspace]').forEach(link=>link.addEventListener('click',event=>{
   event.preventDefault();
   navigate(link.dataset.workspace,{scroll:true});
@@ -54,4 +58,7 @@ document.querySelectorAll('[data-rdf-subview]').forEach(button=>button.addEventL
 window.addEventListener('hashchange',()=>activateLocation({scroll:true}));
 window.addEventListener('popstate',()=>activateLocation({scroll:true}));
 activate(hashMap[location.hash]||'isotherm');
+return {ok:true};
+})();return initializationPromise;
+}
 export {controller,activate,activateLocation,attachChainRenderer,navigate};
