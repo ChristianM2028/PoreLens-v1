@@ -17,3 +17,17 @@ Its static-report input contracts (`final_abs_pressure_up`, `final_abs_fug_up`, 
 ## Interactive differences
 
 The plotter never invents a common pressure grid: exact, nearest-with-visible-tolerance, manual-run, and loading modes return explicit unmatched groups. RDF and probability-density histogram records remain in pure parsing/catalog modules. Only visible curves enter CSV/JSON exports. Configuration state is stored separately from file content so it can be restored without rescanning, while result files are loaded on demand and the Refresh Dataset event clears parsed-file cache. End-to-end terminal labels are not inferred from histogram filenames or PDB atom names; until a validated molecule topology supplies the terminal-site mapping, the UI must treat that mapping as ambiguous.
+
+## Conditional LJ decomposition workflow
+
+The application workflow follows the minimum-image and unshifted/truncated 12-6 LJ equations in
+`custom_movie_analysis.py` and `c10_pocket_decomposition.py`. Intentional differences are:
+
+- the conditioning pair, component, numbered framework label, interval, and exact run are user-selected rather than fixed to C10 terminal–Zn or to PFA/alkane names;
+- interval membership is explicitly closed (`lower <= nearest distance <= upper`) and is exported;
+- every in-cutoff atom-indexed pair is retained before aggregation, including mixed parameters and periodic geometry;
+- conditional means are computed after summing neighbors for each guest-anchor observation. This preserves zero contributions and avoids the pair-event mean bias when neighbor counts differ;
+- uncertainty uses exported contiguous frame blocks and is labelled block-based, without confidence intervals, independence, or significance claims; and
+- numbered CIF labels remain canonical, with element aggregation offered only as an additional rollup.
+
+These differences generalize provenance and correct the normalization target; they do not alter the reference minimum-image or Lennard–Jones formulas.
