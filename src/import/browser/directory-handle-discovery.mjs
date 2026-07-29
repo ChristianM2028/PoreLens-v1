@@ -1,5 +1,6 @@
 import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=porelens-20260729-indexed-pdb-v1';
 import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=porelens-20260729-indexed-pdb-v1';
 
 const CHAIN=/^C\d+$/i, RUN=/^\d+(?:_|$)/;
 const SUMMARIES=new Map([['final_abs_pressure_up','pressure'],['final_abs_fug_up','fugacity']]);
@@ -81,7 +82,7 @@ export class DirectoryCatalogScanner {
     for await(const [name,handle] of directory.entries()){
       const childPath=`${path}/${name}`;
       if(handle.kind==='directory')await this.enumerateOutput(handle,childPath,[type,accept],run,parentOutputDirectory);
-      else if(typeof accept==='function'?accept(name):accept.test(name)){run.outputs[type].push({type,name,path:childPath,file:pathFile(handle,childPath),handle});this.catalog.stats.outputs++;if(type==='rdf')this.catalog.stats.rdfs++;else if(type==='end_to_end')this.catalog.stats.endToEnd++;else if(type==='vtk')this.catalog.stats.vtk++}
+      else if(typeof accept==='function'?accept(name):accept.test(name)){const file=pathFile(handle,childPath),metadata=type==='vtk'?indexVtk(childPath,await readVtkHeaderPrefix(file),{componentNames:run.simulation?.components?.map(x=>x.name??x.MoleculeName).filter(Boolean)||[]}):{};run.outputs[type].push({type,name,path:childPath,file,handle,...metadata});this.catalog.stats.outputs++;if(type==='rdf')this.catalog.stats.rdfs++;else if(type==='end_to_end')this.catalog.stats.endToEnd++;else if(type==='vtk')this.catalog.stats.vtk++}
       else this.ignored(childPath,`unsupported file for ${parentOutputDirectory}`,parentOutputDirectory);
       await this.yieldIfNeeded();if(this.cancelled)return;
     }
