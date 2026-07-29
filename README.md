@@ -170,15 +170,18 @@ missing/invalid definitions and C1/C2 interpretation are warned rather than
 inferred. Movie-derived conformations are not substituted for the online RASPA
 observable.
 
-VTK support is intentionally strict: ASCII legacy `STRUCTURED_POINTS` and
-`IMAGE_DATA`, scalar arrays, dimensions, origin, spacing, and stored values are
-preserved. The browser supplies orthogonal slices, thresholded 3D voxel
-projection, opacity, linear/log color mapping, explicitly display-only maximum
-normalization, screenshots, and visualization-state JSON. Difference utilities
-require identical geometry and scalar names and never regrid. Scalar values
-remain labeled **stored scalar value** because generic legacy VTK headers do not
-establish physical units or normalization. Binary/XML VTK, true polygonal
-marching-cubes geometry, arbitrary framework/grid registration, synchronized
-side-by-side rendering, and production-scale worker geometry are remaining
-limitations; parsing yields to the browser before large VTK work but is not yet
-implemented in a dedicated Web Worker.
+VTK is an **optional, lazy, exact-run spatial handoff**. PoreLens discovers VTK
+records without parsing their bodies, associates them only with the authorized run,
+and uses supported ASCII legacy `STRUCTURED_POINTS`/`IMAGE_DATA` scalar grids to
+validate scalar metadata, dimensions, cell registration, and stored-value ranges.
+Missing, binary/XML, POLYDATA, or otherwise unsupported VTK never blocks RDF,
+loading, sampling-quality, trajectory, or energetic workflows.
+
+The collapsed **Optional spatial grid evidence** panel summarizes provenance and
+registration. Its **Download original VTK** action hands off the original file bytes,
+not display-normalized values and not a request to launch desktop software. Use
+**iRASPA** for molecular/crystal inspection and **ParaView** for general VTK
+scalar-grid analysis. A hidden-by-default **Quick registered slice** is available
+only for supported ASCII scalar grids; its color mapping, threshold, and optional
+normalization are display-only. Visualization-state JSON records those display
+choices separately from unchanged source scalar semantics.
