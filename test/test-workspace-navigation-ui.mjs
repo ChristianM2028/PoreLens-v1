@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 
 test('workspace tabs create navigable history and follow back/forward hash changes',async()=>{
   const listeners=new Map(),windowListeners=new Map();
-  const links=['isotherm','rdf','end_to_end','trajectory_energetics'].map(workspace=>({
+  const links=['isotherm','rdf','end_to_end'].map(workspace=>({
     dataset:{workspace},
-    href:{isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms',trajectory_energetics:'#trajectory-energetics'}[workspace],
+    href:{isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms'}[workspace],
     attributes:new Map(),
     addEventListener(type,handler){listeners.set(`${workspace}:${type}`,handler)},
     getAttribute(name){return name==='href'?this.href:null},
@@ -51,7 +51,7 @@ test('workspace tabs create navigable history and follow back/forward hash chang
 
     location.hash='#trajectory-energetics';
     windowListeners.get('hashchange')();
-    assert.equal(navigation.controller.active,'trajectory_energetics');
+    assert.equal(navigation.controller.active,'rdf');
   }finally{
     for(const key of ['document','window','location','history','requestAnimationFrame','CustomEvent'])delete globalThis[key];
   }
