@@ -5,11 +5,38 @@ import {join} from 'node:path';
 import {parseLegacyVtk} from '../src/core/result-types.mjs';
 import {parseSimulationInput} from '../src/import/parsers/simulation_input.mjs';
 import {parseCif} from '../src/core/raspa-package.mjs';
+import {importRunPackage} from '../src/core/raspa-package.mjs';
 import {buildSpatialRegistrationInput,parsePdbCryst1,validateSpatialRegistration,RASPA_ORTHOGONAL_VTK_CONVENTION} from '../src/core/spatial-registration.mjs';
 const root=join(process.cwd(),'test/fixtures/representative_dataset/nonideal_PFA/C10/40');
 const id={dataset:'matched-fixture',component:'C10',run:'40',pressurePa:23299.51811,systemDirectory:'System_0'};
 async function evidence(){const [vtk,sim,pdb,cif]=await Promise.all([readFile(join(root,'VTK/System_0/DensityProfile_C10.vtk'),'utf8'),readFile(join(root,'simulation.input'),'utf8'),readFile(join(root,'Movies/System_0/Movie_IRMOF-1_1.1.1_300.000000_23299.518110_allcomponents.pdb'),'utf8'),readFile(join(root,'IRMOF-1.cif'),'utf8')]);const grid=parseLegacyVtk(vtk,'DensityProfile_C10.vtk');return {grid,simulation:parseSimulationInput(sim),movieCell:parsePdbCryst1(pdb.slice(0,512)),cifCell:parseCif(cif)}}
 const make=(x,overrides={})=>buildSpatialRegistrationInput({...x,identity:id,vtkIdentity:id,movieIdentity:id,annotationIdentity:id,convention:RASPA_ORTHOGONAL_VTK_CONVENTION,files:{simulation:'simulation.input',movie:'Movies/System_0/movie.pdb',cif:'IRMOF-1.cif',vtk:'VTK/System_0/DensityProfile_C10.vtk'},...overrides});
+
+test('run-package simulation import carries canonical VTK dimensions and unit cells into spatial checks',async()=>{
+  const simulationText=`SimulationType MonteCarlo
+ComputeDensityProfile3DVTKGrid yes
+WriteDensityProfile3DVTKGridEvery 500
+DensityProfile3DVTKGridPoints 50 50 50
+Framework 0
+FrameworkName IRMOF-1
+UnitCells 1 1 1
+ExternalTemperature 300
+ExternalPressure 23299.51811
+Component 0 MoleculeName C10
+MoleculeDefinition local
+`;
+  const audit=await importRunPackage([{name:'simulation.input',text:simulationText}]);
+  assert.deepEqual(audit.parsed.simulation.settings.vtk,{enabled:true,writeEvery:500,gridPoints:[50,50,50]});
+  assert.deepEqual(audit.parsed.simulation.settings.unitCells,[1,1,1]);
+  const cell={lengthsA:[25,25,25],anglesDeg:[90,90,90],source:'test cell'};
+  const grid={dimensions:[50,50,50],origin:[0,0,0],spacing:[0.5,0.5,0.5],cellParameters:cell,source:'test.vtk'};
+  const registration=validateSpatialRegistration(buildSpatialRegistrationInput({grid,simulation:audit.parsed.simulation,movieCell:cell,identity:id,vtkIdentity:id,movieIdentity:id,annotationIdentity:id}));
+  assert.deepEqual(registration.expected.dimensions,[50,50,50]);
+  assert.deepEqual(registration.evidence.simulation.unitCells,[1,1,1]);
+  assert.equal(registration.checks.find(check=>check.code==='dimensions').result,'pass');
+  assert.equal(registration.checks.find(check=>check.code==='spacing').result,'pass');
+  assert.equal(registration.validated,true,registration.reasons.join('; '));
+});
 test('matched fixture independently validates dimensions, cell, spacing, origin, and identity',async()=>{const x=await evidence();assert.deepEqual(x.grid.dimensions,[50,50,50]);assert.deepEqual(x.grid.cellParameters.lengthsA,[25.832,25.832,25.832]);assert.deepEqual(x.simulation.settings.vtk.gridPoints,[50,50,50]);assert.deepEqual(x.movieCell.lengthsA,[25.832,25.832,25.832]);const result=validateSpatialRegistration(make(x));assert.equal(result.validated,true,result.reasons.join('; '));assert.equal(result.checks.find(c=>c.code==='spacing').expected[0],25.832/50);});
 test('altered numerical and provenance evidence stays blocked with precise structured checks',async()=>{const x=await evidence();for(const [code,change] of [['dimensions',m=>m.observed.dimensions=[49,50,50]],['spacing',m=>m.observed.spacing=[.5,.51664,.51664]],['cell',m=>m.observed.vtkCell.lengthsA=[26,25.832,25.832]],['identity_run',m=>m.evidence.vtk.identity.run='41'],['identity_pressurePa',m=>m.evidence.annotationIdentity.pressurePa=23000]]){const model=make(x);change(model);const result=validateSpatialRegistration(model),check=result.checks.find(c=>c.code===code);assert.equal(result.validated,false);assert.equal(check.result,'fail',code);assert.ok(check.evidenceSource);}});
 test('movie or CIF absence degrades explicitly, while either independent cell can support registration',async()=>{const x=await evidence();const noMovie=validateSpatialRegistration(make({...x,movieCell:null},{movieIdentity:{}}));assert.equal(noMovie.validated,true,noMovie.reasons.join('; '));const noCif=validateSpatialRegistration(make({...x,cifCell:null}));assert.equal(noCif.validated,true,noCif.reasons.join('; '));const neither=validateSpatialRegistration(make({...x,movieCell:null,cifCell:null},{movieIdentity:{}}));assert.equal(neither.validated,false);assert.equal(neither.checks.find(c=>c.code==='missing_reference_cell').result,'missing');});

@@ -52,7 +52,7 @@ export function normalizeRdfForUi(rdfRecord,datasetSlot){
 export function catalogRdfRecords(catalog){
   const top=first(catalog,['rdfRecords','rdf_records','rdfs']);
   if(Array.isArray(top))return top;
-  return (catalog.runs||[]).flatMap(run=>(run.outputs?.rdf||[]).map(output=>({...output,chainKey:run.chain,seriesName:run.simulation?.component?.MoleculeName,runId:run.run,pressurePa:run.simulation?.pressurePa,temperatureK:run.simulation?.temperatureK,framework:run.simulation?.framework})));
+  return (catalog.runs||[]).flatMap(run=>(run.outputs?.rdf||[]).map(output=>({...output,chainKey:run.chain,seriesName:run.simulation?.components?.[0]?.name,runId:run.run,pressurePa:run.simulation?.pressurePa,temperatureK:run.simulation?.temperatureK,framework:run.simulation?.framework?.name})));
 }
 
 export function deriveRdfSelectorState(records,{datasetId,chainKey=null,pairKey=null}={}){
