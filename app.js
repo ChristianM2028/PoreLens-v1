@@ -51,7 +51,7 @@ window.addEventListener('porelens:authorized-run-request',async event=>{
     const catalog=authorized.catalog||await discoverChainSeries(authorized.files,{manifestRows:ws.slots[slot]?.rows||[],datasetName:ws.slots[slot]?.displayName});
     const match=exactAuthorizedCatalogRun(catalog,{datasetFingerprint:annotation.datasetFingerprint,currentDatasetFingerprint:currentFingerprint,chain:annotation.chainLength,run:annotation.run,pressurePa:Number(annotation.pressurePa)});
     if(!match.run)return fail(match.diagnostics);
-    const audit=await importRunPackage(match.files,{manifestFingerprint:currentFingerprint});
+    const audit=await importRunPackage(match.files,{manifestFingerprint:currentFingerprint,annotationPressurePa:Number(annotation.pressurePa),manifestPressurePa:Number(match.run.pressurePa)});
     window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation.id,audit,importDiagnostics:audit.diagnostics,run:{...match.run,run:String(match.run.run),pressurePa:Number(match.run.pressurePa??match.run.simulation?.pressurePa)}}}));
   }catch(error){fail({severity:'error',code:'authorized_run_import_failed',stage:error.stage||'run_package_import',file:error.file||null,message:`The exact authorized run could not be imported${error.file?` from ${error.file}`:''} during ${error.stage||'run_package_import'}: ${error.message}`})}
 });
