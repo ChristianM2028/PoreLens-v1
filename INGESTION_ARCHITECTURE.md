@@ -30,7 +30,7 @@ splitting also risked misclassifying scientific records.
 
 ## Replacement
 
-`poreview/ingestion` is now the only campaign discovery/indexing layer for
+`src/import/` is now the only campaign discovery/indexing layer for
 filesystem datasets. A run is evidence-based: every distinct directory that
 contains `simulation.input` becomes a `SimulationRun`. Parsed pressure,
 temperature, framework, and components remain separate from useful parent-path
@@ -47,14 +47,14 @@ Responsibilities are separated as follows:
 * `indexer.mjs` joins input metadata, definitions, and lazy output records.
 * `cache.mjs` owns regenerable `.poreview/index.json` persistence and file
   fingerprints.
-* `poreview/parsers` contains format-specific pure parsers/indexers. RDF pair
+* `src/import/parsers/` contains format-specific pure parsers/indexers. RDF pair
   resolution uses known complete pseudoatom names, and VTK initial scanning
   reads only a small header rather than coordinate/scalar arrays.
 * `cli.mjs` exposes the same normalized ingestion operation to humans and
   automation.
 
 The static browser cannot invoke the Node/Python filesystem indexer. For the
-static application, `poreview/ingestion/browser/directory-handle-discovery.mjs`
+static application, `src/import/browser/directory-handle-discovery.mjs`
 is therefore the authoritative directory-handle discovery implementation. It
 emits the same normalized run/RDF concepts while retaining authorized file
 handles for lazy reads. `catalog-adapter.mjs` is the single conversion boundary

@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": { "poreview": "./poreview/cli.mjs" },
-  "scripts": { "start": "node serve.mjs", "test": "node --test", "scan": "node poreview/cli.mjs scan" }
+  "bin": { "poreview": "./src/import/cli.mjs" },
+  "scripts": { "start": "node serve.mjs", "test": "node --test", "scan": "node src/import/cli.mjs scan" }
 }
