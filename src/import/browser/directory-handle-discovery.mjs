@@ -82,7 +82,7 @@ export class DirectoryCatalogScanner {
     for await(const [name,handle] of directory.entries()){
       const childPath=`${path}/${name}`;
       if(handle.kind==='directory')await this.enumerateOutput(handle,childPath,[type,accept],run,parentOutputDirectory);
-      else if(typeof accept==='function'?accept(name):accept.test(name)){const file=pathFile(handle,childPath),metadata=type==='vtk'?indexVtk(childPath,await readVtkHeaderPrefix(file),{componentNames:run.simulation?.components?.map(x=>x.name??x.MoleculeName).filter(Boolean)||[]}):{};run.outputs[type].push({type,name,path:childPath,file,handle,...metadata});this.catalog.stats.outputs++;if(type==='rdf')this.catalog.stats.rdfs++;else if(type==='end_to_end')this.catalog.stats.endToEnd++;else if(type==='vtk')this.catalog.stats.vtk++}
+      else if(typeof accept==='function'?accept(name):accept.test(name)){const file=pathFile(handle,childPath),metadata=type==='vtk'?indexVtk(childPath,await readVtkHeaderPrefix(file),{componentNames:run.simulation?.components?.map(x=>x.name).filter(Boolean)||[]}):{};run.outputs[type].push({type,name,path:childPath,file,handle,...metadata});this.catalog.stats.outputs++;if(type==='rdf')this.catalog.stats.rdfs++;else if(type==='end_to_end')this.catalog.stats.endToEnd++;else if(type==='vtk')this.catalog.stats.vtk++}
       else this.ignored(childPath,`unsupported file for ${parentOutputDirectory}`,parentOutputDirectory);
       await this.yieldIfNeeded();if(this.cancelled)return;
     }

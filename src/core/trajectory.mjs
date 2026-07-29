@@ -1,19 +1,6 @@
-export function parseSimulationInput(text) {
-  const values={},components=[]; let component=null;
-  for(const original of text.split(/\r?\n/)){
-    const line=original.trim(); if(!line||line.startsWith('#')) continue;
-    const [key,...rest]=line.split(/\s+/); const value=rest.join(' ');
-    if(key==='Component') {
-      component={index:String(rest[0])};
-      components.push(component);
-      for(let i=1;i<rest.length-1;i+=2) if(['MoleculeName','MoleculeDefinition'].includes(rest[i])) component[rest[i]]=rest[i+1];
-    }
-    else if(component&&['MoleculeName','MoleculeDefinition'].includes(key)) component[key]=value;
-    else values[key]=value;
-  }
-  const number=key=>values[key]===undefined?null:Number(values[key]);
-  return {simulationType:values.SimulationType??null,productionCycles:number('NumberOfCycles'),initializationCycles:number('NumberOfInitializationCycles'),temperatureK:number('ExternalTemperature'),pressurePa:number('ExternalPressure'),unitCells:values.UnitCells?.split(/\s+/).map(Number)??null,movieWriteInterval:number('WriteMoviesEvery'),rdfWriteInterval:number('WriteRDFEvery'),vdwCutoffA:number('CutOffVDW'),useChargesFromCif:values.UseChargesFromCIFFile?.toLowerCase()==='yes',framework:values.FrameworkName??null,forceField:values.Forcefield??values.ForceField??null,components,component:components[0]??component};
-}
+// Compatibility entry point: keep the historical import path while exposing
+// the canonical typed representation, not a second divergent flat parser.
+export {parseSimulationInput} from '../import/parsers/simulation_input.mjs?rev=porelens-20260729-spatial-registration-v1';
 
 export function parsePdbMovie(text,{sitesPerMolecule=null,siteTypes=null}={}){
   const frames=[]; let frame=null;
@@ -52,7 +39,7 @@ export function analysisRange({totalFrames,intervalCount=1,firstInterval=1,lastI
 export function validateMovieTopology({simulation,componentDefinitionName,topology,pseudoatoms,frameAtomCounts}){
   if(!simulation||!topology||!pseudoatoms)throw new Error('simulation.input, component .def, and pseudo_atoms.def are all required');
   if(simulation.components.length!==1)throw new Error(`All-components movie is ambiguous for ${simulation.components.length} adsorbate components; select a component-specific trajectory or explicit mapping`);
-  const component=simulation.components[0],expected=`${component.MoleculeName}.def`;
+  const component=simulation.components[0],expected=`${component.name}.def`;
   if(componentDefinitionName?.split(/[\\/]/).at(-1)!==expected)throw new Error(`Component definition must be ${expected}, as referenced by simulation.input`);
   if(topology.sites.length!==topology.sitesPerMolecule||topology.sites.some((site,index)=>site.index!==index))throw new Error('Template indices must be unique and complete from 0 through N-1');
   for(const site of topology.sites)if(!pseudoatoms.has(site.type))throw new Error(`Required pseudoatom ${site.type} is missing from pseudo_atoms.def`);
@@ -61,7 +48,7 @@ export function validateMovieTopology({simulation,componentDefinitionName,topolo
   if(!frameAtomCounts?.length||frameAtomCounts.some(count=>!Number.isInteger(count)||count%topology.sitesPerMolecule!==0))throw new Error('At least one parsed frame does not consist of whole contiguous molecule blocks');
   const degree=Array(topology.sitesPerMolecule).fill(0);for(const [a,b] of topology.bonds){degree[a]++;degree[b]++;}
   const counts=new Map();for(const site of topology.sites)counts.set(site.type,(counts.get(site.type)||0)+1);
-  return {validated:true,siteMappingValidated:true,bondConnectivityValidated:true,bondCount:topology.bonds.length,componentName:component.MoleculeName,sitesPerMolecule:topology.sitesPerMolecule,siteTypes:topology.sites.map(x=>x.type),siteRoles:degree.map(value=>value===1?'terminal':'internal'),typeCounts:Object.fromEntries(counts),moleculeCounts:frameAtomCounts.map(x=>x/topology.sitesPerMolecule)};
+  return {validated:true,siteMappingValidated:true,bondConnectivityValidated:true,bondCount:topology.bonds.length,componentName:component.name,sitesPerMolecule:topology.sitesPerMolecule,siteTypes:topology.sites.map(x=>x.type),siteRoles:degree.map(value=>value===1?'terminal':'internal'),typeCounts:Object.fromEntries(counts),moleculeCounts:frameAtomCounts.map(x=>x/topology.sitesPerMolecule)};
 }
 
 /** Byte/character ranges for complete PDB models; callers decode only the selected range. */

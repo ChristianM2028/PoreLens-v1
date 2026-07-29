@@ -27,8 +27,8 @@ export function parsePdbCryst1(text){
 /** Build independent expected values and exact-run provenance; never copies grid geometry into expectations. */
 export function buildSpatialRegistrationInput({grid,simulation=null,vtkCell=null,movieCell=null,cifCell=null,identity={},vtkIdentity={},movieIdentity={},annotationIdentity={},convention=RASPA_ORTHOGONAL_VTK_CONVENTION,files={}}={}){
   vtkCell??=grid?.cellParameters??null;
-  const dimensions=simulation?.settings?.vtk?.gridPoints??simulation?.vtk?.gridPoints??null;
-  const replication=simulation?.settings?.unitCells??simulation?.unitCells??null;
+  const dimensions=simulation?.settings?.vtk?.gridPoints??null;
+  const replication=simulation?.settings?.unitCells??null;
   const baseCif=cellGeometry(cifCell),expandedCif=baseCif&&finite3(replication)?{lengthsA:baseCif.lengthsA.map((x,i)=>x*replication[i]),anglesDeg:[...baseCif.anglesDeg],source:'validated CIF × simulation UnitCells'}:null;
   const referenceCell=cellGeometry(movieCell)??expandedCif;
   const expectedSpacing=referenceCell&&finite3(dimensions)?referenceCell.lengthsA.map((x,i)=>x/dimensions[i]):null;
