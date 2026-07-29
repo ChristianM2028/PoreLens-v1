@@ -1,9 +1,10 @@
-const WORKSPACE_IDS=['isotherm','rdf','end_to_end','trajectory_energetics'];
+const WORKSPACE_IDS=['isotherm','rdf','end_to_end'];
 const controller={active:'isotherm',states:Object.fromEntries(WORKSPACE_IDS.map(id=>[id,{selection:{},error:null,loading:false}])),activate(id){if(!WORKSPACE_IDS.includes(id))throw new Error(`Unknown analysis workspace ${id}`);this.active=id;return this.state(id)},state(id=this.active){return this.states[id]}};
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
 const chainSelections=new Map();
 let activationGeneration=0;
-const hashMap={'#adsorption-isotherms':'isotherm','#rdf-workspace':'rdf','#end-to-end-histograms':'end_to_end','#trajectory-energetics':'trajectory_energetics'};
+const hashMap={'#adsorption-isotherms':'isotherm','#rdf-workspace':'rdf','#end-to-end-histograms':'end_to_end'};
+const legacyEvidenceHash='#trajectory-energetics';
 function selectionSnapshot(){const values={};document.querySelectorAll('#sharedChainPlotUi select, #sharedChainPlotUi input').forEach(el=>{if(el.id==='chainResult')return;values[el.id]=el.type==='checkbox'?el.checked:el.multiple?[...el.selectedOptions].map(x=>x.value):el.value});return values}
 /** The only function permitted to move the shared renderer. */
 function attachChainRenderer(id){
@@ -35,10 +36,12 @@ function activate(id,{scroll=false}={}){
   });
 }
 function activateLocation({scroll=false}={}){
+  if(location.hash===legacyEvidenceHash){navigate('rdf',{scroll,replace:true});openRdfEvidence({scroll});return 'rdf'}
   const id=hashMap[location.hash];
   if(id&&controller.active!==id)activate(id,{scroll});
   return id||null;
 }
+function openRdfEvidence({scroll=true}={}){if(controller.active!=='rdf')navigate('rdf');const panel=document.querySelector('#trajectory-energetics');if(panel){panel.hidden=false;panel.setAttribute?.('aria-expanded','true');if(scroll)panel.scrollIntoView?.({behavior:'smooth',block:'start'})}window.dispatchEvent(new CustomEvent('porelens:rdf-evidence-opened',{detail:{state:controller.state('rdf')}}));return panel}
 /** Update history and delegate all workspace visibility to the controller. */
 function navigate(id,{scroll=false,replace=false}={}){
   const hash=Object.entries(hashMap).find(([,workspace])=>workspace===id)?.[0];
@@ -51,9 +54,10 @@ document.querySelectorAll('[data-workspace]').forEach(link=>link.addEventListene
   navigate(link.dataset.workspace,{scroll:true});
 }));
 document.querySelectorAll('[data-rdf-subview]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-rdf-subview]').forEach(x=>x.setAttribute('aria-selected',String(x===button)));const target=button.dataset.rdfSubview==='heatmaps'?'#heatmap':'#realRdfCanvas';document.querySelector(target)?.scrollIntoView({behavior:'smooth',block:'center'})}));
+document.querySelector('#openLjAnalysis')?.addEventListener('click',()=>openRdfEvidence());
 window.addEventListener('hashchange',()=>activateLocation({scroll:true}));
 window.addEventListener('popstate',()=>activateLocation({scroll:true}));
-activate(hashMap[location.hash]||'isotherm');
+if(location.hash===legacyEvidenceHash)activate('rdf');else activate(hashMap[location.hash]||'isotherm');
 
 const featureTargets={rdf:'#rdf-workspace',trajectory:'#trajectory-energetics','result-browser':'#runProvenanceDrawer',catalog:'#datasets',isotherms:'#adsorption-isotherms'};
 function reportFeatureUnavailable(feature,error){
@@ -76,4 +80,4 @@ if(document.documentElement){
   void loadFeature('catalog','./directory-import-ui.mjs?rev=porelens-20260729-indexed-pdb-v1');
 }
 
-export {controller,activate,activateLocation,attachChainRenderer,loadFeature,navigate,reportFeatureUnavailable};
+export {controller,activate,activateLocation,attachChainRenderer,loadFeature,navigate,openRdfEvidence,reportFeatureUnavailable};
