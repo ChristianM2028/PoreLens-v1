@@ -1,5 +1,5 @@
-import {AnalysisWorkspaces} from './analysis-workspaces.mjs';
-const controller=new AnalysisWorkspaces();
+const WORKSPACE_IDS=['isotherm','rdf','end_to_end','trajectory_energetics'];
+const controller={active:'isotherm',states:Object.fromEntries(WORKSPACE_IDS.map(id=>[id,{selection:{},error:null,loading:false}])),activate(id){if(!WORKSPACE_IDS.includes(id))throw new Error(`Unknown analysis workspace ${id}`);this.active=id;return this.state(id)},state(id=this.active){return this.states[id]}};
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
 const chainSelections=new Map();
 let activationGeneration=0;
@@ -54,4 +54,26 @@ document.querySelectorAll('[data-rdf-subview]').forEach(button=>button.addEventL
 window.addEventListener('hashchange',()=>activateLocation({scroll:true}));
 window.addEventListener('popstate',()=>activateLocation({scroll:true}));
 activate(hashMap[location.hash]||'isotherm');
-export {controller,activate,activateLocation,attachChainRenderer,navigate};
+
+const featureTargets={rdf:'#rdf-workspace',trajectory:'#trajectory-energetics','result-browser':'#runProvenanceDrawer',catalog:'#datasets',isotherms:'#adsorption-isotherms'};
+function reportFeatureUnavailable(feature,error){
+  const host=document.querySelector(featureTargets[feature]);
+  if(!host)return;
+  let status=host.querySelector?.(`[data-feature-unavailable="${feature}"]`);
+  if(!status){status=document.createElement('div');status.className='notice feature-unavailable';status.dataset.featureUnavailable=feature;status.setAttribute('role','status');host.prepend(status)}
+  status.textContent=`${feature} feature unavailable. The application shell and other workspaces remain usable. ${error?.message||error}`;
+  window.dispatchEvent(new CustomEvent('porelens:feature-unavailable',{detail:{feature,error:String(error?.message||error)}}));
+}
+function loadFeature(feature,source){return import(source).catch(error=>{reportFeatureUnavailable(feature,error);return null})}
+
+// Visibility and aria-current are reconciled above before any feature graph is evaluated.
+// Each optional entry point is imported independently so one parser or renderer cannot
+// prevent the progressively enhanced shell from remaining usable.
+if(document.documentElement){
+  void loadFeature('rdf','./app.js');
+  void loadFeature('isotherms','./chain-plotter-ui.mjs');
+  void loadFeature('result-browser','./result-browser-ui.mjs');
+  void loadFeature('catalog','./directory-import-ui.mjs');
+}
+
+export {controller,activate,activateLocation,attachChainRenderer,loadFeature,navigate,reportFeatureUnavailable};
