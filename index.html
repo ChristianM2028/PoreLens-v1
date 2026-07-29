@@ -142,7 +142,7 @@
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
 <div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
 <script type="module">
-  import('./workspace-navigation-ui.mjs?rev=porelens-20260729-indexed-pdb-v1').catch(error => {
+  import('./src/ui/workspace-navigation-ui.mjs?rev=porelens-20260729-indexed-pdb-v1').catch(error => {
     const message = document.getElementById('shellStartupFailure');
     message.hidden = false;
     message.append(document.createTextNode(` ${error.message}`));

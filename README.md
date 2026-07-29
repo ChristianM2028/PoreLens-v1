@@ -24,7 +24,7 @@ node --test
 
 ## Campaign ingestion and audit CLI
 
-The standalone `poreview/ingestion` package discovers runs by recursively
+The standalone `src/import/` package discovers runs by recursively
 finding `simulation.input`, not by requiring `C<n>/<number>` names. It parses
 run settings and component blocks, resolves definitions with explicit and
 content-adjacent evidence, indexes RDF/end-to-end/VTK outputs semantically,
@@ -34,7 +34,7 @@ header-indexed and their large arrays remain lazy.
 ```bash
 npm run scan -- /path/to/dataset --report
 # machine-readable audit
-node poreview/cli.mjs scan /path/to/dataset --json
+node src/import/cli.mjs scan /path/to/dataset --json
 ```
 
 Missing definitions and optional output folders produce per-run diagnostics;
@@ -49,23 +49,23 @@ boundaries, and current browser-adapter status.
 The first movie-analysis layer is implemented as pure ES modules rather than
 copying the reference scripts' system-specific workflow:
 
-- `raspa-package.mjs` audits run-package inputs and refuses quantitative LJ
+- `src/core/raspa-package.mjs` audits run-package inputs and refuses quantitative LJ
   attribution when the movie, cutoff, force field, topology, CIF mapping, or
   other essential input is absent or contradictory. A missing trajectory is a
   capability warning, not a reason to discard RDFs or annotations.
-- `raspa-physics.mjs` parses pseudoatoms, mixing rules, pair overrides,
+- `src/core/raspa-physics.mjs` parses pseudoatoms, mixing rules, pair overrides,
   molecule site order/intramolecular VDW pairs, CIF cells and framework sites;
   implements triclinic minimum images, shifted/truncated LJ, and deterministic
   physics fingerprints.
-- `movie-analysis.mjs` compiles annotations only with explicit scope
+- `src/core/movie-analysis.mjs` compiles annotations only with explicit scope
   (`pair_only`, `anchor_site`, `whole_molecule`), pair criterion (`any`,
   `nearest`, `all`), and reference selection. Pressure annotations select exact
   simulated run/pressure identities. Results are versioned and explicitly
   labeled as reconstructed coordinate-based pairwise LJ, with JSON-ready data
   and a pair contribution CSV export.
-- `lj-workflow.mjs` executes validated framewise selections and reference
+- `src/core/lj-workflow.mjs` executes validated framewise selections and reference
   populations, normalization, guest–framework/guest–guest separation, block
-  uncertainty, and pressure grouping. `lj-ui.mjs` exposes that workflow in the
+  uncertainty, and pressure grouping. `src/ui/lj-ui.mjs` exposes that workflow in the
   browser with progress, unavailable/error/success states, sortable results,
   progressive diagnostics, and JSON/CSV downloads.
 

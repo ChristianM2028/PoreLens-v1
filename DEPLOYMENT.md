@@ -16,7 +16,7 @@ can no longer be served.
 For incident verification, disable the browser cache, clear site data and any
 service-worker registration, then open a new tab. In Network, preserve the log
 and record the full URL, status, response headers, initiator, and body revision
-for `index.html`, `app.js`, `raspa-package.mjs`, and `trajectory.mjs`. All four
-must report the same `X-PoreLens-Revision`; `raspa-package.mjs` must import
-`indexPdbSource`, and `trajectory.mjs` must declare
+for `index.html`, `src/ui/app.js`, `src/core/raspa-package.mjs`, and `src/core/trajectory.mjs`. All four
+must report the same `X-PoreLens-Revision`; `src/core/raspa-package.mjs` must import
+`indexPdbSource`, and `src/core/trajectory.mjs` must declare
 `export async function indexPdbSource`.
