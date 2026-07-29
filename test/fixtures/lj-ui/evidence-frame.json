@@ -1,0 +1,16 @@
+{
+  "frameIndex": 0,
+  "atoms": [
+    {"x": 9.5, "y": 1.0, "z": 2.0, "moleculeIndex": 3},
+    {"x": 8.5, "y": 1.5, "z": 2.5, "moleculeIndex": 3}
+  ],
+  "pair": {
+    "frameIndex": 0,
+    "moleculeIndex": 3,
+    "guestAtomIndex": 0,
+    "frameworkAtomIndex": 7,
+    "energyKJMol": -1.25,
+    "periodicPartner": {"x": 10.25, "y": 1.25, "z": 2.25},
+    "periodicImage": [1, 0, 0]
+  }
+}
