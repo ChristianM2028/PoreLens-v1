@@ -29,6 +29,13 @@ test('real RASPA VTK headers separate encoding, dataset, scalar-grid support, an
   assert.equal(spatialWorkflowState({records:[atoms],record:atoms}).code,'contextual_vtk_geometry');
 });
 
+test('lazy VTK records preserve exact-run provenance and unmodified source bytes',async()=>{
+  const root=join(process.cwd(),'test/fixtures/representative_dataset/nonideal_PFA');
+  const catalog=await new DirectoryCatalogScanner(fsDirectory(root,'nonideal_PFA'),{batchSize:10000}).scan(),run=catalog.runs.find(x=>x.chain==='C10'&&x.run==='40'),record=run.outputs.vtk.find(x=>x.name==='DensityProfile_C10.vtk');
+  assert.equal(record.path.includes('C10/40/VTK/System_0/'),true);assert.equal(record.grid,undefined,'directory discovery indexes only the header and does not parse the scalar grid');
+  const source=await readFile(join(vtkRoot,record.name)),authorized=Buffer.from(await record.file.arrayBuffer());assert.deepEqual(authorized,source,'handoff bytes are exactly the authorized source bytes');
+});
+
 test('matched run prefers and parses a scalar grid while its movie is usable and validation stays mandatory',async()=>{
   const root=join(process.cwd(),'test/fixtures/representative_dataset/nonideal_PFA');
   const catalog=await new DirectoryCatalogScanner(fsDirectory(root,'nonideal_PFA'),{batchSize:10000}).scan();
