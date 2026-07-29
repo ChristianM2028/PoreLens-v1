@@ -121,4 +121,3 @@ export function contactsInBand(left,right,cell,minA,maxA){
   left.forEach((a,i)=>right.forEach((b,j)=>{const distanceA=minimumImageDistance(a,b,cell);if(distanceA>=minA&&distanceA<=maxA)contacts.push({leftIndex:i,rightIndex:j,distanceA});}));
   return contacts;
 }
-export {APPLICATION_VERSION} from './app-version.mjs';
