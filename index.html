@@ -41,10 +41,10 @@
   <section id="datasets" class="dataset-manager" aria-labelledby="dataset-heading">
     <div class="section-title"><div><p class="kicker">Local data inventory</p><h1 id="dataset-heading">Dataset management</h1></div><label class="integrity"><input id="verifyChecksums" type="checkbox"> Verify available SHA-256 values</label></div>
     <div class="dataset-grid">
-      <article class="slot slot-a"><div class="slot-tag">A <span>Primary</span></div><div><h2 id="nameA">Not loaded</h2><p id="statusA">Choose a dataset root without materializing its complete file tree.</p></div><div class="slot-actions"><button id="chooseDirectoryA" disabled class="button">Choose dataset root A</button><label class="button secondary">Compatibility folder<input id="filesA" type="file" disabled multiple webkitdirectory></label><button id="removeA" class="quiet-button">Remove</button></div></article>
-      <article class="slot slot-b"><div class="slot-tag">B <span>Comparison</span></div><div><h2 id="nameB">Not loaded</h2><p id="statusB">Independent slot; loading B never replaces A.</p></div><div class="slot-actions"><button id="chooseDirectoryB" disabled class="button secondary">Choose dataset root B</button><label class="button secondary">Compatibility folder<input id="filesB" type="file" disabled multiple webkitdirectory></label><button id="removeB" class="quiet-button">Remove</button></div></article>
+      <article class="slot slot-a"><div class="slot-tag">A <span>Primary</span></div><div><h2 id="nameA">Not loaded</h2><p id="statusA">Choose a dataset root without materializing its complete file tree.</p></div><div class="slot-actions"><button id="chooseDirectoryA" class="button">Choose dataset root A</button><label class="button secondary">Compatibility folder<input id="filesA" type="file" multiple webkitdirectory></label><button id="removeA" class="quiet-button">Remove</button></div></article>
+      <article class="slot slot-b"><div class="slot-tag">B <span>Comparison</span></div><div><h2 id="nameB">Not loaded</h2><p id="statusB">Independent slot; loading B never replaces A.</p></div><div class="slot-actions"><button id="chooseDirectoryB" class="button secondary">Choose dataset root B</button><label class="button secondary">Compatibility folder<input id="filesB" type="file" multiple webkitdirectory></label><button id="removeB" class="quiet-button">Remove</button></div></article>
     </div>
-    <div id="scanPanel" class="scan-panel"><strong>Incremental local catalog</strong><p id="scanState" aria-live="polite">Idle</p><p id="scanPrivacy">Local files remain in this browser and are never uploaded.</p><div class="slot-actions"><button id="cancelScan" class="quiet-button">Cancel Scan</button><button id="resumeScan" class="quiet-button" disabled>Resume Scan</button><button id="refreshScan" class="quiet-button">Incremental Refresh Dataset</button><button id="reopenDataset" disabled class="quiet-button">Reopen saved dataset</button></div><details><summary>Ignored-file diagnostics (grouped by reason and type)</summary><div id="ignoredReport"></div></details></div>
+    <div id="scanPanel" class="scan-panel"><strong>Incremental local catalog</strong><p id="scanState" aria-live="polite">Idle</p><p id="scanPrivacy">Local files remain in this browser and are never uploaded.</p><div class="slot-actions"><button id="cancelScan" class="quiet-button">Cancel Scan</button><button id="resumeScan" class="quiet-button" disabled>Resume Scan</button><button id="refreshScan" class="quiet-button">Incremental Refresh Dataset</button><button id="reopenDataset" class="quiet-button">Reopen saved dataset</button></div><details><summary>Ignored-file diagnostics (grouped by reason and type)</summary><div id="ignoredReport"></div></details></div>
   </section>
 
   <section class="workspace analysis-workspace" id="rdf-workspace" data-analysis-workspace="rdf" hidden aria-labelledby="analysis-heading">
@@ -139,5 +139,8 @@
   </section>
 </main>
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
-<script type="module" src="startup.mjs"></script>
+<script type="module" src="app.js"></script>
+<script type="module" src="chain-plotter-ui.mjs"></script>
+<script type="module" src="result-browser-ui.mjs"></script>
+<script type="module" src="directory-import-ui.mjs"></script>
 </body></html>
