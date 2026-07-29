@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {spawn,spawnSync} from 'node:child_process';
+import {createServer} from 'node:http';
+import {readFile,stat} from 'node:fs/promises';
+import {extname,join,normalize} from 'node:path';
+const browser=['chromium','chromium-browser','google-chrome'].find(command=>spawnSync('sh',['-c',`command -v ${command}`]).status===0);
+test('real index navigation and both RDF imports render without page errors',{skip:browser?false:'Chromium is not installed in this environment'},async()=>{
+  const root=process.cwd(),server=createServer(async(req,res)=>{try{const path=normalize(decodeURIComponent(req.url.split('?')[0])).replace(/^\/+/,''),file=join(root,path||'index.html');await stat(file);res.setHeader('content-type',extname(file)==='.mjs'||extname(file)==='.js'?'text/javascript':extname(file)==='.html'?'text/html':extname(file)==='.css'?'text/css':'application/octet-stream');res.end(await readFile(file))}catch{res.statusCode=404;res.end('not found')}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const url=`http://127.0.0.1:${server.address().port}/test/browser/rdf-import-runtime.html`,child=spawn(browser,['--headless','--no-sandbox','--disable-gpu','--virtual-time-budget=20000','--dump-dom',url]);let out='',err='';child.stdout.on('data',x=>out+=x);child.stderr.on('data',x=>err+=x);const code=await new Promise(resolve=>child.on('close',resolve));server.close();assert.equal(code,0,err);const match=out.match(/<pre id="result">([^<]+)<\/pre>/);assert.ok(match,`browser result missing: ${out.slice(-1200)}`);const value=match[1].replaceAll('&quot;','"').replaceAll('&amp;','&').replaceAll('&#39;',"'");const report=JSON.parse(value);assert.equal(report.ok,true,report.error);assert.equal(report.navigation,true);for(const path of ['compatibility','directory'])for(const field of ['component','pair','pressure','heatmap','curve'])assert.ok(report[path][field],`${path} ${field}`);
+});

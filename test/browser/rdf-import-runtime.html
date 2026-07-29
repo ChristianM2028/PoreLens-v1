@@ -1,0 +1,41 @@
+<!doctype html><meta charset="utf-8"><pre id="result">waiting</pre><iframe id="app" style="width:1400px;height:1200px"></iframe>
+<script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('#app');
+const errors=[];
+const waitFor=async(fn,ms=10000)=>{const end=Date.now()+ms;while(Date.now()<end){const value=fn();if(value)return value;await new Promise(r=>setTimeout(r,25))}throw new Error('timed out')};
+const makeFile=(name,path,text)=>{const file=new File([text],name);Object.defineProperty(file,'webkitRelativePath',{value:path});return file};
+const visibleWorkspace=d=>[...d.querySelectorAll('[data-analysis-workspace]')].filter(x=>!x.hidden);
+try {
+  frame.src='../../index.html#adsorption-isotherms';
+  await new Promise((resolve,reject)=>{frame.onload=resolve;setTimeout(()=>reject(new Error('index load timeout')),10000)});
+  const w=frame.contentWindow,d=w.document;
+  w.addEventListener('error',event=>errors.push(event.error?.stack||event.message));
+  w.addEventListener('unhandledrejection',event=>errors.push(event.reason?.stack||String(event.reason)));
+  await waitFor(()=>d.querySelector('[data-workspace="rdf"]').onclick!==undefined && d.querySelector('#filesA').onchange);
+
+  const expected={isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms',trajectory_energetics:'#trajectory-energetics'};
+  for(const [id,hash] of Object.entries(expected)){
+    d.querySelector(`[data-workspace="${id}"]`).click();
+    await waitFor(()=>w.location.hash===hash&&visibleWorkspace(d)[0]?.dataset.analysisWorkspace===id);
+    if(visibleWorkspace(d).length!==1)throw new Error(`${id} did not exclusively own workspace visibility`);
+  }
+  w.history.back();await waitFor(()=>w.location.hash==='#end-to-end-histograms');
+  w.history.forward();await waitFor(()=>w.location.hash==='#trajectory-energetics');
+
+  const manifest=await (await fetch('../../test/fixtures/collection/manifest.csv')).text();
+  const rdf=await (await fetch('../../test/fixtures/collection/rdfs/RDF_CF3_sp3_O2.dat')).text();
+  const files=[makeFile('manifest.csv','collection/manifest.csv',manifest),makeFile('RDF_CF3_sp3_O2.dat','collection/rdfs/RDF_CF3_sp3_O2.dat',rdf)];
+  const input=d.querySelector('#filesA');Object.defineProperty(input,'files',{configurable:true,value:files});input.dispatchEvent(new w.Event('change'));
+  await waitFor(()=>d.querySelector('#heatmap')._heatmap&&d.querySelector('#realRdfCanvas')._curve);
+  const compatibility={component:d.querySelector('#componentSelect').options.length,pair:d.querySelector('#pairSelect').options.length,pressure:d.querySelector('#pressureSelect').options.length,heatmap:!!d.querySelector('#heatmap')._heatmap,curve:!!d.querySelector('#realRdfCanvas')._curve};
+
+  const source=makeFile('RDF_CF3_sp3_O2.dat','RDF_CF3_sp3_O2.dat',rdf);
+  const catalog={name:'directory fixture',finished:true,authorized:true,stats:{rdfs:1},diagnostics:[],rdfRecords:[{type:'rdf',chainKey:'C5',pair:['CF3_sp3','O2'],pairKey:'CF3_sp3 ↔ O2',pressurePa:25000,runId:'directory-1',relativePath:'C5/directory-1/RDF_CF3_sp3_O2.dat',filename:'RDF_CF3_sp3_O2.dat',file:source}]};
+  w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{slot:'B',catalog}}));
+  await waitFor(()=>d.querySelector('#datasetSelect').value==='B'&&d.querySelector('#heatmap')._heatmap?.pressuresPa?.[0]===25000);
+  const directory={component:d.querySelector('#componentSelect').options.length,pair:d.querySelector('#pairSelect').options.length,pressure:d.querySelector('#pressureSelect').options.length,heatmap:!!d.querySelector('#heatmap')._heatmap,curve:!!d.querySelector('#realRdfCanvas')._curve};
+  if(errors.length)throw new Error(`uncaught page errors: ${errors.join('\n')}`);
+  if(Object.values(compatibility).some(x=>!x)||Object.values(directory).some(x=>!x))throw new Error(`RDF state missing: ${JSON.stringify({compatibility,directory})}`);
+  result.textContent=JSON.stringify({ok:true,navigation:true,compatibility,directory});
+}catch(error){result.textContent=JSON.stringify({ok:false,error:error.stack||error.message,errors})}
+</script>

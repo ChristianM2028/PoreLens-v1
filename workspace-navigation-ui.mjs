@@ -39,14 +39,19 @@ function activateLocation({scroll=false}={}){
   if(id&&controller.active!==id)activate(id,{scroll});
   return id||null;
 }
+/** Update history and delegate all workspace visibility to the controller. */
+function navigate(id,{scroll=false,replace=false}={}){
+  const hash=Object.entries(hashMap).find(([,workspace])=>workspace===id)?.[0];
+  if(!hash)throw new Error(`Unknown analysis workspace: ${id}`);
+  if(location.hash!==hash)history[replace?'replaceState':'pushState'](null,'',hash);
+  activate(id,{scroll});
+}
 document.querySelectorAll('[data-workspace]').forEach(link=>link.addEventListener('click',event=>{
   event.preventDefault();
-  const href=link.getAttribute('href');
-  if(location.hash!==href)history.pushState(null,'',href);
-  activate(link.dataset.workspace,{scroll:true});
+  navigate(link.dataset.workspace,{scroll:true});
 }));
 document.querySelectorAll('[data-rdf-subview]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-rdf-subview]').forEach(x=>x.setAttribute('aria-selected',String(x===button)));const target=button.dataset.rdfSubview==='heatmaps'?'#heatmap':'#realRdfCanvas';document.querySelector(target)?.scrollIntoView({behavior:'smooth',block:'center'})}));
 window.addEventListener('hashchange',()=>activateLocation({scroll:true}));
 window.addEventListener('popstate',()=>activateLocation({scroll:true}));
 activate(hashMap[location.hash]||'isotherm');
-export {controller,activate,activateLocation,attachChainRenderer};
+export {controller,activate,activateLocation,attachChainRenderer,navigate};

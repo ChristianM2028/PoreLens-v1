@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div id="fileLaunchWarning" class="notice" role="alert" hidden>
+  <strong>PoreLens cannot start from a <code>file://</code> URL.</strong>
+  Serve this directory over HTTP with <code>python3 -m http.server 8000 --bind 127.0.0.1</code>, then open
+  <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>.
+</div>
+<script>
+  if (location.protocol === 'file:') document.getElementById('fileLaunchWarning').hidden = false;
+</script>
 <header class="topbar">
   <a class="brand" href="#adsorption-isotherms" aria-label="PoreLens analysis workspaces"><span class="brand-mark">P</span><span>PoreLens</span><small>RDF workstation</small></a>
   <span class="local-status"><i></i> Local session · no telemetry</span>

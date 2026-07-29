@@ -14,7 +14,7 @@ test('workspace tabs create navigable history and follow back/forward hash chang
   }));
   const sections=links.map(link=>({dataset:{analysisWorkspace:link.dataset.workspace},hidden:false}));
   const location={hash:'#adsorption-isotherms'};
-  const history={entries:[],pushState(_state,_title,href){this.entries.push(href);location.hash=href}};
+  const history={entries:[],pushState(_state,_title,href){this.entries.push(href);location.hash=href},replaceState(_state,_title,href){this.entries.push(href);location.hash=href}};
   const document={
     querySelectorAll(selector){
       if(selector==='[data-analysis-workspace]')return sections;
@@ -55,4 +55,13 @@ test('workspace tabs create navigable history and follow back/forward hash chang
   }finally{
     for(const key of ['document','window','location','history','requestAnimationFrame','CustomEvent'])delete globalThis[key];
   }
+});
+
+test('application has no stale #analysis visibility mechanism and documents file launch recovery',async()=>{
+  const [{readFile}]=await Promise.all([import('node:fs/promises')]);
+  const [app,html]=await Promise.all([readFile('app.js','utf8'),readFile('index.html','utf8')]);
+  assert.doesNotMatch(app,/querySelector\(['"`]#analysis|\$\(['"`]#analysis/);
+  assert.match(html,/location\.protocol\s*===\s*['"]file:['"]/);
+  assert.match(html,/python3 -m http\.server 8000 --bind 127\.0\.0\.1/);
+  assert.match(html,/http:\/\/127\.0\.0\.1:8000/);
 });
