@@ -7,6 +7,9 @@ import {parseLegacyVtk} from '../src/core/result-types.mjs';
 import {indexPdbSource} from '../src/core/trajectory.mjs';
 import {DirectoryCatalogScanner} from '../src/import/directory-catalog.mjs';
 import {preferredSpatialRecordIndex,spatialWorkflowState} from '../src/ui/lj-ui.mjs';
+import {parseSimulationInput} from '../src/import/parsers/simulation_input.mjs';
+import {parseCif} from '../src/core/raspa-package.mjs';
+import {buildSpatialRegistrationInput,parsePdbCryst1,validateSpatialRegistration} from '../src/core/spatial-registration.mjs';
 
 const runRoot=join(process.cwd(),'test/fixtures/representative_dataset/nonideal_PFA/C10/40');
 const vtkRoot=join(runRoot,'VTK/System_0');
@@ -32,7 +35,9 @@ test('matched run prefers and parses a scalar grid while its movie is usable and
   const run=catalog.runs.find(x=>x.chain==='C10'&&x.run==='40');assert.ok(run);
   const records=run.outputs.vtk;assert.equal(records[0].name,'AdsorbateAtoms.vtk');
   const selected=records[preferredSpatialRecordIndex(records)];assert.equal(selected.supportedScalarGrid,true);assert.match(selected.name,/DensityProfile_C10\.vtk/);
-  const grid=parseLegacyVtk(await selected.file.text(),selected.path);assert.ok(grid.arrays.length);assert.equal(spatialWorkflowState({records,record:selected,grid}).code,'scalar_mapping_required');assert.equal(spatialWorkflowState({records,record:selected,grid,scalarIdentity:{arrayName:grid.arrays[0].name}}).code,'registration_mismatch');
+  const grid=parseLegacyVtk(await selected.file.text(),selected.path);assert.ok(grid.arrays.length);assert.equal(spatialWorkflowState({records,record:selected,grid}).code,'scalar_mapping_required');assert.equal(spatialWorkflowState({records,record:selected,grid,scalarIdentity:{arrayName:grid.arrays[0].name}}).code,'grid_only_visualization');
   const movie=run.outputs.movie.find(x=>x.path.endsWith(movieName));assert.ok(movie,'exact-run movie is authorized');
-  const indexed=await indexPdbSource(movie.file);assert.ok(indexed.frames.length>0);assert.ok(indexed.frames[0].atomCount>0);
+  const indexed=await indexPdbSource(movie.file);assert.equal(indexed.frames.length,1000);assert.equal(indexed.frames[0].atomCount,250);
+  const identity={dataset:'representative',component:'C10',run:'40',pressurePa:23299.51811,systemDirectory:'System_0'},simulation=parseSimulationInput(await readFile(join(runRoot,'simulation.input'),'utf8')),movieCell=parsePdbCryst1((await readFile(join(runRoot,'Movies/System_0',movieName),'utf8')).slice(0,512)),cifCell=parseCif(await readFile(join(runRoot,'IRMOF-1.cif'),'utf8'));
+  const registration=validateSpatialRegistration(buildSpatialRegistrationInput({grid,simulation,movieCell,cifCell,identity,vtkIdentity:identity,movieIdentity:identity,annotationIdentity:identity}));assert.equal(registration.validated,true,registration.reasons.join('; '));assert.equal(spatialWorkflowState({records,record:selected,grid,scalarIdentity:{arrayName:'scalars'},registration}).level,'registered_framework_overlay');
 });
