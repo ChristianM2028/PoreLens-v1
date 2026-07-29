@@ -584,6 +584,11 @@ def main() -> None:
     parser.add_argument("--band-high", type=float, default=5.5)
     parser.add_argument("--bin-width", type=float, default=0.1)
     parser.add_argument("--block-size", type=int, default=50)
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print each integrated atom-type record (also available in the generated CSV file).",
+    )
     args = parser.parse_args()
 
     if args.output.exists():
@@ -636,14 +641,19 @@ def main() -> None:
     archive = shutil.make_archive(str(args.output), "zip", root_dir=args.output)
     print(f"Wrote {args.output}")
     print(f"Wrote {archive}")
-    for row in integrated:
-        print(
-            row["chemistry"],
-            row["atom_type"],
-            f"delta_N={row['delta_N_inside_minus_outside']:.6f}",
-            f"delta_U={row['delta_U_inside_minus_outside_kJmol']:.6f}",
-            f"CI=({row['delta_U_95ci_low_kJmol']:.6f},{row['delta_U_95ci_high_kJmol']:.6f})",
-        )
+    print(
+        f"Wrote {len(integrated)} integrated rows to "
+        f"{args.output / 'integrated_atom_type_summary.csv'}"
+    )
+    if args.verbose:
+        for row in integrated:
+            print(
+                row["chemistry"],
+                row["atom_type"],
+                f"delta_N={row['delta_N_inside_minus_outside']:.6f}",
+                f"delta_U={row['delta_U_inside_minus_outside_kJmol']:.6f}",
+                f"CI=({row['delta_U_95ci_low_kJmol']:.6f},{row['delta_U_95ci_high_kJmol']:.6f})",
+            )
 
 
 if __name__ == "__main__":

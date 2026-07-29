@@ -808,6 +808,11 @@ def main() -> None:
     parser.add_argument("--cutoff", type=float, default=12.9)
     parser.add_argument("--band-low", type=float, default=4.5)
     parser.add_argument("--band-high", type=float, default=5.5)
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print each overall and conditional record (also available in the generated CSV files).",
+    )
     args = parser.parse_args()
 
     if args.output.exists():
@@ -856,10 +861,13 @@ def main() -> None:
     archive = shutil.make_archive(str(args.output), "zip", root_dir=args.output)
     print(f"Wrote analysis to {args.output}")
     print(f"Wrote archive to {archive}")
-    for row in overall:
-        print(row)
-    for row in summary_rows:
-        print(row)
+    print(f"Wrote {len(overall)} overall records to {args.output / 'overall_summary.csv'}")
+    print(f"Wrote {len(summary_rows)} conditional records to {args.output / 'conditional_summary.csv'}")
+    if args.verbose:
+        for row in overall:
+            print(row)
+        for row in summary_rows:
+            print(row)
 
 
 if __name__ == "__main__":
