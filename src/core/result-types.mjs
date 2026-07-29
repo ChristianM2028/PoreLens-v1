@@ -1,4 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=porelens-20260729-spatial-registration-v1';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));
@@ -65,7 +66,7 @@ export function parseLegacyVtk(text,source='VTK grid'){
   while(i<lines.length){if(!/^\s*SCALARS\s+/i.test(lines[i])){i++;continue}const header=lines[i].trim().split(/\s+/),name=header[1],components=Number(header[3]||1);if(components!==1)throw new Error(`${source}: scalar ${name} has unsupported component count`);i++;if(/^\s*LOOKUP_TABLE/i.test(lines[i]||''))i++;const values=[];while(i<lines.length&&!/^\s*(?:SCALARS|VECTORS|FIELD)\s+/i.test(lines[i])){for(const token of tokens(lines[i])){const value=Number(token);if(!finite(value))throw new Error(`${source}: non-finite scalar ${name}`);values.push(value);}i++;}if(values.length!==expected)throw new Error(`${source}: scalar ${name} has ${values.length} values; expected ${expected}`);arrays.push({name,dataType:header[2]||'unknown',values});
   }
   if(!arrays.length)throw new Error(`${source}: no scalar arrays found`);
-  return {format:'legacy-ascii-vtk',dataset,dimensions,origin,spacing,arrays,source,pointCount:expected};
+  return {format:'legacy-ascii-vtk',dataset,dimensions,origin,spacing,cellParameters:parseVtkCellParameters(text),arrays,source,pointCount:expected};
 }
 
 export const voxelIndex=(grid,x,y,z)=>x+grid.dimensions[0]*(y+grid.dimensions[1]*z);

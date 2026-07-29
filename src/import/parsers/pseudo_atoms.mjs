@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import { PseudoAtom } from '../models.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260729-spatial-registration-v1';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

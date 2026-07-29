@@ -1,8 +1,8 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {parseCif} from '../../core/raspa-package.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms} from '../../core/raspa-physics.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {parseCif} from '../../core/raspa-package.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms} from '../../core/raspa-physics.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=porelens-20260729-spatial-registration-v1';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);

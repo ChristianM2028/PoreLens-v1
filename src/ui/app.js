@@ -1,15 +1,15 @@
-import {navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { importBrowserFiles } from '../import/importers.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { buildHeatmap, nearestPressureIndex, matchNearestPressure, mapAnnotations, compareRdfs, highRegions } from '../core/analysis.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { DatasetWorkspace } from '../core/workspace.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { groupDiagnostics } from '../core/ui-state.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {PLOT_THEME, markerIndices} from './plot-theme.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {importRunPackage} from '../core/raspa-package.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import {navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { importBrowserFiles } from '../import/importers.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { buildHeatmap, nearestPressureIndex, matchNearestPressure, mapAnnotations, compareRdfs, highRegions } from '../core/analysis.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { DatasetWorkspace } from '../core/workspace.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { groupDiagnostics } from '../core/ui-state.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {PLOT_THEME, markerIndices} from './plot-theme.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {importRunPackage} from '../core/raspa-package.mjs?rev=porelens-20260729-spatial-registration-v1';
+import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=porelens-20260729-spatial-registration-v1';
 
 const $=selector=>document.querySelector(selector), ws=new DatasetWorkspace();
 const elements=['datasetSelect','componentSelect','pairSelect','pressureSelect','thresholdMode','threshold','maskPeaks','showAnnotations','showPeakTrace','rdfDisplay','smoothWindow','rowDisplay','compA','pairA','pressureA','compB','pairB','pressureB','nearestMatch','rdfCompareMode','colorMode','compareMask','differenceMap'].reduce((o,id)=>(o[id]=$(`#${id}`),o),{});
@@ -52,7 +52,10 @@ window.addEventListener('porelens:authorized-run-request',async event=>{
     const match=exactAuthorizedCatalogRun(catalog,{datasetFingerprint:annotation.datasetFingerprint,currentDatasetFingerprint:currentFingerprint,chain:annotation.chainLength,run:annotation.run,pressurePa:Number(annotation.pressurePa)});
     if(!match.run)return fail(match.diagnostics);
     const audit=await importRunPackage(match.files,{manifestFingerprint:currentFingerprint,annotationPressurePa:Number(annotation.pressurePa),manifestPressurePa:Number(match.run.pressurePa)});
-    window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation.id,audit,importDiagnostics:audit.diagnostics,run:{...match.run,run:String(match.run.run),pressurePa:Number(match.run.pressurePa??match.run.simulation?.pressurePa)}}}));
+    const pressurePa=Number(match.run.pressurePa??match.run.simulation?.pressurePa),identity={dataset:annotation.datasetFingerprint,component:annotation.chainLength,run:String(match.run.run),pressurePa,systemDirectory:'System_0'};
+    const movieMetadata=audit.files.movie&&audit.parsed.movie?{...identity,pressurePa:audit.parsed.simulation?.pressurePa}:{};
+    const spatialRegistration={simulation:audit.parsed.simulation,movieCell:audit.parsed.movieCell??null,cifCell:audit.parsed.cif??null,identity,movieIdentity:movieMetadata,annotationIdentity:{dataset:annotation.datasetFingerprint,component:annotation.chainLength,run:String(annotation.run),pressurePa:Number(annotation.pressurePa),systemDirectory:'System_0'},files:{simulation:audit.files.simulation,movie:audit.files.movie,cif:audit.files.cif}};
+    window.dispatchEvent(new CustomEvent('porelens:authorized-run-package',{detail:{annotationId:annotation.id,audit,importDiagnostics:audit.diagnostics,run:{...match.run,run:String(match.run.run),pressurePa,spatialRegistration}}}));
   }catch(error){fail({severity:'error',code:'authorized_run_import_failed',stage:error.stage||'run_package_import',file:error.file||null,message:`The exact authorized run could not be imported${error.file?` from ${error.file}`:''} during ${error.stage||'run_package_import'}: ${error.message}`})}
 });
 [elements.datasetSelect,elements.componentSelect,elements.pairSelect].forEach(x=>x.onchange=()=>{diagnostics(elements.datasetSelect.value);render()});elements.pressureSelect.onchange=()=>selectPressure();[elements.maskPeaks,elements.showAnnotations,elements.showPeakTrace,elements.rdfDisplay,elements.smoothWindow,elements.rowDisplay,elements.thresholdMode,elements.threshold].forEach(x=>x.oninput=()=>selectPressure());
@@ -68,9 +71,9 @@ $('#suggestPeaks').onclick=()=>{const index=nearestPressureIndex(currentMap.pres
 let rdfDrag=null;$('#realRdfCanvas').onpointerdown=e=>{rdfDrag={x:e.clientX};e.currentTarget.setPointerCapture(e.pointerId)};$('#realRdfCanvas').onpointerup=e=>{const canvas=e.currentTarget,m=canvas._curve;if(!m||!rdfDrag)return;const rect=canvas.getBoundingClientRect(),toDistance=x=>m.xmin+Math.max(0,Math.min(m.plotW,x-rect.left-m.pad.l))/m.plotW*(m.xmax-m.xmin),a=snapRdf(m.records,toDistance(rdfDrag.x)),b=snapRdf(m.records,toDistance(e.clientX)),context=annotationContext();if(Math.abs(e.clientX-rdfDrag.x)<5)annotationStore.create(context,{type:'peak',distanceA:b.distanceA,gR:b.gR},annotationFields());else annotationStore.create(context,{type:'span',startA:Math.min(a.distanceA,b.distanceA),endA:Math.max(a.distanceA,b.distanceA),gR:[a.gR,b.gR]},annotationFields());rdfDrag=null;renderAnnotationTable();selectPressure(false);};
 let heatDrag=null;$('#heatmap').onpointerdown=e=>{if(e.shiftKey){heatDrag={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId)}};$('#heatmap').onpointerup=e=>{if(!heatDrag)return;const m=e.currentTarget._heatmap,rect=e.currentTarget.getBoundingClientRect(),pw=rect.width-m.pad.l-54,toR=x=>m.map.distances[Math.max(0,Math.min(m.map.distances.length-1,Math.round((x-rect.left-m.pad.l)/pw*(m.map.distances.length-1))))],toP=y=>m.map.pressuresPa[Math.max(0,Math.min(m.map.pressuresPa.length-1,Math.floor((y-rect.top-m.pad.t)/m.ph*m.map.pressuresPa.length)))],r1=toR(heatDrag.x),r2=toR(e.clientX),p1=toP(heatDrag.y),p2=toP(e.clientY),row=m.map.rows[nearestPressureIndex(m.map.pressuresPa,p1)];annotationStore.create(annotationContext(elements.datasetSelect.value,row),{type:'region',startA:Math.min(r1,r2),endA:Math.max(r1,r2),pressureMinPa:Math.min(p1,p2),pressureMaxPa:Math.max(p1,p2)},annotationFields());heatDrag=null;renderAnnotationTable();selectPressure(false);};
 window.addEventListener('beforeunload',e=>{if(annotationStore.dirty){e.preventDefault();e.returnValue='';}});renderAnnotationTable();
-import('./lj-ui.mjs?rev=porelens-20260729-indexed-pdb-v1')
+import('./lj-ui.mjs?rev=porelens-20260729-spatial-registration-v1')
   .then(({setupLjWorkflow})=>setupLjWorkflow({workspace:ws,annotationStore}))
-  .catch(error=>import('./workspace-navigation-ui.mjs?rev=porelens-20260729-indexed-pdb-v1').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
+  .catch(error=>import('./workspace-navigation-ui.mjs?rev=porelens-20260729-spatial-registration-v1').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
 
 let pressureRegionStart=null;
 $('#annotatePressurePoint').onclick=()=>{const context=annotationContext();annotationStore.create(context,pressurePointGeometry(context.run,context.pressurePa),annotationFields());renderAnnotationTable();selectPressure(false);};

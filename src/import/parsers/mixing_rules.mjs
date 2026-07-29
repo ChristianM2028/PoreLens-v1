@@ -1,5 +1,5 @@
-import { VdwParameter } from '../models.mjs?rev=porelens-20260729-indexed-pdb-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260729-indexed-pdb-v1';
+import { VdwParameter } from '../models.mjs?rev=porelens-20260729-spatial-registration-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260729-spatial-registration-v1';
 
 export function parseMixingRules(text, source = 'force_field_mixing_rules.def') {
   const parameters = [], diagnostics = [], data = text.split(/\r?\n/).map(x => x.replace(/\/\/.*$/, '').trim()).filter(x => x && !x.startsWith('#'));

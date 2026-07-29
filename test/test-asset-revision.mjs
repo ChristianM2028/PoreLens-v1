@@ -5,7 +5,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 
 const execFileAsync=promisify(execFile);
-const revision='porelens-20260729-indexed-pdb-v1';
+const revision='porelens-20260729-spatial-registration-v1';
 
 test('HTML and the complete browser module graph share one revision marker',async()=>{
   const {stdout}=await execFileAsync('rg',['--files','-g','*.mjs','-g','*.js']);
