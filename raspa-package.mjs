@@ -1,4 +1,4 @@
-import {parseSimulationInput,parsePdbMovie,validateMovieTopology} from './trajectory.mjs';
+import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs';
 import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs';
 import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from './movie-filename.mjs';
 
@@ -39,6 +39,9 @@ const javascriptType=value=>value===null?'null':Array.isArray(value)?'array':typ
 export async function normalizeRunPackageFile(file){
   const name=file?.name||file?.path||file?.webkitRelativePath||'(unnamed file)';
   const path=file?.path||file?.webkitRelativePath||file?.name||name;
+  // Movie content is deliberately not resolved here. Large trajectories remain
+  // local lazy sources and are scanned/decoded by trajectory.mjs.
+  if(/\.pdb$/i.test(path))return {source:file,name,path,text:null,resolutionDiagnostic:null};
   try{
     const resolver=file?.text;
     const text=typeof resolver==='function'?await resolver.call(file):await resolver;
@@ -75,8 +78,8 @@ export async function importRunPackage(files,{annotationSidecar=null,manifestFin
   parseFile('topology',molecule,'molecule_topology',parseMoleculeDefinition);
   parseFile('output',output,'raspa_output',parseRaspaOutput);
   if(parsed.forceField)parsed.forceField.overrides=parsed.overrides;
-  if(movie&&!movie.resolutionDiagnostic)try{const options=parsed.topology?{sitesPerMolecule:parsed.topology.sitesPerMolecule,siteTypes:parsed.topology.sites.map(x=>x.type)}:{};parsed.movie=parsePdbMovie(movie.text,options);}catch(error){diagnostics.push({severity:'error',code:'invalid_pdb_movie',stage:'pdb_movie',file:movie.path,message:`Failed to parse ${movie.path} during pdb_movie: ${error.message}`});}
-  if(parsed.movie&&parsed.topology)try{parsed.topologyValidation=validateMovieTopology({simulation:parsed.simulation,componentDefinitionName:molecule?.name,topology:parsed.topology,pseudoatoms:parsed.pseudoatoms,frameAtomCounts:parsed.movie.frames.map(frame=>frame.atoms.length)});if(!parsed.movie.roleSpecificAnalysisEnabled)throw new Error('Movie-to-topology site ordering could not be validated');const cells=new Set(parsed.movie.frames.map(frame=>frame.cell.join(',')));if(cells.size!==1)throw new Error('Changing movie cells are unsupported for quantitative reconstruction');}catch(error){diagnostics.push({severity:'error',code:'movie_topology_mismatch',stage:'topology_validation',file:movie.path,message:`Failed to validate ${movie.path} during topology_validation: ${error.message}`});}
+  if(movie&&!movie.resolutionDiagnostic)try{parsed.movie=await indexPdbSource(movie.source);parsed.movie.roleSpecificAnalysisEnabled=!!parsed.topology;parsed.movie.totalFrames=parsed.movie.frames.length;parsed.movie.frames.forEach(frame=>{frame.atoms={length:frame.atomCount}});}catch(error){diagnostics.push({severity:'error',code:'invalid_pdb_movie',stage:'pdb_movie_index',file:movie.path,message:`Failed to index ${movie.path} during pdb_movie_index: ${error.message}`});}
+  if(parsed.movie&&parsed.topology)try{parsed.topologyValidation=validateMovieTopology({simulation:parsed.simulation,componentDefinitionName:molecule?.name,topology:parsed.topology,pseudoatoms:parsed.pseudoatoms,frameAtomCounts:parsed.movie.frames.map(frame=>frame.atomCount)});if(!parsed.movie.roleSpecificAnalysisEnabled)throw new Error('Movie-to-topology site ordering could not be validated');}catch(error){diagnostics.push({severity:'error',code:'movie_topology_mismatch',stage:'topology_validation',file:movie.path,message:`Failed to validate ${movie.path} during topology_validation: ${error.message}`});}
   if(parsed.cif&&parsed.forceField){parsed.frameworkTypeMapping=new Map();for(const site of parsed.cif.asymmetricSites){const candidates=[site.label,site.cifType,`${site.cifType}_`].filter(x=>parsed.forceField.parameters.has(x));if(candidates.length!==1)diagnostics.push({severity:'error',code:'framework_mapping_ambiguous',message:`Framework label ${site.label} resolves to ${candidates.length} force-field types (${candidates.join(', ')||'none'}).`});else parsed.frameworkTypeMapping.set(site.label,candidates[0]);}}
   if(parsed.topology&&parsed.forceField)for(const site of parsed.topology.sites)if(!parsed.forceField.parameters.has(site.type))diagnostics.push({severity:'error',code:'guest_parameter_missing',message:`No LJ parameters for guest site type ${site.type}.`});
   if(parsed.simulation&&!Number.isFinite(parsed.simulation.vdwCutoffA))diagnostics.push({severity:'error',code:'missing_cutoff',message:'CutOffVDW is required; no default was substituted.'});

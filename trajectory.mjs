@@ -36,6 +36,18 @@ export function parsePdbMovie(text,{sitesPerMolecule=null,siteTypes=null}={}){
   return {frames,lossyAtomLabels:new Set(frames.flatMap(f=>f.atoms.map(a=>a.atomName))).size===1,roleSpecificAnalysisEnabled:sitesPerMolecule!==null&&siteTypes?.length===sitesPerMolecule};
 }
 
+/** Build a deterministic selection of zero-based frames from equal trajectory intervals. */
+export function analysisRange({totalFrames,intervalCount=1,firstInterval=1,lastInterval=intervalCount,stride=1}={}){
+  for(const [name,value] of Object.entries({totalFrames,intervalCount,firstInterval,lastInterval,stride}))if(!Number.isInteger(value))throw new TypeError(`${name} must be an integer`);
+  if(totalFrames<1)throw new RangeError('totalFrames must be positive');
+  if(intervalCount<1)throw new RangeError('intervalCount must be positive');
+  if(firstInterval<1||lastInterval>intervalCount||firstInterval>lastInterval)throw new RangeError(`Intervals must satisfy 1 <= firstInterval <= lastInterval <= ${intervalCount}`);
+  if(stride<1)throw new RangeError('stride must be positive');
+  const startFrame=Math.floor((firstInterval-1)*totalFrames/intervalCount),endFrame=Math.floor(lastInterval*totalFrames/intervalCount);
+  const frameIndices=[];for(let index=startFrame;index<endFrame;index+=stride)frameIndices.push(index);
+  return {totalFrames,intervalCount,firstInterval,lastInterval,stride,startFrame,endFrame,frameIndices,analyzedFrameCount:frameIndices.length,frameNumbering:'zero-based half-open'};
+}
+
 /** Validate the evidence needed to assign lossy PDB atoms by RASPA site order. */
 export function validateMovieTopology({simulation,componentDefinitionName,topology,pseudoatoms,frameAtomCounts}){
   if(!simulation||!topology||!pseudoatoms)throw new Error('simulation.input, component .def, and pseudo_atoms.def are all required');
@@ -62,6 +74,28 @@ export function indexPdbFrames(text){
   Object.defineProperty(frames,'diagnostics',{value:diagnostics,enumerable:false});return frames;
 }
 export function decodeIndexedPdbFrame(text,indexEntry,options={}){return parsePdbMovie(text.slice(indexEntry.start,indexEntry.end),options).frames[0]}
+
+const abortError=()=>new DOMException('Trajectory read cancelled','AbortError');
+async function sourceText(source,signal){if(signal?.aborted)throw abortError();if(typeof source==='string')return source;if(typeof source?.text==='string')return source.text;if(typeof source?.text==='function'){const value=await source.text();if(signal?.aborted)throw abortError();return value;}throw new TypeError('Trajectory source must be a Blob, File, file-handle, string, or explicit text fixture');}
+async function sourceBlob(source){if(source?.getFile)return source.getFile();return source;}
+
+/** Scan complete models without constructing atom objects; byte offsets are retained for Blob sources. */
+export async function indexPdbSource(source,{signal=null}={}){
+  source=await sourceBlob(source);if(signal?.aborted)throw abortError();
+  // Blob slicing keeps the trajectory lazy after this bounded line scan. Explicit text
+  // fixtures use character offsets and remain useful in Node tests.
+  if(typeof source?.slice==='function'&&Number.isFinite(source.size)){
+    const decoder=new TextDecoder(),reader=source.stream().getReader(),frames=[],diagnostics=[];let pending='',consumed=0,start=null,model=null,atomCount=0;
+    try{while(true){if(signal?.aborted){await reader.cancel();throw abortError()}const {done,value}=await reader.read();const chunk=decoder.decode(value||new Uint8Array(),{stream:!done});pending+=chunk;let newline;while((newline=pending.indexOf('\n'))>=0){const raw=pending.slice(0,newline+1),line=raw.replace(/[\r\n]+$/,'');const bytes=new TextEncoder().encode(raw).length,lineStart=consumed;consumed+=bytes;pending=pending.slice(newline+1);const type=line.slice(0,6).trim();if(type==='MODEL'){start=lineStart;model=Number(line.slice(6).trim());atomCount=0}else if((type==='ATOM'||type==='HETATM')&&start!==null)atomCount++;else if(type==='ENDMDL'&&start!==null){frames.push({model:Number.isFinite(model)?model:frames.length+1,start,end:consumed,atomCount});start=null}}if(done)break}
+    }finally{reader.releaseLock()}if(start!==null)diagnostics.push({code:'incomplete_trailing_model',model:Number.isFinite(model)?model:null,message:'Skipped an incomplete trailing MODEL without a matching ENDMDL.'});if(!frames.length)throw new Error('PDB movie contains no complete models');return {frames,diagnostics,source,offsetUnit:'byte'};
+  }
+  const text=await sourceText(source,signal),frames=indexPdbFrames(text);return {frames:[...frames].map(entry=>({...entry,atomCount:(text.slice(entry.start,entry.end).match(/^(?:ATOM  |HETATM)/gm)||[]).length})),diagnostics:frames.diagnostics||[],source,text,offsetUnit:'character'};
+}
+
+export async function decodePdbSourceFrame(index,indexEntry,options={},signal=null){if(signal?.aborted)throw abortError();let text;if(index.offsetUnit==='byte'){const blob=index.source.slice(indexEntry.start,indexEntry.end);text=await blob.text()}else text=index.text.slice(indexEntry.start,indexEntry.end);if(signal?.aborted)throw abortError();return decodeIndexedPdbFrame(text,{...indexEntry,start:0,end:text.length},options)}
+
+/** Decode selected frames one at a time so callers need retain only current coordinates. */
+export async function* selectedPdbFrames(index,range,options={},signal=null){for(const frameIndex of range.frameIndices){if(signal?.aborted)throw abortError();const entry=index.frames[frameIndex];if(!entry)throw new RangeError(`Frame ${frameIndex} is outside the trajectory`);const frame=await decodePdbSourceFrame(index,entry,options,signal);yield {frameIndex,modelNumber:entry.model,frame};}}
 
 /** One-at-a-time frame preparation with stale-result rejection and atomic commits. */
 export class SerializedFrameScheduler{
