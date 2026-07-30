@@ -116,5 +116,10 @@ export async function importRunPackage(files,{annotationSidecar=null,manifestFin
   const geometric=!!(parsed.movie&&parsed.topologyValidation?.validated&&parsed.expandedFramework);
   const essential=geometric&&!!(parsed.simulation&&parsed.pseudoatoms&&parsed.forceField&&Number.isFinite(cutoffA));
   const fingerprint=Number.isFinite(cutoffA)&&parsed.forceField&&parsed.simulation&&parsed.cif&&parsed.topology?await physicsFingerprint({cutoffA,useChargesFromCif,unitCells,forceField:parsed.forceField,cif:parsed.cif,topology:parsed.topology}):null;
-  return {files:{simulation:sim?.path||null,pseudoatoms:pseudo?.path||null,mixing:mix?.path||null,override:override?.path||null,cif:cif?.path||null,molecule:molecule?.path||null,movie:movie?.path||null,output:output?.path||null},parsed,physicsFingerprint:fingerprint,capabilities:{rdfAndAnnotations:true,moviePlayback:!!parsed.movie,geometricSelection:geometric,quantitativeLJ:essential},diagnostics};
+  // The authorized package-relative path is the movie identity for now.  It is
+  // combined with the exact dataset/run identity when an LJ result is saved.
+  // Keeping this separate from the lazy source avoids reading or copying a
+  // potentially large trajectory merely to construct comparison provenance.
+  const movieIdentity=movie?.path||null;
+  return {files:{simulation:sim?.path||null,pseudoatoms:pseudo?.path||null,mixing:mix?.path||null,override:override?.path||null,cif:cif?.path||null,molecule:molecule?.path||null,movie:movie?.path||null,output:output?.path||null},movieIdentity,parsed,physicsFingerprint:fingerprint,capabilities:{rdfAndAnnotations:true,moviePlayback:!!parsed.movie,geometricSelection:geometric,quantitativeLJ:essential},diagnostics};
 }
