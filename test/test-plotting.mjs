@@ -31,7 +31,7 @@ test('publication SVG has numeric ticks, concise legend, and no interface or pro
 
 test('workspace curve renderer requires generic accessors and explicit axis metadata',async()=>{const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8'),draw=source.slice(source.indexOf('function drawCurve'),source.indexOf('function viridis'));assert.match(draw,/\{x,y,xLabel,xUnit,yLabel,yUnit,/);assert.match(draw,/missing: \$\{missing\.join/);assert.doesNotMatch(draw,/x\?\?r\.distanceA|y\?\?r\.gR/);assert.match(source,/yLabel:'Radial distribution function, g\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Δg\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Probability density',yUnit:'Å⁻¹'/)});
 
-import {comparisonCurveLayout, comparisonHeatmapLayout, formatPressureTick} from '../src/ui/plot-theme.mjs';
+import {comparisonCurveLayout, comparisonHeatmapLayout, measuredLegendLayout, formatPressureTick} from '../src/ui/plot-theme.mjs';
 const measuredText=text=>String(text).length*7;
 test('comparison layouts preserve useful curve and heatmap regions at desktop and mobile sizes',()=>{
   for(const [width,height] of [[700,430],[320,400]]){
@@ -56,12 +56,21 @@ test('A/B legends are measured and wrap within their bounded region without coll
   const mobile=comparisonCurveLayout({width:320,height:400,measure:measuredText,legendLabels:['A · C10 · CF2_sp3 ↔ Zn1','B · C10 · CF2_sp3 ↔ Zn1']});
   assert.equal(mobile.legend.columns,1);assert.equal(mobile.legend.rows,2);
 });
+test('measured legend items stay bounded, do not intersect, and add rows on narrow plots',()=>{
+  const widths=[245,224,238],wide=measuredLegendLayout({availableWidth:760,labelWidths:widths,swatchSize:24,fontHeight:14,horizontalGap:7,verticalGap:5}),narrow=measuredLegendLayout({availableWidth:180,labelWidths:widths,swatchSize:24,fontHeight:14,horizontalGap:7,verticalGap:5});
+  assert.ok(narrow.rows>wide.rows);assert.equal(narrow.columns,1);assert.equal(narrow.policy,'clip');
+  for(const layout of [wide,narrow])for(const [i,a] of layout.items.entries()){
+    assert.ok(a.x>=0&&a.x+a.width<=layout.width);assert.ok(a.y>=0&&a.y+a.height<=layout.height);
+    for(const b of layout.items.slice(i+1))assert.ok(a.y+a.height<=b.y||b.y+b.height<=a.y||a.x+a.width<=b.x||b.x+b.width<=a.x);
+  }
+  assert.ok(narrow.items.every(item=>item.clipped),'oversized labels use the documented visual clipping policy');
+});
 test('workspace renderers expose one/multi-row, axes, color scale mode, and true maximum metadata',async()=>{
   const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8');
   const heat=source.slice(source.indexOf('function drawHeatmap'),source.indexOf('function heatmapClick'));
   for(const title of ['Distance, r (Å)','Pressure, P (Pa)','g(r)'])assert.match(heat,new RegExp(title.replace(/[()]/g,'\\$&')));
   assert.match(heat,/n===1\?`one pressure row/);assert.match(heat,/scaleMode/);assert.match(heat,/true maximum/);assert.match(heat,/clipped/);
-  assert.match(source,/scaleMode:shared\?'shared A\/B':'independent A'/);
-  assert.match(source,/label:`A · \$\{choiceA\.component\} · \$\{choiceA\.pair\}`/);
+  assert.match(source,/shared across \$\{datasetLabel\('A'\)\} and \$\{datasetLabel\('B'\)\}/);
+  assert.match(source,/label:`\$\{datasetLabel\('A'\)\} · \$\{choiceA\.component\} · \$\{choiceA\.pair\}`/);
   assert.doesNotMatch(source,/j\*150/);
 });
