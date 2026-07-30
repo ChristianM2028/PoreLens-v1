@@ -4,23 +4,40 @@ import {parseVtkCellParameters} from './spatial-registration.mjs?rev=porelens-20
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));
 
-/** Parse a two-column RASPA online end-to-end observable without guessing its normalization. */
+export class HistogramParseError extends Error{
+  constructor(message,{code,source,lineNumber=null,diagnostics=null}={}){super(message);this.name='HistogramParseError';this.code=code;this.source=source;this.lineNumber=lineNumber;this.diagnostics=diagnostics;}
+}
+
+const HISTOGRAM_HEADERS=[
+  /^(?:#|!|;|@|%)\s*/, // RASPA comment/header records
+  /^end[- ]to[- ]end (?:distance )?histogram\b/i,
+  /^distance(?:\s*\[[^\]]+\])?\s+(?:probability(?:\s+density)?|density|frequency|weight)\b/i,
+  /^average end[- ]to[- ]end distance\b/i
+];
+/** Parse fixture-backed RASPA histogram layouts without guessing from the filename.
+ * Layouts are (distance, stored value) and (integer bin, distance, stored value).
+ */
 export function parseEndToEndDistribution(text,source='end-to-end histogram'){
-  const records=[],comments=[];
+  const records=[],comments=[],ignoredHeaderLines=[];let layout=null,numericValueCount=0;
   for(const {raw,trimmed,line} of cleanLines(text)){
     if(!trimmed)continue;
-    if(/^(#|!|;|@|%)/.test(trimmed)){comments.push(trimmed);continue;}
+    if(HISTOGRAM_HEADERS.some(pattern=>pattern.test(trimmed))){comments.push(trimmed);ignoredHeaderLines.push({lineNumber:line,text:raw});continue;}
     const columns=trimmed.split(/\s+/).map(Number);
-    if(columns.length<2||!columns.slice(0,2).every(finite))throw new Error(`${source}: malformed numeric row ${line}`);
-    records.push({distanceA:columns[0],sourceValue:columns[1]});
+    if(!columns.length||!columns.every(finite))throw new HistogramParseError(`${source}: unsupported histogram layout at line ${line}`,{code:'unsupported_layout',source,lineNumber:line,diagnostics:{detectedLayout:'unsupported',numericRowCount:records.length,numericValueCount,ignoredHeaderLines}});
+    const rowLayout=columns.length===2?'distance_value':columns.length===3&&Number.isInteger(columns[0])?'bin_distance_value':null;
+    if(!rowLayout||layout&&layout!==rowLayout)throw new HistogramParseError(`${source}: unsupported histogram layout at line ${line}`,{code:'unsupported_layout',source,lineNumber:line,diagnostics:{detectedLayout:layout||'unsupported',numericRowCount:records.length,numericValueCount,ignoredHeaderLines}});
+    layout=rowLayout;numericValueCount+=columns.length;
+    const [distanceA,sourceValue]=rowLayout==='distance_value'?columns:[columns[1],columns[2]];
+    records.push({distanceA,sourceValue,lineNumber:line,...(rowLayout==='bin_distance_value'?{binIndex:columns[0]}:{})});
   }
-  if(records.length<2)throw new Error(`${source}: requires at least two numeric rows`);
-  if(records.some((row,i)=>i&&row.distanceA<=records[i-1].distanceA))throw new Error(`${source}: distance grid must be strictly increasing`);
-  if(records.some(row=>row.sourceValue<0))throw new Error(`${source}: distribution values must be non-negative`);
+  const diagnostics={detectedLayout:layout||'empty',numericRowCount:records.length,numericValueCount,ignoredHeaderLines};
+  if(!records.length)throw new HistogramParseError(`${source}: histogram output is empty or incomplete`,{code:'incomplete_output',source,diagnostics});
+  if(records.some((row,i)=>i&&row.distanceA<=records[i-1].distanceA))throw new HistogramParseError(`${source}: distance grid must be strictly increasing`,{code:'invalid_grid',source,diagnostics});
+  if(records.some(row=>row.sourceValue<0))throw new HistogramParseError(`${source}: distribution values must be non-negative`,{code:'invalid_value',source,diagnostics});
   const header=comments.join(' ').toLowerCase();
   const semantics=/probability\s*density|normalized\s*(?:density|histogram)/.test(header)?'probability_density':/raw|count|observation|frequency/.test(header)?'raw_weight':'stored_values';
   const integral=trapezoid(records.map(x=>x.distanceA),records.map(x=>x.sourceValue));
-  return {records,comments,semantics,integral,normalizations:{stored:true,probability:integral>0,normalizedDensity:integral>0,rawDensity:semantics==='raw_weight'},source};
+  return {records,comments,semantics,integral,diagnostics,layout,normalizations:{stored:true,probability:integral>0,normalizedDensity:integral>0,rawDensity:semantics==='raw_weight'},source};
 }
 
 const trapezoid=(x,y)=>x.slice(1).reduce((sum,_,i)=>sum+(x[i+1]-x[i])*(y[i]+y[i+1])/2,0);

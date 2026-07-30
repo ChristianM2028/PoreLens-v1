@@ -1,24 +1,29 @@
 import {parseRdf} from '../importers.mjs?rev=porelens-20260729-simulation-shape-v2';
-
-const KNOWN_SITES=['CH3_sp3','CH2_sp3','CF3_sp3','CF2_sp3','Zn1','O1','O2','C1','C2','C3','H1'];
+const LEGACY_STANDALONE_LABELS=['CH3_sp3','CH2_sp3','CF3_sp3','CF2_sp3','Zn1','O1','O2','C1','C2','C3','H1'];
 
 /** Resolve only complete known labels; never split each underscore. */
-export function resolveCatalogPair(filename,knownSites=KNOWN_SITES){
+export function resolveCatalogPair(filename,knownSites=LEGACY_STANDALONE_LABELS){
   const stem=String(filename||'').split('/').at(-1).replace(/^RDF[_-]?/i,'').replace(/\.(?:dat|txt|data)$/i,'');
   const matches=[];
   for(const left of knownSites)for(const right of knownSites)if(`${left}_${right}`===stem)matches.push([left,right]);
   return matches.length===1?matches[0]:[stem,null];
 }
 
+const labelOf=x=>typeof x==='string'?x:x?.name??x?.label??x?.type??x?.pseudoAtomType;
+/** Assemble labels only from evidence belonging to this run. */
+export function runSpecificSiteLabels(record={}){const run=record.normalizedRun||record.runRecord||record.run||{},explicit=first(record,['pairMetadata','pair_metadata','knownSiteLabels','known_site_labels'])||[],pseudo=run.pseudoAtoms||run.pseudoatoms||record.pseudoAtoms||[],definitions=run.moleculeDefinitions||record.moleculeDefinitions||[],framework=run.frameworkAtoms||run.cifLabels||record.frameworkLabels||record.cifLabels||[];return [...new Set([...(Array.isArray(explicit)?explicit:[]).flatMap(x=>Array.isArray(x)?x:[x]),...pseudo.map(labelOf),...definitions.flatMap(d=>(d.parsed?.atoms||d.atoms||d.parsed?.sites||d.sites||[]).map(labelOf)),...framework.map(labelOf)].filter(Boolean).map(String))].sort((a,b)=>b.length-a.length||a.localeCompare(b))}
+
+export function resolveCatalogPairDetailed(filename,knownSites=[]){const pair=resolveCatalogPair(filename,knownSites),resolved=!!pair[1],mappingRequired=!resolved;return {pair,resolved,mappingRequired,diagnostic:resolved?null:{severity:'warning',code:knownSites.length?'rdf_pair_ambiguous_or_unknown':'rdf_pair_dependencies_missing',message:`Cannot resolve the complete RDF pair in ${String(filename).split('/').at(-1)} from this run's labels. The RDF remains indexed; supply an explicit two-label pair mapping${knownSites.length?' or correct the run metadata':', or import pseudo_atoms.def, the matching molecule definition, and framework CIF'}.`,mappingRequired:true,candidates:knownSites}}}
+
 const first=(record,names)=>names.map(name=>record?.[name]).find(value=>value!==undefined&&value!==null&&value!=='');
 const rdfType=record=>String(first(record,['type','kind','resultType'])??'rdf').toLowerCase().replaceAll('-','_');
 const isRdf=record=>['rdf','radial_distribution_function','radialdistributionfunction'].includes(rdfType(record));
 
-function pairIdentity(record,path){
+function pairIdentity(record,path,labels=runSpecificSiteLabels(record)){
   const supplied=first(record,['pairKey','pair_key','pairLabel','pair_label','pair']);
   if(Array.isArray(supplied)&&supplied.length===2&&supplied.every(Boolean))return supplied.join(' ↔ ');
   if(typeof supplied==='string'&&supplied.trim())return supplied.trim();
-  const resolved=resolveCatalogPair(first(record,['filename','name','relativePath','relative_path','path'])||path);
+  const resolved=resolveCatalogPair(first(record,['filename','name','relativePath','relative_path','path'])||path,labels);
   return resolved[1]?resolved.join(' ↔ '):null;
 }
 function sourceFilename(record,path){return String(first(record,['filename','name','rdfFilename','rdf_filename'])??String(path).split('/').at(-1)??'');}
@@ -36,12 +41,12 @@ export function normalizeRdfForUi(rdfRecord,datasetSlot){
   if(!rdfRecord||!isRdf(rdfRecord))return null;
   const path=String(first(rdfRecord,['relativePath','relative_path','collectedRelativePath','collected_relative_path','path'])??'');
   const chainKey=String(first(rdfRecord,['chainKey','chain_key','chain','chainId','chain_id','seriesName','series_name','componentName','component_name','component'])??'').trim()||null;
-  const pairKey=pairIdentity(rdfRecord,path),filename=sourceFilename(rdfRecord,path);
+  const labels=runSpecificSiteLabels(rdfRecord),filename=sourceFilename(rdfRecord,path),resolution=resolveCatalogPairDetailed(filename||path,labels),pairKey=pairIdentity(rdfRecord,path,labels);
   const pressurePa=Number(first(rdfRecord,['pressurePa','pressure_pa','pressure']));
   const runId=String(first(rdfRecord,['runId','run_id','run'])??'');
   const file=readableFile(rdfRecord),lookup=first(rdfRecord,['fileHandleLookup','file_handle_lookup','lookup'])||{rootRelativePath:path,fileHandle:rdfRecord.handle??null};
-  const pair=Array.isArray(rdfRecord.pair)&&rdfRecord.pair.length===2?[...rdfRecord.pair]:resolveCatalogPair(filename||path);
-  const normalized={datasetId:String(datasetSlot),chainKey,chainLabel:String(first(rdfRecord,['chainLabel','chain_label'])??chainKey??''),pairKey,pairLabel:String(first(rdfRecord,['pairLabel','pair_label'])??pairKey??''),pair,pressurePa,temperatureK:Number(first(rdfRecord,['temperatureK','temperature_k'])),runId,relativePath:path,fileHandleLookup:lookup,sourceRecord:rdfRecord,resultType:'rdf',rdf:null};
+  const pair=Array.isArray(rdfRecord.pair)&&rdfRecord.pair.length===2?[...rdfRecord.pair]:resolution.pair;
+  const normalized={datasetId:String(datasetSlot),chainKey,chainLabel:String(first(rdfRecord,['chainLabel','chain_label'])??chainKey??''),pairKey,pairLabel:String(first(rdfRecord,['pairLabel','pair_label'])??pairKey??filename),pair,pairResolution:resolution,pressurePa,temperatureK:Number(first(rdfRecord,['temperatureK','temperature_k'])),runId,relativePath:path,fileHandleLookup:lookup,sourceRecord:rdfRecord,resultType:'rdf',rdf:null};
   normalized.manifest={n_value:Number(String(chainKey||'').replace(/^C/i,'')),component:chainKey,run:runId,pressure_pa:pressurePa,pressure_bar:pressurePa/100000,rdf_filename:filename,source_relative_path:path,collected_relative_path:path,size_bytes:null,sha256:''};
   normalized.lookup=lookup;normalized.path=path;
   normalized.loadRdf=async()=>{if(normalized.rdf)return normalized.rdf;let source=file;if(!source&&typeof lookup==='function')source=await lookup(path);if(!source&&typeof lookup?.getFile==='function')source=lookup;if(!source&&lookup?.fileHandle)source=lookup.fileHandle;if(source?.getFile)source=await source.getFile();if(!source?.text)throw new Error(`Directory authorization is unavailable for ${path}`);normalized.rdf=parseRdf(await source.text(),path);return normalized.rdf};
@@ -52,7 +57,7 @@ export function normalizeRdfForUi(rdfRecord,datasetSlot){
 export function catalogRdfRecords(catalog){
   const top=first(catalog,['rdfRecords','rdf_records','rdfs']);
   if(Array.isArray(top))return top;
-  return (catalog.runs||[]).flatMap(run=>(run.outputs?.rdf||[]).map(output=>({...output,chainKey:run.chain,seriesName:run.simulation?.components?.[0]?.name,runId:run.run,pressurePa:run.simulation?.pressurePa,temperatureK:run.simulation?.temperatureK,framework:run.simulation?.framework?.name})));
+  return (catalog.runs||[]).flatMap(run=>(run.outputs?.rdf||[]).map(output=>({...output,normalizedRun:run,chainKey:run.chain,seriesName:run.simulation?.components?.[0]?.name,runId:run.run,pressurePa:run.simulation?.pressurePa,temperatureK:run.simulation?.temperatureK,framework:run.simulation?.framework?.name})));
 }
 
 export function deriveRdfSelectorState(records,{datasetId,chainKey=null,pairKey=null}={}){
@@ -62,7 +67,7 @@ export function deriveRdfSelectorState(records,{datasetId,chainKey=null,pairKey=
 
 export function normalizedCatalogToBrowserResult(catalog,{datasetId=catalog.name}={}){
   const diagnostics=[...(catalog.diagnostics||[])],raw=catalogRdfRecords(catalog),datasets=[];
-  for(const record of raw){const entry=normalizeRdfForUi(record,datasetId);if(entry)datasets.push(entry)}
+  for(const record of raw){const entry=normalizeRdfForUi(record,datasetId);if(entry){datasets.push(entry);if(!entry.pairKey)diagnostics.push({...entry.pairResolution.diagnostic,source:entry.path})}}
   datasets.sort((a,b)=>(Number.isFinite(a.pressurePa)?a.pressurePa:Infinity)-(Number.isFinite(b.pressurePa)?b.pressurePa:Infinity)||a.path.localeCompare(b.path));
   const trace=deriveRdfSelectorState(datasets,{datasetId});
   const indexedCount=Number(catalog.rdfCount??catalog.stats?.rdfs??raw.length);
