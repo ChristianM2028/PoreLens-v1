@@ -1,6 +1,7 @@
 import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=porelens-20260729-simulation-shape-v2';
 import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=porelens-20260729-simulation-shape-v2';
 import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {parseCif} from '../../core/raspa-package.mjs?rev=porelens-20260729-simulation-shape-v2';
 
 const CHAIN=/^C\d+$/i, RUN=/^\d+(?:_|$)/;
 const SUMMARIES=new Map([['final_abs_pressure_up','pressure'],['final_abs_fug_up','fugacity']]);
@@ -50,7 +51,7 @@ export class DirectoryCatalogScanner {
     if(!this.cancelled){const rdfDirectories=this.catalog.runs.filter(r=>r.rdfDirectories>0).length;if(rdfDirectories&&!this.catalog.stats.rdfs)this.diagnostic('error','rdf_directories_empty','RadialDistributionFunctions directories were found, but no RDF files were indexed.');if(this.catalog.stats.ignored&&!this.catalog.stats.rdfs)this.diagnostic('error','no_rdf_selector_records',`${this.catalog.stats.ignored} files were ignored and no RDF records can reach the selector model.`);this.catalog.finished=true;this.emit(this.catalog.stats.failures?'complete-with-errors':'complete')}return this.catalog;
   }
   async indexRun(chain,run,handle,prefix=chain){
-    const item={id:`${chain}/${run}`,rootRelativePath:`${prefix}/${run}`,chain,run,handle,simulation:null,simulationFile:null,dependencies:{},pseudoAtoms:null,forceFieldParameters:null,moleculeDefinitions:[],outputs:{raspa_output:[],rdf:[],end_to_end:[],movie:[],vtk:[]},rdfDirectories:0,diagnostics:[]};
+    const item={id:`${chain}/${run}`,rootRelativePath:`${prefix}/${run}`,chain,run,handle,simulation:null,simulationFile:null,dependencies:{},pseudoAtoms:null,forceFieldParameters:null,moleculeDefinitions:[],frameworkCif:null,frameworkLabels:[],outputs:{raspa_output:[],rdf:[],end_to_end:[],movie:[],vtk:[]},rdfDirectories:0,diagnostics:[]};
     try{await this.walkRun(handle,item.rootRelativePath,item)}catch(error){item.diagnostics.push(error.message);this.diagnostic('error','run_scan_failed',error.message,item.id)}
     if(!item.simulation){item.diagnostics.push('simulation.input is missing or invalid');this.diagnostic('warning','missing_simulation_input','simulation.input is missing or invalid',item.id)}
     else await this.parseRunDefinitions(item);
@@ -61,6 +62,7 @@ export class DirectoryCatalogScanner {
     const read=async file=>{this.catalog.stats.filesRead++;return file.text()};
     try{const pseudo=dependency('pseudo_atoms.def');if(pseudo)item.pseudoAtoms=parsePseudoAtoms(await read(pseudo),pseudo.path)}catch(error){item.diagnostics.push(`pseudo_atoms.def: ${error.message}`)}
     try{const mixing=dependency('force_field_mixing_rules.def');if(mixing)item.forceFieldParameters=parseMixingRules(await read(mixing),mixing.path)}catch(error){item.diagnostics.push(`force_field_mixing_rules.def: ${error.message}`)}
+    try{const frameworkName=item.simulation.framework?.name;const cif=frameworkName?dependency(`${frameworkName}.cif`):null;if(cif){item.frameworkCif=parseCif(await read(cif));item.frameworkLabels=[...new Set(item.frameworkCif.asymmetricSites.map(site=>site.label).filter(Boolean))]}}catch(error){item.diagnostics.push(`framework CIF: ${error.message}`)}
     for(const component of item.simulation.components||[]){
       const candidates=[`${component.name}.def`,component.moleculeDefinition].filter(x=>x&&/\.def$/i.test(x));
       const file=candidates.map(dependency).find(Boolean);

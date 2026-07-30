@@ -1,4 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {DirectoryCatalogScanner,lightweightSnapshot} from '../src/import/directory-catalog.mjs';
 import {normalizedCatalogToBrowserResult,hydrateRdfSeries,resolveCatalogPair,deriveRdfSelectorState,normalizeRdfForUi} from '../src/import/browser/catalog-adapter.mjs';
 const file=(name,getText)=>({kind:'file',name,async getFile(){const text=getText();return {name,size:text.length,lastModified:1,text:async()=>text,arrayBuffer:async()=>new TextEncoder().encode(text).buffer}}});
@@ -30,3 +31,23 @@ test('typed browser catalog drives chain, pair, sorted pressure, lazy read, and 
 });
 
 test('run-specific longest complete labels resolve arbitrary and multi-underscore RDF sites',()=>{const record=(filename,labels)=>({type:'rdf',filename,path:`C7/1/${filename}`,chain:'C7',run:'1',pressurePa:10,knownSiteLabels:labels,file:{text:async()=>rdf()}});for(const [filename,pair] of [['RDF_CH4_sp3_linker_O9.dat',['CH4_sp3','linker_O9']],['RDF_CH3_sp3_O12.dat',['CH3_sp3','O12']],['RDF_CH2_sp3_site_with_many_underscores.dat',['CH2_sp3','site_with_many_underscores']]]){const normalized=normalizeRdfForUi(record(filename,pair),'fixture');assert.deepEqual(normalized.pair,pair);assert.equal(normalized.pairKey,pair.join(' ↔ '))}const ambiguous=normalizeRdfForUi(record('RDF_A_B_C.dat',['A','A_B','B_C','C']),'fixture');assert.equal(ambiguous.pairKey,null);assert.equal(ambiguous.pairResolution.diagnostic.code,'rdf_pair_ambiguous_or_unknown')});
+
+test('directory scanner resolves underscore pseudoatoms against parsed molecule and numbered CIF labels',async()=>{
+  const fixture=name=>readFile(new URL(`./fixtures/representative_annotations/${name}`,import.meta.url),'utf8');
+  const [simulationInput,pseudoAtoms,molecule,cif,rdfText]=await Promise.all([fixture('simulation.input'),fixture('pseudo_atoms.def'),fixture('C10.def'),fixture('IRMOF-1.cif'),fixture('RDF_CF3_sp3_O2.dat')]);
+  const handle=dir('matched',[dir('C10',[dir('40',[file('simulation.input',()=>simulationInput),file('pseudo_atoms.def',()=>pseudoAtoms),file('C10.def',()=>molecule),file('IRMOF-1.cif',()=>cif),dir('RadialDistributionFunctions',[file('RDF_CH3_sp3_O2.dat',()=>rdfText),file('RDF_CH2_sp3_Zn1.dat',()=>rdfText)])])])]);
+  const catalog=await new DirectoryCatalogScanner(handle).scan(),run=catalog.runs[0];
+  assert.ok(run.pseudoAtoms.records.some(atom=>atom.name==='CH3_sp3'));
+  assert.deepEqual(run.frameworkLabels.filter(label=>['O1','O2','Zn1'].includes(label)).sort(),['O1','O2','Zn1']);
+  const result=normalizedCatalogToBrowserResult(catalog,{datasetId:'A'});
+  assert.equal(result.datasets.length,2);
+  assert.deepEqual(result.datasets.map(entry=>entry.pairKey).sort(),['CH2_sp3 ↔ Zn1','CH3_sp3 ↔ O2']);
+  const selectors=deriveRdfSelectorState(result.datasets,{datasetId:'A',chainKey:'C10'});
+  assert.deepEqual(selectors.chains,['C10']);assert.equal(selectors.pairs.length,2);assert.deepEqual(selectors.pressures,[23299.51811]);
+  const hydrated=await hydrateRdfSeries(result,'C10','CH3_sp3 ↔ O2');assert.equal(hydrated.length,1);assert.ok(hydrated[0].rdf.records.length>1);
+});
+
+test('unverified metadata collection shapes cannot break unresolved RDF browsing',()=>{
+  const entry=normalizeRdfForUi({type:'rdf',filename:'RDF_unknown_site.dat',path:'C8/1/RDF_unknown_site.dat',chain:'C8',run:'1',pressurePa:1,pseudoAtoms:{records:null},moleculeDefinitions:{bad:true},frameworkLabels:'O1',knownSiteLabels:{bad:true},file:{text:async()=>rdf()}},'A');
+  assert.equal(entry.pairKey,null);assert.equal(entry.pairResolution.mappingRequired,true);assert.equal(entry.pairResolution.diagnostic.code,'rdf_pair_dependencies_missing');
+});

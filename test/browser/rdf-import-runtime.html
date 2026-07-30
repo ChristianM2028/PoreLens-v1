@@ -9,6 +9,7 @@ try {
   frame.src='../../index.html#adsorption-isotherms';
   await new Promise((resolve,reject)=>{frame.onload=resolve;setTimeout(()=>reject(new Error('index load timeout')),10000)});
   const w=frame.contentWindow,d=w.document;
+  const loadedSlots=[];w.addEventListener('porelens:dataset-loaded',event=>loadedSlots.push(event.detail?.slot));
   w.addEventListener('error',event=>errors.push(event.error?.stack||event.message));
   w.addEventListener('unhandledrejection',event=>errors.push(event.reason?.stack||String(event.reason)));
   await waitFor(()=>d.querySelector('[data-workspace="rdf"]').onclick!==undefined && d.querySelector('#filesA').onchange);
@@ -41,8 +42,14 @@ try {
   w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{slot:'B',catalog}}));
   await waitFor(()=>d.querySelector('#datasetSelect').value==='B'&&d.querySelector('#heatmap')._heatmap?.pressuresPa?.[0]===25000);
   const directory={component:d.querySelector('#componentSelect').options.length,pair:d.querySelector('#pairSelect').options.length,pressure:d.querySelector('#pressureSelect').options.length,heatmap:!!d.querySelector('#heatmap')._heatmap,curve:!!d.querySelector('#realRdfCanvas')._curve};
+  await waitFor(()=>loadedSlots.includes('A')&&loadedSlots.includes('B')&&d.querySelector('#comparisonGate').hidden&&d.querySelector('#compA').options.length&&d.querySelector('#pairA').options.length&&d.querySelector('#compB').options.length&&d.querySelector('#pairB').options.length);
+  const comparison={loadedSlots:[...loadedSlots],gateOpen:d.querySelector('#comparisonGate').hidden,componentsA:d.querySelector('#compA').options.length,pairsA:d.querySelector('#pairA').options.length,componentsB:d.querySelector('#compB').options.length,pairsB:d.querySelector('#pairB').options.length};
+  const broken={name:'broken fixture',finished:true,authorized:true,stats:{rdfs:1},diagnostics:[]};Object.defineProperty(broken,'rdfRecords',{get(){throw new Error('fixture catalog shape exploded')}});
+  w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{slot:'B',catalog:broken}}));
+  await waitFor(()=>d.querySelector('#statusB').textContent.includes('Catalog adapter failed: fixture catalog shape exploded'));
+  const adapterDiagnostic=d.querySelector('#statusB').textContent;
   if(errors.length)throw new Error(`uncaught page errors: ${errors.join('\n')}`);
   if(Object.values(compatibility).some(x=>!x)||Object.values(directory).some(x=>!x))throw new Error(`RDF state missing: ${JSON.stringify({compatibility,directory})}`);
-  result.textContent=JSON.stringify({ok:true,navigation:true,compatibility,directory});
+  result.textContent=JSON.stringify({ok:true,navigation:true,compatibility,directory,comparison,adapterDiagnostic});
 }catch(error){result.textContent=JSON.stringify({ok:false,error:error.stack||error.message,errors})}
 </script>
