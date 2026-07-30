@@ -30,3 +30,38 @@ test('one shared publication theme supplies stable chain encodings and readable 
 test('publication SVG has numeric ticks, concise legend, and no interface or provenance text',()=>{const records=Array.from({length:50},(_,i)=>({x:10**(i/10),y:i/10,uncertainty:.02})),svg=buildLineSvg([{component:'C2',chainLength:2,family:'PFA',records}],{logX:true,xLabel:'Pressure, P (Pa)',yLabel:'Absolute loading (mol kg⁻¹ framework)'});assert.match(svg,/class="tick x-tick"/);assert.match(svg,/10⁰/);assert.match(svg,/C₂/);assert.match(svg,/Absolute loading \(mol kg⁻¹ framework\)/);assert.match(svg,/class="error-bar"/);for(const forbidden of ['Adsorption Isotherms','checkbox','final_abs_pressure_up','wheel to zoom','provenance'])assert.doesNotMatch(svg,new RegExp(forbidden,'i'))});
 
 test('workspace curve renderer requires generic accessors and explicit axis metadata',async()=>{const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8'),draw=source.slice(source.indexOf('function drawCurve'),source.indexOf('function viridis'));assert.match(draw,/\{x,y,xLabel,xUnit,yLabel,yUnit,/);assert.match(draw,/missing: \$\{missing\.join/);assert.doesNotMatch(draw,/x\?\?r\.distanceA|y\?\?r\.gR/);assert.match(source,/yLabel:'Radial distribution function, g\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Δg\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Probability density',yUnit:'Å⁻¹'/)});
+
+import {comparisonCurveLayout, comparisonHeatmapLayout, formatPressureTick} from '../src/ui/plot-theme.mjs';
+const measuredText=text=>String(text).length*7;
+test('comparison layouts preserve useful curve and heatmap regions at desktop and mobile sizes',()=>{
+  for(const [width,height] of [[700,430],[320,400]]){
+    const curve=comparisonCurveLayout({width,height,measure:measuredText,yTickLabels:['0','1.234567e8'],legendLabels:['A · C10 · CF2_sp3 ↔ Zn1','B · C10 · CF2_sp3 ↔ Zn1']});
+    const heatmap=comparisonHeatmapLayout({width,height,measure:measuredText,pressureTickLabels:['1.0e2','2.3e8'],colorTickLabels:['0','123.4']});
+    assert.ok(curve.plotW>=curve.minimum.width&&curve.plotH>=curve.minimum.height,`${width}px curve data region`);
+    assert.ok(heatmap.plotW>=heatmap.minimum.width&&heatmap.plotH>=heatmap.minimum.height,`${width}px heatmap data region`);
+    assert.ok(curve.legend.y+curve.legend.height<=curve.top,'legend ends before curve');
+    assert.ok(heatmap.left+heatmap.plotW<=heatmap.colorBar.x,'map ends before color bar');
+  }
+});
+test('comparison gutters respond to measured long values and pressure notation is concise',()=>{
+  const short=comparisonCurveLayout({width:700,height:430,measure:measuredText,yTickLabels:['1'],legendLabels:['A']});
+  const long=comparisonCurveLayout({width:700,height:430,measure:measuredText,yTickLabels:['1.234567e8'],legendLabels:['A']});
+  assert.ok(long.left>short.left);
+  assert.equal(formatPressureTick(23299.51811),'2.3e4');
+  assert.equal(formatPressureTick(1e8),'1e8');
+});
+test('A/B legends are measured and wrap within their bounded region without collisions',()=>{
+  const layout=comparisonCurveLayout({width:700,height:430,measure:measuredText,legendLabels:['A · C10 · CF2_sp3 ↔ Zn1','B · C10 · CF2_sp3 ↔ Zn1']});
+  assert.equal(layout.legend.columns,2);assert.equal(layout.legend.rows,1);
+  const mobile=comparisonCurveLayout({width:320,height:400,measure:measuredText,legendLabels:['A · C10 · CF2_sp3 ↔ Zn1','B · C10 · CF2_sp3 ↔ Zn1']});
+  assert.equal(mobile.legend.columns,1);assert.equal(mobile.legend.rows,2);
+});
+test('workspace renderers expose one/multi-row, axes, color scale mode, and true maximum metadata',async()=>{
+  const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8');
+  const heat=source.slice(source.indexOf('function drawHeatmap'),source.indexOf('function heatmapClick'));
+  for(const title of ['Distance, r (Å)','Pressure, P (Pa)','g(r)'])assert.match(heat,new RegExp(title.replace(/[()]/g,'\\$&')));
+  assert.match(heat,/n===1\?`one pressure row/);assert.match(heat,/scaleMode/);assert.match(heat,/true maximum/);assert.match(heat,/clipped/);
+  assert.match(source,/scaleMode:shared\?'shared A\/B':'independent A'/);
+  assert.match(source,/label:`A · \$\{choiceA\.component\} · \$\{choiceA\.pair\}`/);
+  assert.doesNotMatch(source,/j\*150/);
+});
