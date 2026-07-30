@@ -1,9 +1,9 @@
-import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=porelens-20260729-simulation-shape-v2';
-import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=porelens-20260729-simulation-shape-v2';
-import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=porelens-20260729-simulation-shape-v2';
-import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=porelens-20260729-simulation-shape-v2';
-import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,EXPORT_PRESETS} from './plot-theme.mjs?rev=porelens-20260729-simulation-shape-v2';
-import {convertPressure,pressureAxisLabel} from '../core/plot-configuration.mjs?rev=porelens-20260729-simulation-shape-v2';
+import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,EXPORT_PRESETS} from './plot-theme.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {convertPressure,pressureAxisLabel} from '../core/plot-configuration.mjs?rev=porelens-20260730-isotherm-export-v3';
 
 const $=s=>document.querySelector(s),histogramSelections=new Map(),histogramVisibility=new Map(); let curves=[], zoom=1, renderGeneration=0,selectionInitialized=false,savedConfigurationRestored=false;
 const ids=['chainErrors','chainPreset','chainDatasetA','chainDatasetB','chainResult','chainLengths','chainPair','chainMatch','chainPressure','chainTolerance','chainCompare','chainXAxis','chainAxis','chainPressureUnit','chainManual','chainLoading','chainAnnotations','chainUnits','chainLoadingKind','chainLoadingUnit','chainLines','chainLegend'];

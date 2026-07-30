@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './browser/directory-handle-discovery.mjs?rev=porelens-20260729-simulation-shape-v2';
+export * from './browser/directory-handle-discovery.mjs?rev=porelens-20260730-isotherm-export-v3';
 
 /** Authorized-file index shared by every workspace; values stay lazy File/handle references. */
 export class AuthorizedRunCatalog {

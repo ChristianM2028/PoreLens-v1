@@ -1,5 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=porelens-20260729-simulation-shape-v2';
-import {parseVtkCellParameters} from './spatial-registration.mjs?rev=porelens-20260729-simulation-shape-v2';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=porelens-20260730-isotherm-export-v3';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));
