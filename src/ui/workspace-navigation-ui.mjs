@@ -1,5 +1,6 @@
-const WORKSPACE_IDS=['isotherm','rdf','end_to_end'];
-const controller={active:'isotherm',states:Object.fromEntries(WORKSPACE_IDS.map(id=>[id,{selection:{},error:null,loading:false}])),activate(id){if(!WORKSPACE_IDS.includes(id))throw new Error(`Unknown analysis workspace ${id}`);this.active=id;return this.state(id)},state(id=this.active){return this.states[id]}};
+import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=porelens-20260729-simulation-shape-v2';
+const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison'];
+const controller=new AnalysisWorkspaces();
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
 const chainSelections=new Map();
 let activationGeneration=0;
@@ -7,6 +8,7 @@ const navigationPaths={
   isotherm:{hash:'#adsorption-isotherms',workspace:'isotherm',rdfEvidence:false},
   rdf:{hash:'#rdf-workspace',workspace:'rdf',rdfEvidence:false},
   end_to_end:{hash:'#end-to-end-histograms',workspace:'end_to_end',rdfEvidence:false},
+  comparison:{hash:'#comparison',workspace:'comparison',rdfEvidence:false},
   rdfEvidence:{hash:'#trajectory-energetics',workspace:'rdf',rdfEvidence:true}
 };
 const pathByHash=Object.fromEntries(Object.entries(navigationPaths).map(([name,path])=>[path.hash,{name,...path}]));
@@ -72,6 +74,18 @@ document.querySelectorAll('[data-workspace]').forEach(link=>link.addEventListene
   navigate(link.dataset.workspace,{scroll:true});
 }));
 document.querySelectorAll('[data-rdf-subview]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-rdf-subview]').forEach(x=>x.setAttribute('aria-selected',String(x===button)));const target=button.dataset.rdfSubview==='heatmaps'?'#heatmap':'#realRdfCanvas';document.querySelector(target)?.scrollIntoView({behavior:'smooth',block:'center'})}));
+const comparisonTabs=()=>[...document.querySelectorAll('[data-comparison-view]')];
+function activateComparisonTab(view,{focus=false}={}){
+  controller.activateComparisonView(view);
+  comparisonTabs().forEach(tab=>{const selected=tab.dataset.comparisonView===controller.comparison.activeView;tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;if(selected&&focus)tab.focus()});
+  document.querySelectorAll('[data-comparison-panel]').forEach(panel=>panel.hidden=panel.dataset.comparisonPanel!==controller.comparison.activeView);
+  window.dispatchEvent(new CustomEvent('porelens:comparison-view-changed',{detail:{view:controller.comparison.activeView,state:controller.comparison}}));
+}
+comparisonTabs().forEach(tab=>{
+  tab.addEventListener('click',()=>activateComparisonTab(tab.dataset.comparisonView));
+  tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const tabs=comparisonTabs(),index=tabs.indexOf(tab),next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;activateComparisonTab(tabs[next].dataset.comparisonView,{focus:true})});
+});
+activateComparisonTab(controller.comparison.activeView);
 document.querySelector('#openLjAnalysis')?.addEventListener('click',()=>openRdfEvidence());
 window.addEventListener('popstate',()=>activateLocation({scroll:true}));
 window.addEventListener('hashchange',()=>activateLocation({scroll:true}));
@@ -98,4 +112,4 @@ if(document.documentElement){
   void loadFeature('catalog','./directory-import-ui.mjs?rev=porelens-20260729-simulation-shape-v2');
 }
 
-export {controller,activate,activateLocation,attachChainRenderer,loadFeature,navigate,openRdfEvidence,reportFeatureUnavailable};
+export {controller,activate,activateComparisonTab,activateLocation,attachChainRenderer,loadFeature,navigate,openRdfEvidence,reportFeatureUnavailable};
