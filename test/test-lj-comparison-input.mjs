@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {compareConditionalRuns,createLjComparisonInput} from '../src/core/lj-workflow.mjs';
+import {LjResultRegistry,comparisonDisplayRows,comparisonExport} from '../src/ui/lj-ui.mjs';
+const fixture=JSON.parse(await readFile(new URL('./fixtures/completed-lj-result.json',import.meta.url)));
+const copy=()=>structuredClone(fixture);
+const identity=slot=>({datasetSlot:slot,runIdentity:{component:'C10',run:slot,pressurePa:1},movieIdentity:`movie-${slot}`});
+test('fixture-backed completed results compare without rereading a movie and report intentional force-field differences',()=>{const a=createLjComparisonInput(copy(),identity('A')),rawB=copy();rawB.physicsFingerprint='ff-B';rawB.provenance.forceFieldIdentity='ff-B';rawB.conditionalDecomposition.summaries[0].differenceKJMol=-1;const b=createLjComparisonInput(rawB,identity('B')),result=compareConditionalRuns(a,b);assert.equal(result.rows[0].comparisonDifferenceKJMol,.5);assert.equal(result.forceFieldsDiffer,true);});
+test('conditioning and normalization incompatibilities are refused',()=>{const a=createLjComparisonInput(copy(),identity('A')),bounds=copy();bounds.provenance.conditioning.boundsA.upper=6;assert.throws(()=>compareConditionalRuns(a,createLjComparisonInput(bounds,identity('B'))),e=>e.incompatibilities.includes('conditioning semantics'));const norm=copy();norm.provenance.normalization='per_frame';assert.throws(()=>compareConditionalRuns(a,createLjComparisonInput(norm,identity('B'))),e=>e.incompatibilities.includes('normalization'));});
+test('missing framework identities are invalid',()=>{const invalid=copy();invalid.conditionalDecomposition.summaries[0].key='';assert.throws(()=>createLjComparisonInput(invalid,identity('A')),e=>e.missing.includes('framework structural identities'));});
+test('registry preserves identity and displayed values exactly match exported comparison values',()=>{const registry=new LjResultRegistry(),a=registry.save(copy(),identity('A')),rawB=copy();rawB.conditionalDecomposition.summaries[0].differenceKJMol=-.75;const b=registry.save(rawB,identity('B')),comparison=compareConditionalRuns(a,b),display=comparisonDisplayRows(comparison),exported=JSON.parse(comparisonExport(comparison));assert.deepEqual([display[0].A,display[0].B,display[0].difference],[exported.rows[0].leftDifferenceKJMol,exported.rows[0].rightDifferenceKJMol,exported.rows[0].comparisonDifferenceKJMol]);assert.equal(registry.list('A')[0].movieIdentity,'movie-A');});

@@ -1,0 +1,18 @@
+{
+  "status": "complete",
+  "physicsFingerprint": "ff-A",
+  "selection": {"source": {"component": "C10"}},
+  "provenance": {
+    "conditioning": {"guestAnchorType":"CF3_sp3","nearestPartnerStructuralLabel":"O2","boundsA":{"lower":4.5,"upper":5.5},"boundaries":{"lower":"inclusive","upper":"inclusive"},"classification":"nearest minimum-image partner"},
+    "selectionScope":"whole_molecule",
+    "pairCriterion":"minimum_image",
+    "referencePopulation":"outside_roi",
+    "normalization":"per_anchor",
+    "frameSelectionSemantics":{"startBoundary":"inclusive","endBoundary":"exclusive","stride":1,"selectionProvenance":"all frames"},
+    "structuralGrouping":{"level":"structural_label","preserveNumberedFrameworkLabels":true},
+    "cutoffTreatment":{"vdwCutoffA":12.9,"treatment":"truncated","comparisonOperator":"distance < cutoff","tailCorrectionsExcluded":true},
+    "validation":{"topology":true,"cell":true,"coordinates":true,"mixingRules":true,"exclusions":true,"periodicBoundary":true,"cutoff":true},
+    "forceFieldIdentity":"ff-A"
+  },
+  "conditionalDecomposition": {"normalization":"per guest-anchor observation","summaries":[{"level":"structural_label","key":"O2","insideCount":8,"outsideCount":7,"insideMeanKJMol":-2,"outsideMeanKJMol":-0.5,"differenceKJMol":-1.5}]}
+}
