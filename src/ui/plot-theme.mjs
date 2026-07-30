@@ -6,6 +6,30 @@ export const PLOT_THEME = Object.freeze({
   background: '#ffffff', margins: Object.freeze({ left: 112, right: 30, top: 66, bottom: 82 })
 });
 
+/** Compact, role-specific geometry for canvases in the comparison workspace. */
+export const COMPARISON_LAYOUTS = Object.freeze({
+  curve: Object.freeze({ top: 14, right: 16, bottom: 16, gap: 8, titleGap: 12, legendGap: 10, minDataWidth: 180, minDataHeight: 150 }),
+  heatmap: Object.freeze({ top: 14, right: 12, bottom: 16, gap: 8, titleGap: 12, colorBarWidth: 14, colorBarGap: 10, minDataWidth: 140, minDataHeight: 120 })
+});
+
+const measured=(measure,text)=>Math.ceil(measure(String(text))||0);
+export function comparisonCurveLayout({width,height,measure,yTickLabels=[],legendLabels=[]}) {
+  const role=COMPARISON_LAYOUTS.curve, tickH=PLOT_THEME.tickPx+5, yWidth=Math.max(0,...yTickLabels.map(x=>measured(measure,x)));
+  const left=role.titleGap+PLOT_THEME.axisTitlePx+role.gap+yWidth+role.gap;
+  const legendWidth=Math.max(0,...legendLabels.map(x=>26+measured(measure,x))), available=Math.max(0,width-left-role.right);
+  const legendColumns=Math.max(1,Math.min(legendLabels.length||1,Math.floor(available/Math.max(legendWidth,1))||1));
+  const legendRows=Math.ceil(legendLabels.length/legendColumns), legendHeight=legendRows?legendRows*(PLOT_THEME.legendPx+5)+role.legendGap:0;
+  const top=role.top+legendHeight, bottom=role.bottom+tickH+role.gap+PLOT_THEME.axisTitlePx;
+  return {left,right:role.right,top,bottom,plotW:Math.max(0,width-left-role.right),plotH:Math.max(0,height-top-bottom),legend:{x:left,y:role.top,width:available,height:legendHeight,columns:legendColumns,rows:legendRows,itemWidth:available/legendColumns},minimum:{width:role.minDataWidth,height:role.minDataHeight}};
+}
+export function comparisonHeatmapLayout({width,height,measure,pressureTickLabels=[],colorTickLabels=[]}) {
+  const role=COMPARISON_LAYOUTS.heatmap, pressureWidth=Math.max(0,...pressureTickLabels.map(x=>measured(measure,x))), colorWidth=Math.max(0,...colorTickLabels.map(x=>measured(measure,x)));
+  const left=role.titleGap+PLOT_THEME.axisTitlePx+role.gap+pressureWidth+role.gap;
+  const right=role.right+role.colorBarWidth+role.colorBarGap+colorWidth+role.gap+PLOT_THEME.axisTitlePx;
+  const bottom=role.bottom+PLOT_THEME.tickPx+role.gap+PLOT_THEME.axisTitlePx;
+  return {left,right,top:role.top,bottom,plotW:Math.max(0,width-left-right),plotH:Math.max(0,height-role.top-bottom),colorBar:{x:width-right+role.gap,y:role.top,width:role.colorBarWidth,height:Math.max(0,height-role.top-bottom)},minimum:{width:role.minDataWidth,height:role.minDataHeight}};
+}
+
 // Okabe-Ito-derived mapping extended with high-contrast tones. It is stable by chain length.
 const COLORS = ['#0072B2','#E69F00','#009E73','#D55E00','#CC79A7','#56B4E9','#7A5C00','#882255','#332288'];
 const MARKERS = ['circle','square','triangle','diamond','cross','down','plus','hexagon','star'];
@@ -33,6 +57,10 @@ export function formatTick(value, step = 0) {
   if (magnitude && (magnitude>=1e7 || magnitude<1e-4)) return value.toExponential(1).replace('.0e','e');
   const decimals=step ? Math.max(0,Math.min(6,-Math.floor(Math.log10(Math.abs(step)))+(Math.abs(step)/10**Math.floor(Math.log10(Math.abs(step)))<2?1:0))) : 3;
   return Number(value.toFixed(decimals)).toString();
+}
+export function formatPressureTick(value) {
+  if (!Number.isFinite(value)) return '';
+  return value === 0 ? '0' : value.toExponential(1).replace('.0e','e').replace('e+','e');
 }
 export function logTicks(min, max) {
   const lo=Math.ceil(Math.log10(min)), hi=Math.floor(Math.log10(max)), major=[], minor=[];
