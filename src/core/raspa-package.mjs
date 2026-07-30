@@ -1,7 +1,7 @@
 import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=porelens-20260730-isotherm-export-v3';
 import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=porelens-20260730-isotherm-export-v3';
 import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=porelens-20260730-isotherm-export-v3';
-import {parsePdbCryst1} from './spatial-registration.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {parsePdbCryst1,SPATIAL_REGISTRATION_TOLERANCES} from './spatial-registration.mjs?rev=porelens-20260730-isotherm-export-v3';
 
 export function parseCif(text){
   const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));
@@ -51,6 +51,39 @@ export async function normalizeRunPackageFile(file){
   }catch(error){
     return {source:file,name,path,text:null,resolutionDiagnostic:{severity:'error',code:'file_content_rejected',stage:'content_resolution',file:path,message:`Cannot read ${path} during content_resolution: ${error?.message||String(error)}; expected text() to resolve to a string.`}};
   }
+}
+
+/** Read just enough trajectory text to establish the periodic cell when the
+ * source supports slicing. This accepts every authorized facade used by both
+ * browser discovery paths and never coerces a text() function to a string. */
+export async function readPdbPrefix(source,{bytes=4096}={}){
+  if(source?.source)source=source.source;
+  if(source?.getFile)source=await source.getFile();
+  if(typeof source==='string')return source.slice(0,bytes);
+  if(typeof source?.text==='string')return source.text.slice(0,bytes);
+  if(typeof source?.slice==='function'){
+    const part=source.slice(0,bytes),value=typeof part?.text==='function'?await part.text():part?.text;
+    if(typeof value!=='string')throw new TypeError('Sliced PDB source did not provide readable text');
+    return value;
+  }
+  if(typeof source?.text==='function'){
+    const value=await source.text();
+    if(typeof value!=='string')throw new TypeError('PDB text() did not resolve to a string');
+    return value.slice(0,bytes);
+  }
+  throw new TypeError('PDB content is unreadable');
+}
+
+const finiteCell=cell=>cell&&Array.isArray(cell.lengthsA)&&Array.isArray(cell.anglesDeg)&&cell.lengthsA.length===3&&cell.anglesDeg.length===3&&[...cell.lengthsA,...cell.anglesDeg].every(Number.isFinite);
+/** Pure occupancy cell selection and independent-evidence validation. */
+export function resolveOccupancyCell({movieCell=null,cif=null,simulation=null,tolerances=SPATIAL_REGISTRATION_TOLERANCES}={}){
+  const replication=simulation?.settings?.unitCells??null,validReplication=Array.isArray(replication)&&replication.length===3&&replication.every(x=>Number.isInteger(x)&&x>0);
+  const cifCell=finiteCell(cif)&&validReplication?{lengthsA:cif.lengthsA.map((x,i)=>x*replication[i]),anglesDeg:[...cif.anglesDeg],source:'framework CIF × simulation.input UnitCells'}:null;
+  const validMovie=finiteCell(movieCell),same=(a,b,t)=>a.every((x,i)=>Math.abs(x-b[i])<=t);
+  if(validMovie&&cifCell){const agreed=same(movieCell.lengthsA,cifCell.lengthsA,tolerances.cellA)&&same(movieCell.anglesDeg,cifCell.anglesDeg,tolerances.angleDeg);if(!agreed)return {cell:null,source:null,replication,validated:false,code:'periodic_cell_disagreement',movieCell,cifCell};}
+  const cell=validMovie?{...movieCell,source:'exact-run movie CRYST1'}:cifCell;
+  if(cell)return {cell,source:cell.source,replication:validReplication?[...replication]:null,validated:true,code:null,movieCell:validMovie?movieCell:null,cifCell};
+  return {cell:null,source:null,replication:validReplication?[...replication]:null,validated:false,code:!cif?'missing_matching_cif':!validReplication?'missing_simulation_replication':'missing_periodic_cell',movieCell:null,cifCell:null};
 }
 
 /**
@@ -106,13 +139,18 @@ export async function importRunPackage(files,{annotationSidecar=null,manifestFin
   parseFile('topology',molecule,'molecule_topology',parseMoleculeDefinition);
   parseFile('output',output,'raspa_output',parseRaspaOutput);
   if(parsed.forceField)parsed.forceField.overrides=parsed.overrides;
-  if(movie&&!movie.resolutionDiagnostic)try{const source=movie.source?.getFile?await movie.source.getFile():movie.source;const prefix=typeof source?.slice==='function'?await source.slice(0,512).text():String(source?.text??'').slice(0,512);parsed.movieCell=parsePdbCryst1(prefix);parsed.movie=await indexPdbSource(movie.source);parsed.movie.roleSpecificAnalysisEnabled=!!parsed.topology;parsed.movie.totalFrames=parsed.movie.frames.length;}catch(error){diagnostics.push({severity:'error',code:'invalid_pdb_movie',stage:'pdb_movie_index',file:movie.path,message:`Failed to index ${movie.path} during pdb_movie_index: ${error.message}`});}
+  if(movie&&!movie.resolutionDiagnostic){let prefix=null;try{prefix=await readPdbPrefix(movie.source);}catch(error){diagnostics.push({severity:'error',code:'unreadable_pdb_movie',stage:'pdb_prefix_read',file:movie.path,message:`Cannot read exact-run movie ${movie.path}: ${error.message}`});}
+    if(prefix!==null){const crystLine=prefix.split(/\r?\n/).find(line=>line.startsWith('CRYST1'));if(!crystLine)diagnostics.push({severity:'error',code:'missing_pdb_cryst1',stage:'pdb_cell_parse',file:movie.path,message:`Exact-run movie ${movie.path} has no CRYST1 record in its bounded prefix.`});else{parsed.movieCell=parsePdbCryst1(prefix);if(!parsed.movieCell)diagnostics.push({severity:'error',code:'malformed_pdb_cell',stage:'pdb_cell_parse',file:movie.path,message:`Exact-run movie ${movie.path} has malformed CRYST1 cell values.`});}
+      try{parsed.movie=await indexPdbSource(movie.source);parsed.movie.roleSpecificAnalysisEnabled=!!parsed.topology;parsed.movie.totalFrames=parsed.movie.frames.length;}catch(error){diagnostics.push({severity:'error',code:'invalid_pdb_trajectory',stage:'pdb_movie_index',file:movie.path,message:`Failed to index ${movie.path}: ${error.message}`});}}
+  }
   if(parsed.movie&&parsed.topology)try{parsed.topologyValidation=validateMovieTopology({simulation:parsed.simulation,componentDefinitionName:molecule?.name,topology:parsed.topology,pseudoatoms:parsed.pseudoatoms,frameAtomCounts:parsed.movie.frames.map(frame=>frame.atomCount)});if(!parsed.movie.roleSpecificAnalysisEnabled)throw new Error('Movie-to-topology site ordering could not be validated');}catch(error){diagnostics.push({severity:'error',code:'movie_topology_mismatch',stage:'topology_validation',file:movie.path,message:`Failed to validate ${movie.path} during topology_validation: ${error.message}`});}
   if(parsed.cif&&parsed.forceField){parsed.frameworkTypeMapping=new Map();for(const site of parsed.cif.asymmetricSites){const candidates=[site.label,site.cifType,`${site.cifType}_`].filter(x=>parsed.forceField.parameters.has(x));if(candidates.length!==1)diagnostics.push({severity:'error',code:'framework_mapping_ambiguous',message:`Framework label ${site.label} resolves to ${candidates.length} force-field types (${candidates.join(', ')||'none'}).`});else parsed.frameworkTypeMapping.set(site.label,candidates[0]);}}
   if(parsed.topology&&parsed.forceField)for(const site of parsed.topology.sites)if(!parsed.forceField.parameters.has(site.type))diagnostics.push({severity:'error',code:'guest_parameter_missing',message:`No LJ parameters for guest site type ${site.type}.`});
   if(parsed.simulation&&!Number.isFinite(cutoffA))diagnostics.push({severity:'error',code:'missing_cutoff',message:'CutOffVDW is required; no default was substituted.'});
   if(annotationSidecar&&manifestFingerprint){for(const [slot,d] of Object.entries(annotationSidecar.datasets||{}))if(d.manifestFingerprint!==manifestFingerprint)diagnostics.push({severity:'error',code:'annotation_manifest_mismatch',message:`Annotation dataset ${slot} does not match the imported manifest fingerprint.`});}
   if(parsed.cif&&parsed.frameworkTypeMapping&&unitCells)try{parsed.expandedFramework=expandFramework(parsed.cif,parsed.frameworkTypeMapping,unitCells);}catch(error){diagnostics.push({severity:'error',code:'framework_expansion_unsupported',message:error.message});}
+  parsed.occupancyCell=resolveOccupancyCell({movieCell:parsed.movieCell,cif:parsed.cif,simulation:parsed.simulation});
+  if(!parsed.occupancyCell.validated)diagnostics.push({severity:'error',blocking:true,code:parsed.occupancyCell.code,message:parsed.occupancyCell.code==='periodic_cell_disagreement'?'Movie CRYST1 and replicated framework CIF cells disagree; occupancy is disabled.':'A validated periodic cell cannot be resolved for occupancy.'});
   const geometric=!!(parsed.movie&&parsed.topologyValidation?.validated&&parsed.expandedFramework);
   const essential=geometric&&!!(parsed.simulation&&parsed.pseudoatoms&&parsed.forceField&&Number.isFinite(cutoffA));
   const fingerprint=Number.isFinite(cutoffA)&&parsed.forceField&&parsed.simulation&&parsed.cif&&parsed.topology?await physicsFingerprint({cutoffA,useChargesFromCif,unitCells,forceField:parsed.forceField,cif:parsed.cif,topology:parsed.topology}):null;
