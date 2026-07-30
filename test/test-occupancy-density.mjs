@@ -21,3 +21,12 @@ test('occupancy result event drives status, canvas, VTK, and provenance exports 
  const panel={querySelector:selector=>elements[selector.slice(1)]},root={querySelector:selector=>selector==='#guestOccupancy'?panel:null};globalThis.document={createElement:tag=>tag==='canvas'?canvas():{}};
  try{const {setupOccupancyDensityUi}=await import('../src/ui/occupancy-density-ui.mjs');const ui=setupOccupancyDensityUi({root,download:(...args)=>downloads.push(args)}),grid=make();events.dispatchEvent(new CustomEvent('porelens:occupancy-result',{detail:{grid}}));assert.equal(ui.getGrid(),grid);assert.deepEqual(elements.occupancyCanvas._occupancyValues,grid.values.slice(0,4));assert.match(elements.occupancyStatus.textContent,/Exact run 7_other.*42 Pa.*3 sampled frames/);elements.occupancyExportVtk.onclick();elements.occupancyExportJson.onclick();assert.match(downloads[0][1],/SCALARS occupancy double 1/);assert.deepEqual(JSON.parse(downloads[1][1]).gridDimensions,grid.metadata.gridDimensions)}finally{globalThis.window=priorWindow;globalThis.CustomEvent=priorCustomEvent}
 });
+
+test('pure occupancy cell resolver prefers movie, falls back to replicated CIF, and blocks disagreement',async()=>{
+ const {resolveOccupancyCell}=await import('../src/core/raspa-package.mjs');
+ const simulation={settings:{unitCells:[2,1,1]}},cif={lengthsA:[5,10,10],anglesDeg:[90,90,90]},movieCell={lengthsA:[10,10,10],anglesDeg:[90,90,90]};
+ const movie=resolveOccupancyCell({movieCell,cif,simulation});assert.equal(movie.source,'exact-run movie CRYST1');assert.deepEqual(movie.replication,[2,1,1]);assert.equal(movie.validated,true);
+ const fallback=resolveOccupancyCell({cif,simulation});assert.equal(fallback.source,'framework CIF × simulation.input UnitCells');assert.deepEqual(fallback.cell.lengthsA,[10,10,10]);
+ const conflict=resolveOccupancyCell({movieCell:{...movieCell,lengthsA:[11,10,10]},cif,simulation});assert.equal(conflict.cell,null);assert.equal(conflict.code,'periodic_cell_disagreement');
+ assert.equal(resolveOccupancyCell({cif,simulation:{settings:{}}}).code,'missing_simulation_replication');
+});

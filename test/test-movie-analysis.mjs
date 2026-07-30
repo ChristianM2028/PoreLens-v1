@@ -72,3 +72,9 @@ test('unrecognized and cutoff-free simulation shapes disable energetics without 
   const audit=await importRunPackage([{name:'simulation.input',path:'screenshot/exact/run/simulation.input',text:simulation}]);
   assert.equal(audit.parsed.simulation.settings.cutoffA,null);assert.equal(audit.capabilities.quantitativeLJ,false);assert.equal(audit.physicsFingerprint,null);assert.ok(audit.diagnostics.some(x=>x.code==='missing_cutoff'));assert.doesNotThrow(()=>audit.capabilities.quantitativeLJ);
 });
+
+test('shared bounded PDB prefix reader supports lazy pathFile facades without stringifying text()',async()=>{
+ const {readPdbPrefix}=await import('../src/core/raspa-package.mjs');let reads=0;const content='CRYST1   10.000   10.000   10.000  90.00  90.00  90.00 P 1\nMODEL 1\n';
+ const facade={path:'C2/7/Movies/System_0/AllComponents.pdb',async text(){reads++;return content}};
+ assert.match(await readPdbPrefix(facade,{bytes:64}),/^CRYST1/);assert.equal(reads,1);assert.doesNotMatch(await readPdbPrefix({text:content}),/async text/);
+});
