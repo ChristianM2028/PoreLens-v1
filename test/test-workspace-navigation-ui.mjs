@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 
 async function navigationHarness(initialHash='#adsorption-isotherms'){
   const listeners=new Map(),windowListeners=new Map();
-  const links=['isotherm','rdf','end_to_end'].map(workspace=>({
+  const links=['isotherm','rdf','end_to_end','comparison'].map(workspace=>({
     dataset:{workspace},
-    href:{isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms'}[workspace],
+    href:{isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms',comparison:'#comparison'}[workspace],
     attributes:new Map(),
     addEventListener(type,handler){listeners.set(`${workspace}:${type}`,handler)},
     getAttribute(name){return name==='href'?this.href:null},
@@ -49,6 +49,16 @@ test('initial trajectory evidence deep link activates RDF and expands its panel'
     assert.equal(evidencePanel.hidden,false);
     assert.equal(evidencePanel.getAttribute('aria-expanded'),'true');
     assert.deepEqual(history.entries,[]);
+  }finally{cleanupNavigationHarness()}
+});
+
+test('direct Comparison hash and history navigation expose exactly one top-level workspace',async()=>{
+  try{
+    const {navigation,sections,location,windowListeners}=await navigationHarness('#comparison');
+    assert.equal(navigation.controller.active,'comparison');
+    assert.deepEqual(sections.filter(section=>!section.hidden).map(section=>section.dataset.analysisWorkspace),['comparison']);
+    location.hash='#rdf-workspace';windowListeners.get('popstate')();
+    assert.deepEqual(sections.filter(section=>!section.hidden).map(section=>section.dataset.analysisWorkspace),['rdf']);
   }finally{cleanupNavigationHarness()}
 });
 
@@ -111,7 +121,7 @@ test('HTML exposes Isotherms before enhancement and delegates optional features 
   for(const id of ['rdf-workspace','end-to-end-histograms','trajectory-energetics'])assert.match(html,new RegExp(`id="${id}"[^>]*\\shidden(?:\\s|>)`));
   assert.match(html,/import\('\.\/src\/ui\/workspace-navigation-ui\.mjs\?rev=porelens-20260729-simulation-shape-v2'\)/);
   for(const legacy of ['src="app.js"','src="chain-plotter-ui.mjs"','src="result-browser-ui.mjs"','src="directory-import-ui.mjs"'])assert.doesNotMatch(html,new RegExp(legacy));
-  assert.doesNotMatch(navigation,/^import\s/m);
+  assert.match(navigation,/import \{AnalysisWorkspaces\}/);
   assert.ok(navigation.indexOf('if(!activateLocation())')<navigation.indexOf("loadFeature('rdf','./app.js?rev=porelens-20260729-simulation-shape-v2')"));
   assert.match(navigation,/rdfEvidence:\{hash:'#trajectory-energetics',workspace:'rdf',rdfEvidence:true\}/);
   assert.match(navigation,/reportFeatureUnavailable/);
