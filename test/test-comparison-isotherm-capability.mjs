@@ -1,28 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
-const cases=JSON.parse(await readFile(new URL('./fixtures/isotherm/comparison-pressure-cases.json',import.meta.url),'utf8'));
-const uiUrl=new URL('../src/ui/chain-plotter-ui.mjs',import.meta.url),uiSource=await readFile(uiUrl,'utf8'),pureSource=uiSource.slice(0,uiSource.indexOf('\nconst $')).replace(/from '([^']+?)(?:\?[^']*)?'/g,(_,relative)=>`from '${new URL(relative,uiUrl).href}'`),{isothermPressureEvidence,createIsothermPlotController}=await import(`data:text/javascript;base64,${Buffer.from(pureSource).toString('base64')}`);
-const curves=value=>Object.entries(value).map(([datasetId,points])=>({datasetId,component:'C10',records:points.map(([run,pressurePa],index)=>({run,pressurePa,loading:index+1,uncertainty:.1}))}));
+import {buildSummaryIsothermCurves,plottedExport,exportCsv} from '../src/core/chain-series.mjs';
+import {parseIsothermSummary} from '../src/core/isotherm-summary.mjs';
 
-test('fixture-backed A/B capability requires two distinct positive pressures in every curve',()=>{
-  for(const name of ['one_each','one_vs_several','duplicate_pressure_runs'])assert.equal(isothermPressureEvidence(curves(cases[name])).every(item=>item.valid),false,name);
-  const duplicate=isothermPressureEvidence(curves(cases.duplicate_pressure_runs));
-  assert.deepEqual(duplicate.map(item=>item.pressures.length),[1,1]);
-  assert.equal(isothermPressureEvidence(curves(cases.valid_multi_pressure)).every(item=>item.valid),true);
+const file=(datasetId,component,xKind,text)=>({entry:{datasetId,component,chainLength:Number(component.slice(1)),xKind,path:`${datasetId}/${component}/final_abs_${xKind}_up.data`,filename:`final_abs_${xKind}_up.data`},parsed:parseIsothermSummary(text,{xKind,source:`${datasetId}/${component}/final_abs_${xKind}_up.data`})});
+const pressure='1 0.1 0.01\n10 0.4 0.02\n';
+const fugacity='2 0.2 0.01\n20 0.5 0.03\n';
+
+test('standalone selections support A-only, B-only, and A+B with identical chain names',()=>{
+  const inputs=[file('A','C10','pressure',pressure),file('B','C10','pressure',pressure)];
+  for(const datasets of [['A'],['B'],['A','B']]){const built=buildSummaryIsothermCurves(inputs.filter(x=>datasets.includes(x.entry.datasetId)),{xKind:'pressure'});assert.deepEqual(new Set(built.curves.map(x=>x.datasetId)),new Set(datasets));assert.ok(built.curves.every(x=>x.component==='C10'))}
 });
 
-test('single loading-point view pads its domain and never repeats formatted axis labels',()=>{
-  const labels=[],context=new Proxy({fillText(label){labels.push(String(label))},measureText(){return {width:10}}},{get(target,key){if(key in target)return target[key];if(['beginPath','moveTo','lineTo','stroke','fill','arc','rect','closePath','clearRect','fillRect'].includes(key))return ()=>{};return target[key]},set(target,key,value){target[key]=value;return true}}),canvas={width:1200,height:420,getContext:()=>context};
-  createIsothermPlotController(canvas).render(curves(cases.one_each).slice(0,1),{pressureScale:'linear',pressureUnit:'Pa',showLines:false});
-  assert.ok(canvas._isothermDomain.xmax>canvas._isothermDomain.xmin);
-  assert.equal(new Set(canvas._isothermTicks).size,canvas._isothermTicks.length);
+test('standalone builder never substitutes pressure and fugacity and retains actionable parse diagnostics',()=>{
+  const pressureBuilt=buildSummaryIsothermCurves([file('A','C8','pressure',pressure),file('B','C8','fugacity',fugacity)],{xKind:'pressure'});
+  assert.deepEqual(pressureBuilt.curves.map(x=>x.datasetId),['A']);
+  assert.ok(pressureBuilt.curves.every(x=>x.xKind==='pressure'));
+  const malformed=file('B','C8','pressure','1 0.1\n');
+  assert.ok(malformed.parsed.diagnostics.length);
 });
 
-test('comparison runtime calls an overlay only after its fixture-backed capability check',async()=>{
-  const source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8'),body=source.slice(source.indexOf('async function renderComparisonIsotherms'),source.indexOf('async function renderComparisonHistograms'));
-  assert.match(body,/isothermPressureEvidence\(built\.curves\)/);
-  assert.match(body,/A\/B isotherm overlay disabled/);
-  assert.match(body,/A\/B isotherm curves \(\$\{pointCount\} loading points\) are overlaid/);
-  assert.match(body,/runs \$\{item\.runs/);
+test('standalone persisted selection and exports preserve A/B styling and provenance',()=>{
+  const built=buildSummaryIsothermCurves([file('A','C10','pressure',pressure),file('B','C10','pressure',pressure)],{xKind:'pressure'});
+  const configuration={datasets:['A','B'],datasetStyles:{A:{stroke:'solid'},B:{stroke:'dashed'}},xKind:'pressure',pressureScale:'log',pressureDisplayUnit:'bar',loadingKind:'absolute',loadingUnit:'mol/kg framework',errorBars:true};
+  const output=plottedExport(built.curves,configuration),csv=exportCsv(output),persisted=JSON.parse(JSON.stringify(output.configuration));
+  assert.deepEqual(persisted.datasets,['A','B']);assert.equal(persisted.datasetStyles.B.stroke,'dashed');
+  assert.deepEqual(new Set(output.data.map(x=>x.dataset)),new Set(['A','B']));
+  assert.ok(output.data.every(x=>x.source_file&&Number.isFinite(x.uncertainty)&&x.loading_unit==='mol/kg framework'&&x.x_kind==='pressure'));
+  assert.match(csv,/source_file/);assert.match(csv,/A\/C10/);assert.match(csv,/B\/C10/);
 });

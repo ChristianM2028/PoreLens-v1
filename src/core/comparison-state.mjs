@@ -1,6 +1,6 @@
 /** Scientific state and pure alignment helpers for the persistent A/B workspace. */
 export const COMPARISON_SCHEMA_VERSION = 'porelens-comparison/v1';
-export const COMPARISON_VIEWS = ['isotherms', 'rdf_curves', 'rdf_heatmaps', 'end_to_end', 'lj'];
+export const COMPARISON_VIEWS = ['rdf_curves', 'rdf_heatmaps', 'end_to_end', 'lj'];
 
 const finite = value => Number.isFinite(Number(value));
 const copyInterval = value => {
@@ -26,7 +26,7 @@ export function createComparisonState(value = {}) {
   const matching = value.pressureMatching || {};
   return {
     schemaVersion: COMPARISON_SCHEMA_VERSION,
-    activeView: COMPARISON_VIEWS.includes(value.activeView) ? value.activeView : 'isotherms',
+    activeView: COMPARISON_VIEWS.includes(value.activeView) ? value.activeView : 'rdf_curves',
     A: datasetSelection(value.A), B: datasetSelection(value.B),
     pressureMatching: {
       mode: ['exact', 'nearest', 'independent', 'loading'].includes(matching.mode) ? matching.mode : 'exact',
