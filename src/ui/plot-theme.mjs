@@ -16,7 +16,7 @@ export function chainStyle(chainLength) {
 export function conciseCurveLabel(curve, multipleDatasets = false) {
   const chain = String(curve.component || `C${curve.chainLength || ''}`).replace(/^C(\d+)$/,(_,n)=>`C${'₀₁₂₃₄₅₆₇₈₉'[n] || [...n].map(x=>'₀₁₂₃₄₅₆₇₈₉'[x]).join('')}`);
   if (!multipleDatasets) return chain;
-  const family = String(curve.family || curve.datasetId || '').replace(/^[AB]:\s*/, '').split(/[·/]/)[0].trim();
+  const family = String(curve.legendLabel || curve.datasetLabel || curve.family || curve.datasetId || '').replace(/^[AB]:\s*/, '').split(/[·/]/)[0].trim();
   return `${family || 'Dataset'} ${chain}`;
 }
 export function linearTicks(min, max, target = 6) {
