@@ -118,7 +118,7 @@ export class ParsedResultCache {
   clear(){ this.values.clear();this.bytes=0; }
 }
 
-export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
+export async function buildChainCatalog(files, { datasetId = 'dataset', datasetLabel = datasetId } = {}) {
   const list = [...files], paths = list.map(file => file.webkitRelativePath || file.name), chains = discoverChains(paths);
   const manifestFile = list.find(file => file.name === 'manifest.csv');
   const manifest = manifestFile ? parseManifest(await manifestFile.text()) : { rows: [], diagnostics: [{ severity: 'warning', message: 'No manifest: run metadata are inferred from paths and simulation.input where available.' }] };
@@ -146,11 +146,12 @@ export async function buildChainCatalog(files, { datasetId = 'dataset' } = {}) {
   }
   for (const row of manifest.rows) if (!results.some(item => item.manifest === row)) diagnostics.push({ severity: 'warning', message: `Manifest target is not available to the plot catalog: ${row.collected_relative_path}` });
   results.sort((a,b)=>a.chainLength-b.chainLength||Number(a.run)-Number(b.run)||a.path.localeCompare(b.path));
-  return { datasetId, chains, results, diagnostics, manifestPrimary: !!manifestFile };
+  for(const entry of results)entry.datasetLabel=datasetLabel;
+  return { datasetId, datasetLabel, chains, results, diagnostics, manifestPrimary: !!manifestFile };
 }
 
 /** Adapt the incremental handle catalog without reading an output file. */
-export function buildHandleCatalog(catalog,{datasetId='dataset'}={}){
+export function buildHandleCatalog(catalog,{datasetId='dataset',datasetLabel=catalog?.name||datasetId}={}){
   const summaries=(catalog.summaries||[]).map(item=>{item.file.xKind=item.xKind;return {datasetId,family:datasetId,component:item.chain,chainLength:item.chainLength,type:item.type,xKind:item.xKind,filename:item.name,path:item.path,file:item.file,provenance:{datasetId,path:item.path}}});
   const results=[...summaries];
   for(const run of catalog.runs||[]){
@@ -161,13 +162,14 @@ export function buildHandleCatalog(catalog,{datasetId='dataset'}={}){
   results.sort((a,b)=>(a.chainLength??Infinity)-(b.chainLength??Infinity)||(a.pressurePa??Infinity)-(b.pressurePa??Infinity)||String(a.run??'').localeCompare(String(b.run??''),undefined,{numeric:true})||a.path.localeCompare(b.path));
   const chains=[...new Set((catalog.runs||[]).map(r=>r.chain).concat((catalog.summaries||[]).map(r=>r.chain)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).map(component=>({component,chainLength:Number(component.slice(1))}));
   const diagnostics=[...(catalog.diagnostics||[])];for(const entry of results)if(entry.pressureDiagnostic)diagnostics.push({severity:'warning',code:'filename_pressure_mismatch',path:entry.path,message:entry.pressureDiagnostic});
-  return {datasetId,chains,results,runs:catalog.runs||[],diagnostics,manifestPrimary:!!catalog.manifest};
+  for(const entry of results)entry.datasetLabel=datasetLabel;
+  return {datasetId,datasetLabel,chains,results,runs:catalog.runs||[],diagnostics,manifestPrimary:!!catalog.manifest};
 }
 
 export function buildSummaryIsothermCurves(parsedSummaries,{xKind='pressure'}={}){const curves=[],diagnostics=[];for(const {entry,parsed} of parsedSummaries){diagnostics.push(...parsed.diagnostics.map(x=>x.message));if(parsed.xKind!==xKind)continue;curves.push({...entry,type:'isotherm',family:entry.datasetId,sourcePath:entry.path,visible:true,loadingUnit:SUMMARY_LOADING_UNIT,xKind,records:parsed.records.map(row=>({...row,pressurePa:xKind==='pressure'?row.x:null,fugacityPa:xKind==='fugacity'?row.x:null}))})}curves.sort((a,b)=>a.chainLength-b.chainLength);return {curves,diagnostics}}
 
 export function plottedExport(curves, configuration) {
-  const data = curves.filter(curve => curve.visible !== false).flatMap(curve => curve.records.map(row => curve.type==='isotherm'?({dataset:curve.datasetId,family:curve.family,chain:curve.component,chain_length:curve.chainLength,x_kind:row.xKind,x_pa:row.x,pressure_pa:row.xKind==='pressure'?row.x:null,fugacity_pa:row.xKind==='fugacity'?row.x:null,loading_kind:row.loadingKind,loading_unit:row.loadingUnit,loading:row.loading,uncertainty:row.uncertainty,source_file:row.sourcePath,source_line:row.lineNumber}):({ dataset: curve.datasetId, family: curve.family, chain: curve.component, chain_length: curve.chainLength, run: curve.run, pressure_pa: curve.pressurePa, pressure_source:curve.pressureSource??null,filename_pressure_pa:curve.filenamePressurePa??null,pressure_consistent:curve.pressureConsistent??null,pressure_mismatch_absolute_pa:curve.pressureMismatchAbsolutePa??null,pressure_mismatch_relative:curve.pressureMismatchRelative??null, temperature_k:curve.temperatureK??null, framework:curve.framework??null, loading: curve.loading ?? null, source_file: curve.sourcePath, manifest_provenance:curve.manifest||null, result_type: curve.type, normalization:curve.normalizationMode??'native', distance_a: row.distanceA, value: curve.type === 'rdf' ? row.gR : row.probabilityDensityPerA, x_unit: 'Å', y_unit: curve.type === 'rdf' ? 'dimensionless' : curve.normalizationMode==='stored'?'stored source units':'Å^-1' })));
+  const data = curves.filter(curve => curve.visible !== false).flatMap(curve => curve.records.map(row => curve.type==='isotherm'?({dataset:curve.datasetLabel||curve.datasetId,dataset_id:curve.datasetId,dataset_label:curve.datasetLabel||curve.datasetId,dataset_fingerprint:curve.datasetFingerprint??null,family:curve.family,chain:curve.component,chain_length:curve.chainLength,x_kind:row.xKind,x_pa:row.x,pressure_pa:row.xKind==='pressure'?row.x:null,fugacity_pa:row.xKind==='fugacity'?row.x:null,loading_kind:row.loadingKind,loading_unit:row.loadingUnit,loading:row.loading,uncertainty:row.uncertainty,source_file:row.sourcePath,source_line:row.lineNumber}):({ dataset:curve.datasetLabel||curve.datasetId,dataset_id:curve.datasetId,dataset_label:curve.datasetLabel||curve.datasetId,dataset_fingerprint:curve.datasetFingerprint??null, family: curve.family, chain: curve.component, chain_length: curve.chainLength, run: curve.run, pressure_pa: curve.pressurePa, pressure_source:curve.pressureSource??null,filename_pressure_pa:curve.filenamePressurePa??null,pressure_consistent:curve.pressureConsistent??null,pressure_mismatch_absolute_pa:curve.pressureMismatchAbsolutePa??null,pressure_mismatch_relative:curve.pressureMismatchRelative??null, temperature_k:curve.temperatureK??null, framework:curve.framework??null, loading: curve.loading ?? null, source_file: curve.sourcePath, manifest_provenance:curve.manifest||null, result_type: curve.type, normalization:curve.normalizationMode??'native', distance_a: row.distanceA, value: curve.type === 'rdf' ? row.gR : row.probabilityDensityPerA, x_unit: 'Å', y_unit: curve.type === 'rdf' ? 'dimensionless' : curve.normalizationMode==='stored'?'stored source units':'Å^-1' })));
   return { schema: 'porelens-chain-series/v1', configuration, data };
 }
 
