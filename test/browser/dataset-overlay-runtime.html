@@ -1,0 +1,22 @@
+<!doctype html><meta charset="utf-8"><pre id="result">running</pre><iframe hidden></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('iframe'),wait=async(fn,n=300)=>{for(let i=0;i<n;i++){const v=fn();if(v)return v;await new Promise(r=>setTimeout(r,20))}throw Error('timeout')};
+try{
+ frame.src='../../index.html#adsorption-isotherms';await new Promise(r=>frame.onload=r);const w=frame.contentWindow,d=w.document;await wait(()=>d.querySelector('#chainCanvas'));
+ const summary='1 2 0.1\n10 3 0.2\n',catalog=(slot,chains,tag)=>chains.map(chain=>{const f=new w.File([summary],'final_abs_pressure_up');Object.defineProperty(f,'webkitRelativePath',{value:`${tag}/${chain}/final_abs_pressure_up`});return f});
+ const emit=(type,slot,chains,tag)=>w.dispatchEvent(new w.CustomEvent(type,{detail:{source:'files',slot,name:tag,files:catalog(slot,chains,tag)}}));
+ const settle=()=>wait(()=>!d.querySelector('#chainDatasetA').disabled||!d.querySelector('#chainDatasetB').disabled);
+ emit('porelens:dataset-loaded','B',['C1','C2','C8'],'b1');await settle();await wait(()=>d.querySelector('#chainDatasetB').checked);if(d.querySelector('#chainDatasetA').checked)throw Error('B-first selected A');
+ emit('porelens:dataset-loaded','A',['C1','C2','C3','C4','C5','C6','C7','C8','C9','C10'],'a1');await wait(()=>!d.querySelector('#chainDatasetA').disabled);if(d.querySelector('#chainDatasetA').checked||!d.querySelector('#chainMatchReport').textContent.includes('hidden'))throw Error('second dataset policy');
+ const A=d.querySelector('#chainDatasetA'),B=d.querySelector('#chainDatasetB'),chains=d.querySelector('#chainLengths'),change=el=>el.dispatchEvent(new w.Event('change',{bubbles:true}));
+ A.checked=true;change(A);await wait(()=>[...chains.options].some(x=>x.value==='C10'));const inventory=()=>[...chains.options].map(x=>x.value);if(!['C1','C2','C3','C4','C5','C6','C7','C8','C9','C10'].every(x=>inventory().includes(x)))throw Error('union inventory');
+ for(const o of chains.options)o.selected=o.value==='C6';change(chains);await wait(()=>d.querySelector('#chainCanvas')._visible?.length===1);let visible=d.querySelector('#chainCanvas')._visible;if(visible[0].datasetId!=='A'||visible[0].component!=='C6'||!visible[0].sourcePath.includes('C6'))throw Error('A-only chain provenance');
+ for(const o of chains.options)o.selected=o.value==='C1';change(chains);await wait(()=>d.querySelector('#chainCanvas')._visible?.length===2);visible=d.querySelector('#chainCanvas')._visible;if(visible.map(x=>x.datasetId).sort().join('')!=='AB'||!visible.every(x=>x.component==='C1'))throw Error('shared curves');
+ const ctx=d.querySelector('#chainCanvas').getContext('2d');if(!visible.some(x=>x.datasetId==='B'))throw Error('B curve absent');
+ emit('porelens:dataset-loaded','A',['C4'],'a2');await wait(()=>inventory().length===4);if(inventory().includes('C6')||!inventory().includes('C4'))throw Error('replacement inventory stale');
+ B.checked=false;A.checked=false;change(A);await wait(()=>d.querySelector('#chainMatchReport').textContent.includes('No dataset overlay'));if(A.checked||B.checked)throw Error('none state not preserved');
+ B.checked=true;change(B);await wait(()=>d.querySelector('#chainCanvas')._visible?.every(x=>x.datasetId==='B'));emit('porelens:dataset-removed','B',[],'');await wait(()=>B.disabled);if(A.checked||B.checked||!d.querySelector('#chainMatchReport').textContent.includes('No replacement'))throw Error('removal fallback');
+ // Late generation 1 must not replace generation 2 in A.
+ const old={name:'old',summaries:[],runs:[],ignoredFiles:[],diagnostics:[],stats:{},finished:true};w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{source:'directory_handle',slot:'A',scanGeneration:2,catalog:{...old,name:'new'}}}));w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{source:'directory_handle',slot:'A',scanGeneration:1,catalog:old}}));await new Promise(r=>setTimeout(r,100));
+ result.textContent=JSON.stringify({ok:true});
+}catch(e){result.textContent=JSON.stringify({ok:false,error:e.stack||String(e)})}
+</script>
