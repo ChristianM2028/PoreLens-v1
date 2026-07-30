@@ -12,9 +12,11 @@ import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/f
 import {importRunPackage} from '../core/raspa-package.mjs?rev=porelens-20260730-isotherm-export-v3';
 import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=porelens-20260730-isotherm-export-v3';
 import {distributionView} from '../core/result-types.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {setupOccupancyDensityUi} from './occupancy-density-ui.mjs?rev=porelens-20260730-isotherm-export-v3';
 import {evidenceCatalogs,parsedResultCache,registerEvidence,removeEvidence,relabelEvidence,evidenceFor} from './evidence-model.mjs?rev=porelens-20260730-isotherm-export-v3';
 
 const $=selector=>document.querySelector(selector), ws=new DatasetWorkspace();
+setupOccupancyDensityUi();
 const elements=['datasetSelect','componentSelect','pairSelect','pressureSelect','thresholdMode','threshold','maskPeaks','showAnnotations','showPeakTrace','rdfDisplay','smoothWindow','rowDisplay','compA','pairA','pressureA','compB','pairB','pressureB','pressureMatchMode','pressureMatchTolerance','rdfCompareMode','colorMode','compareMask','differenceMap'].reduce((o,id)=>(o[id]=$(`#${id}`),o),{});
 let currentMap=null;const annotationStore=new AnnotationStore(),authorizedDatasets=new Map();
 const annotationDatasets=()=>Object.fromEntries(['A','B'].filter(s=>ws.slots[s]).map(s=>[s,{displayName:ws.slots[s].displayName,manifestFingerprint:ws.slots[s].manifestFingerprint,rdfFingerprints:Object.fromEntries(ws.slots[s].datasets.map(x=>[x.manifest.collected_relative_path,x.manifest.sha256||null])),datasets:ws.slots[s].datasets}]));
