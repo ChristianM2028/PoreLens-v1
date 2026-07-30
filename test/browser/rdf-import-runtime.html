@@ -44,6 +44,8 @@ try {
   const directory={component:d.querySelector('#componentSelect').options.length,pair:d.querySelector('#pairSelect').options.length,pressure:d.querySelector('#pressureSelect').options.length,heatmap:!!d.querySelector('#heatmap')._heatmap,curve:!!d.querySelector('#realRdfCanvas')._curve};
   await waitFor(()=>loadedSlots.includes('A')&&loadedSlots.includes('B')&&d.querySelector('#comparisonGate').hidden&&d.querySelector('#compA').options.length&&d.querySelector('#pairA').options.length&&d.querySelector('#compB').options.length&&d.querySelector('#pairB').options.length);
   await waitFor(()=>d.querySelector('#compareRdf')._curve?.axisTitles);
+  if(d.querySelector('#nearest'+'Match')||d.body.textContent.includes(['Legacy nearest','pressure match'].join(' ')))throw new Error('legacy nearest-pressure checkbox remains');
+  const pa=Number(d.querySelector('#pressureA').value),nearest=d.querySelector('#pressureMatchMode'),tol=d.querySelector('#pressureMatchTolerance');nearest.value='nearest';tol.value='1';nearest.dispatchEvent(new w.Event('change'));await waitFor(()=>d.querySelector('#matchReport').textContent.includes('unmatched:')&&d.querySelector('#matchReport').textContent.includes('exceeds 1 Pa tolerance'));tol.value=String(Math.abs(25000-pa));tol.dispatchEvent(new w.Event('change'));await waitFor(()=>d.querySelector('#matchReport').textContent.includes('explicit nearest match'));const pressureMatching={mode:nearest.value,tolerance:Number(tol.value),legacyCheckbox:!!d.querySelector('#nearest'+'Match'),report:d.querySelector('#matchReport').textContent};
   if(JSON.stringify(compatibility.axisTitles)!==JSON.stringify({x:'Distance, r (Å)',y:'Radial distribution function, g(r) (dimensionless)'}))throw new Error(`selected RDF axis titles incorrect: ${JSON.stringify(compatibility.axisTitles)}`);
   if(JSON.stringify(d.querySelector('#compareRdf')._curve.axisTitles)!==JSON.stringify({x:'Distance, r (Å)',y:'Radial distribution function, g(r) (dimensionless)'}))throw new Error(`compared RDF axis titles incorrect: ${JSON.stringify(d.querySelector('#compareRdf')._curve.axisTitles)}`);
   const comparison={loadedSlots:[...loadedSlots],gateOpen:d.querySelector('#comparisonGate').hidden,componentsA:d.querySelector('#compA').options.length,pairsA:d.querySelector('#pairA').options.length,componentsB:d.querySelector('#compB').options.length,pairsB:d.querySelector('#pairB').options.length};
@@ -53,6 +55,6 @@ try {
   const adapterDiagnostic=d.querySelector('#statusB').textContent;
   if(errors.length)throw new Error(`uncaught page errors: ${errors.join('\n')}`);
   if(Object.values(compatibility).some(x=>!x)||Object.values(directory).some(x=>!x))throw new Error(`RDF state missing: ${JSON.stringify({compatibility,directory})}`);
-  result.textContent=JSON.stringify({ok:true,navigation:true,compatibility,directory,comparison,adapterDiagnostic});
+  result.textContent=JSON.stringify({ok:true,navigation:true,compatibility,directory,comparison,pressureMatching,adapterDiagnostic});
 }catch(error){result.textContent=JSON.stringify({ok:false,error:error.stack||error.message,errors})}
 </script>
