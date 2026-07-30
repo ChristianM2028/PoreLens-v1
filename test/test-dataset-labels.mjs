@@ -28,3 +28,19 @@ test('identical labels do not merge identities and reach legends and exports',()
  const svg=buildLineSvg(curves.map(c=>({...c,records:[{x:1,y:2},{x:2,y:3}]})),{});
  assert.match(svg,/Same label C₅/);
 });
+
+test('complete long display labels remain in SVG accessibility metadata',()=>{
+ const labels=['Primary fluorinated adsorbate collection with a deliberately long provenance label','Reference hydrocarbon collection with an equally long descriptive label'];
+ const curves=labels.map((datasetLabel,index)=>({datasetId:index?'B':'A',datasetLabel,legendLabel:datasetLabel,family:datasetLabel,component:'C10',chainLength:10,records:[{x:1,y:2},{x:2,y:3}]}));
+ const svg=buildLineSvg(curves,{width:340,height:420});
+ for(const label of labels){assert.match(svg,new RegExp(label));assert.match(svg,new RegExp(`data-full-label="${label} C₁₀"`))}
+ assert.match(svg,/role="img" aria-label="Line plot;/);assert.match(svg,/legend-clip-/);
+});
+
+test('comparison UI resolves display labels while retaining slots only as internal keys',async()=>{
+ const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8'),html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(source,/function datasetLabel\(slot\).*ws\.slots\[slot\]\?\.datasetLabel/);
+ for(const id of ['heatmapHeadingA','heatmapHeadingB','mappingLegendA','mappingLegendB','rdfOverlayOption','rdfDifferenceOption','sharedColorOption','differenceMapLabel'])assert.match(html,new RegExp(`id="${id}"`));
+ for(const visiblePlaceholder of ['A/B overlay','Shared across A/B','gB(r) − gA(r)','B − A','Dataset A heatmap','Dataset B heatmap'])assert.ok(!html.includes(visiblePlaceholder));
+ assert.match(source,/editDatasetLabel[\s\S]*syncDatasetLabels\(\)/);assert.match(source,/datasetId:slot/);
+});
