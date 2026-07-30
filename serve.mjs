@@ -2,8 +2,8 @@
 import {createReadStream,statSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {extname,resolve,sep} from 'node:path';
+import {ASSET_REVISION} from './asset-revision.mjs';
 
-export const ASSET_REVISION='porelens-20260729-indexed-pdb-v1';
 const root=resolve(process.cwd());
 const port=Number(process.env.PORT||4173);
 const types={'.css':'text/css; charset=utf-8','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};

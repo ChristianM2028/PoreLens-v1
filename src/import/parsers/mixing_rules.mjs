@@ -1,5 +1,5 @@
-import { VdwParameter } from '../models.mjs?rev=porelens-20260729-simulation-shape-v2';
-import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260729-simulation-shape-v2';
+import { VdwParameter } from '../models.mjs?rev=porelens-20260730-isotherm-export-v3';
+import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260730-isotherm-export-v3';
 
 export function parseMixingRules(text, source = 'force_field_mixing_rules.def') {
   const parameters = [], diagnostics = [], data = text.split(/\r?\n/).map(x => x.replace(/\/\/.*$/, '').trim()).filter(x => x && !x.startsWith('#'));

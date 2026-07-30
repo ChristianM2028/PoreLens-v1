@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": { "poreview": "./src/import/cli.mjs" },
-  "scripts": { "start": "node serve.mjs", "test": "node --test", "scan": "node src/import/cli.mjs scan" }
+  "bin": {
+    "poreview": "./src/import/cli.mjs"
+  },
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node --test",
+    "scan": "node src/import/cli.mjs scan",
+    "assets:revision": "node scripts/set-asset-revision.mjs"
+  }
 }
