@@ -10,8 +10,25 @@ export function resolveCatalogPair(filename,knownSites=LEGACY_STANDALONE_LABELS)
 }
 
 const labelOf=x=>typeof x==='string'?x:x?.name??x?.label??x?.type??x?.pseudoAtomType;
+const recordsOf=value=>Array.isArray(value)?value:Array.isArray(value?.records)?value.records:value instanceof Set?[...value]:value instanceof Map?[...value.values()]:[];
+const labelsFromExplicit=value=>{
+  const records=recordsOf(value),items=records.length?records:value&&typeof value==='object'?[...Object.values(value)]:[];
+  return items.reduce((labels,item)=>{
+  if(Array.isArray(item))return labels.concat(item);
+  if(item&&typeof item==='object'&&Array.isArray(item.pair))return labels.concat(item.pair);
+  return labels.concat(item);
+},[])};
 /** Assemble labels only from evidence belonging to this run. */
-export function runSpecificSiteLabels(record={}){const run=record.normalizedRun||record.runRecord||record.run||{},explicit=first(record,['pairMetadata','pair_metadata','knownSiteLabels','known_site_labels'])||[],pseudo=run.pseudoAtoms||run.pseudoatoms||record.pseudoAtoms||[],definitions=run.moleculeDefinitions||record.moleculeDefinitions||[],framework=run.frameworkAtoms||run.cifLabels||record.frameworkLabels||record.cifLabels||[];return [...new Set([...(Array.isArray(explicit)?explicit:[]).flatMap(x=>Array.isArray(x)?x:[x]),...pseudo.map(labelOf),...definitions.flatMap(d=>(d.parsed?.atoms||d.atoms||d.parsed?.sites||d.sites||[]).map(labelOf)),...framework.map(labelOf)].filter(Boolean).map(String))].sort((a,b)=>b.length-a.length||a.localeCompare(b))}
+export function runSpecificSiteLabels(record={}){
+  const run=record.normalizedRun||record.runRecord||record.run||{};
+  const explicit=labelsFromExplicit(first(record,['pairMetadata','pair_metadata','knownSiteLabels','known_site_labels']));
+  const pseudo=[...recordsOf(run.pseudoAtoms),...recordsOf(run.pseudoatoms),...recordsOf(record.pseudoAtoms)];
+  const definitions=[...recordsOf(run.moleculeDefinitions),...recordsOf(record.moleculeDefinitions)];
+  const moleculeSites=[];
+  for(const definition of definitions)moleculeSites.push(...recordsOf(definition?.parsed?.atoms),...recordsOf(definition?.atoms),...recordsOf(definition?.parsed?.sites),...recordsOf(definition?.sites));
+  const framework=[...recordsOf(run.frameworkAtoms),...recordsOf(run.cifLabels),...recordsOf(run.frameworkLabels),...recordsOf(run.frameworkCif?.asymmetricSites),...recordsOf(record.frameworkLabels),...recordsOf(record.cifLabels)];
+  return [...new Set([...explicit,...pseudo,...moleculeSites,...framework].map(labelOf).filter(Boolean).map(String))].sort((a,b)=>b.length-a.length||a.localeCompare(b));
+}
 
 export function resolveCatalogPairDetailed(filename,knownSites=[]){const pair=resolveCatalogPair(filename,knownSites),resolved=!!pair[1],mappingRequired=!resolved;return {pair,resolved,mappingRequired,diagnostic:resolved?null:{severity:'warning',code:knownSites.length?'rdf_pair_ambiguous_or_unknown':'rdf_pair_dependencies_missing',message:`Cannot resolve the complete RDF pair in ${String(filename).split('/').at(-1)} from this run's labels. The RDF remains indexed; supply an explicit two-label pair mapping${knownSites.length?' or correct the run metadata':', or import pseudo_atoms.def, the matching molecule definition, and framework CIF'}.`,mappingRequired:true,candidates:knownSites}}}
 
