@@ -81,7 +81,7 @@ export function histogramCompatibility(A = {}, B = {}) {
 
 const rowDistance = row => Number(row.distanceA ?? row.distance_A ?? row.distance);
 const rowG = row => Number(row.g ?? row.g_r ?? row.gR);
-const rowHistogram = row => Number(row.rawHistogram ?? row.unnormalizedHistogram ?? row.raw_histogram);
+const rowHistogram = row => Number(row.rawHistogram ?? row.unnormalizedDistanceHistogram ?? row.unnormalizedHistogram ?? row.raw_histogram);
 function interpolate(records, grid) {
   let cursor = 0;
   return grid.map(distanceA => {
@@ -112,7 +112,32 @@ export function subtractRdf(A, B, options = {}) {
   if (!same(A.pairSemantics, B.pairSemantics)) return { enabled: false, reason: 'RDF pair semantics differ' };
   const aligned = alignRdfRecords(A.records, B.records, options);
   if (!aligned.compatible) return { enabled: false, reason: aligned.reason, provenance: aligned.provenance };
-  return { enabled: true, records: aligned.grid.map((distanceA, index) => ({ distanceA, g: rowG(aligned.B[index]) - rowG(aligned.A[index]), histogramDifference: rowHistogram(aligned.B[index]) - rowHistogram(aligned.A[index]), interpolated: aligned.interpolated })), warning: aligned.warning || null, provenance: aligned.provenance };
+  const peakA=aligned.A.reduce((a,b)=>rowG(b)>rowG(a)?b:a),peakB=aligned.B.reduce((a,b)=>rowG(b)>rowG(a)?b:a);
+  return { enabled: true, records: aligned.grid.map((distanceA, index) => ({ distanceA, gR: rowG(aligned.B[index]) - rowG(aligned.A[index]), histogramDifference: rowHistogram(aligned.B[index]) - rowHistogram(aligned.A[index]), interpolated: aligned.interpolated })), peakHeightDifference:rowG(peakB)-rowG(peakA),peakPositionDifferenceA:rowDistance(peakB)-rowDistance(peakA),warning: aligned.warning || null, provenance: aligned.provenance };
+}
+
+/** One selected-pressure comparison transaction for both browser presentation and tests. */
+export function compareRdfSelections(rowsA = [], rowsB = [], {
+  mode = 'exact', tolerancePa = 0, selectedPressurePaA = null,
+  selectedPressurePaB = null, pairSemanticsA = null, pairSemanticsB = null,
+  maximumShiftA = null
+} = {}) {
+  if (mode === 'nearest' && !(Number(tolerancePa) >= 0)) throw new TypeError('Nearest pressure matching requires an explicit non-negative tolerance');
+  const byPressure = rows => rows.map(row => ({...row, pressurePa: Number(row.pressurePa)}));
+  const A = byPressure(rowsA), B = byPressure(rowsB);
+  const selectedA = A.find(row => row.pressurePa === Number(selectedPressurePaA)) || A[0] || null;
+  let selectedB = B.find(row => row.pressurePa === Number(selectedPressurePaB)) || B[0] || null;
+  if (selectedA && mode !== 'independent') {
+    const pressure = matchPressures([selectedA], B, {mode, tolerancePa});
+    if (pressure.matches[0]) selectedB = pressure.matches[0].B;
+    else return {mode, tolerancePa:Number(tolerancePa), A:selectedA, B:selectedB, matched:false, unmatched:pressure.unmatched, difference:{enabled:false,reason:pressure.unmatched[0]?.reason || 'pressure unmatched'}};
+  }
+  if (!selectedA || !selectedB) return {mode, matched:false, unmatched:[{reason:'selected RDF evidence is unavailable'}], difference:{enabled:false,reason:'selected RDF evidence is unavailable'}};
+  const difference = subtractRdf(
+    {pairSemantics:pairSemanticsA, records:selectedA.records},
+    {pairSemantics:pairSemanticsB, records:selectedB.records}, {maximumShiftA}
+  );
+  return {mode, tolerancePa:Number(tolerancePa), A:selectedA, B:selectedB, matched:mode === 'independent' || selectedA.pressurePa === selectedB.pressurePa || Math.abs(selectedB.pressurePa-selectedA.pressurePa) <= Number(tolerancePa), unmatched:[], difference};
 }
 
 export function synchronizeDistanceInterval(state, interval, { source = 'heatmap' } = {}) {
@@ -120,14 +145,4 @@ export function synchronizeDistanceInterval(state, interval, { source = 'heatmap
   state.distanceIntervalA = selected;
   state.provenance = { ...state.provenance, distanceSelection: { source, intervalA: [...selected] } };
   return selected;
-}
-
-export function comparisonExport(state, sections = {}) {
-  return { schemaVersion: COMPARISON_SCHEMA_VERSION, exportedAt: new Date().toISOString(), state: createComparisonState(state), sections };
-}
-
-const csv = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
-export function comparisonCsv(rows = []) {
-  const columns = [...new Set(rows.flatMap(Object.keys))];
-  return [columns.map(csv).join(','), ...rows.map(row => columns.map(column => csv(row[column])).join(','))].join('\n');
 }

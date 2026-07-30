@@ -29,3 +29,5 @@ test('standalone persisted selection and exports preserve A/B styling and proven
   assert.ok(output.data.every(x=>x.source_file&&Number.isFinite(x.uncertainty)&&x.loading_unit==='mol/kg framework'&&x.x_kind==='pressure'));
   assert.match(csv,/source_file/);assert.match(csv,/A\/C10/);assert.match(csv,/B\/C10/);
 });
+
+test('live isotherm preparation preserves canonical pressure, converts units, and filters invalid log points',async()=>{const {prepareIsothermSeries}=await import('../src/core/isotherm-summary.mjs');const [curve]=prepareIsothermSeries([{datasetId:'A',visible:true,records:[{pressurePa:100000,x:7,loading:1},{pressurePa:0,x:0,loading:2}]}],{pressureUnit:'bar',pressureScale:'log'});assert.equal(curve.records.length,1);assert.equal(curve.records[0].canonicalPa,100000);assert.equal(curve.records[0].displayPressure,1);assert.equal(curve.records[0].plotX,0)});

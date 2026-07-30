@@ -21,3 +21,10 @@ export function parseIsothermSummary(text,{source='summary',xKind='pressure'}={}
 }
 
 export function logPlottableRecords(records){const included=records.filter(row=>row.x>0),excluded=records.filter(row=>row.x<=0);return {included,excluded,warning:excluded.length?`${excluded.length} nonpositive ${records[0]?.xKind||'x'} value(s) excluded from the logarithmic axis.`:null};}
+
+/** Canonical preparation used by the live isotherm canvas and its tests. */
+export function prepareIsothermSeries(series,configuration={}){
+  const pressureUnit=configuration.pressureUnit||'Pa',pressureScale=configuration.pressureScale||'linear',factors={Pa:1,kPa:1e3,MPa:1e6,bar:1e5};
+  if(!factors[pressureUnit])throw new Error(`Unsupported pressure unit ${pressureUnit}`);
+  return series.filter(curve=>curve.visible!==false).map(curve=>({...curve,records:curve.records.map(row=>{const canonicalPa=Number(row.pressurePa??row.x),displayPressure=canonicalPa/factors[pressureUnit];return {...row,canonicalPa,displayPressure,plotX:pressureScale==='log'?(displayPressure>0?Math.log10(displayPressure):null):displayPressure}}).filter(row=>Number.isFinite(row.plotX))}));
+}

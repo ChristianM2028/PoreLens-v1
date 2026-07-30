@@ -137,17 +137,13 @@ and aggregate comparison when those capabilities are requested.
 
 The workflow does not claim a RASPA total potential: tail corrections are not
 localized, rounded PDB coordinates can perturb steep repulsions, and compatible
-RASPA output totals can also differ due to sampling, electrostatics, framework
-treatment, and excluded intramolecular terms. CIF symmetry operations used by
-the representative fixture are expanded and deduplicated; arbitrary CIF
-expression dialects, Ewald/electrostatic reconstruction, flexible frameworks, changing cells,
-The milestone does not claim a RASPA total potential: tail corrections are not
-localized, rounded PDB coordinates can perturb steep repulsions, and compatible
-RASPA output totals can also differ due to sampling, electrostatics, framework
-treatment, and excluded intramolecular terms. General CIF symmetry expansion,
-Ewald/electrostatic reconstruction, flexible frameworks, changing cells,
-anisotropic or non-LJ potentials, and tail-correction attribution remain
-unsupported. The included two-frame trimmed PDB preserves one 25-molecule and
+RASPA output totals can also differ because of sampling, electrostatics, framework
+treatment, and excluded intramolecular terms. The symmetry operations used by
+the representative IRMOF-1 CIF fixture are expanded and deduplicated, but
+arbitrary CIF symmetry-expression dialects are not supported. Ewald/electrostatic
+reconstruction, flexible frameworks, changing cells, anisotropic or non-LJ
+potentials, and attribution of tail corrections remain unsupported.
+The included two-frame trimmed PDB preserves one 25-molecule and
 one 26-molecule frame, lossy all-C labels, absent molecule delimiters, and
 out-of-cell coordinates for routine parser tests; the complete movie remains
 an optional integration fixture.

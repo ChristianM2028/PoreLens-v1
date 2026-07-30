@@ -4,6 +4,19 @@ import {parseVtkCellParameters} from './spatial-registration.mjs?rev=porelens-20
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));
 
+export const RESULT_CAPABILITIES=Object.freeze({
+  rdf:{parser:'rdf',presentation:'curve',scientificValue:'normalized RDF and unnormalized distance histogram'},
+  end_to_end:{parser:'end_to_end',presentation:'distribution',scientificValue:'stored end-to-end histogram values'},
+  vtk:{parser:'vtk',presentation:'spatial_density',scientificValue:'source scalar grid'},
+  movie:{parser:'movie',presentation:'trajectory',scientificValue:'framewise coordinates'},
+  raspa_output:{parser:'raspa_output',presentation:'run_summary',scientificValue:'final RASPA metadata and raw output'}
+});
+export function resultCapability(recordOrType){
+  const type=typeof recordOrType==='string'?recordOrType:recordOrType?.type;
+  const capability=RESULT_CAPABILITIES[type];
+  return capability?{type,...capability,supported:true}:{type:type??null,presentation:'unsupported',supported:false};
+}
+
 export class HistogramParseError extends Error{
   constructor(message,{code,source,lineNumber=null,diagnostics=null}={}){super(message);this.name='HistogramParseError';this.code=code;this.source=source;this.lineNumber=lineNumber;this.diagnostics=diagnostics;}
 }
