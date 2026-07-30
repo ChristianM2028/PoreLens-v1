@@ -13,6 +13,8 @@ try {
   w.addEventListener('error',event=>errors.push(event.error?.stack||event.message));
   w.addEventListener('unhandledrejection',event=>errors.push(event.reason?.stack||String(event.reason)));
   await waitFor(()=>d.querySelector('[data-workspace="rdf"]').onclick!==undefined && d.querySelector('#filesA').onchange);
+  const initialDatasetOptionValues=[...d.querySelector('#datasetSelect').options].map(option=>option.value);
+  if(JSON.stringify(initialDatasetOptionValues)!==JSON.stringify(['A','B']))throw new Error(`dataset labels changed slot values: ${JSON.stringify(initialDatasetOptionValues)}`);
 
   const expected={isotherm:'#adsorption-isotherms',rdf:'#rdf-workspace',end_to_end:'#end-to-end-histograms'};
   for(const [id,hash] of Object.entries(expected)){
@@ -41,7 +43,7 @@ try {
   const catalog={name:'directory fixture',finished:true,authorized:true,stats:{rdfs:1},diagnostics:[],rdfRecords:[{type:'rdf',chainKey:'C5',pair:['CF3_sp3','O2'],pairKey:'CF3_sp3 ↔ O2',pressurePa:25000,runId:'directory-1',relativePath:'C5/directory-1/RDF_CF3_sp3_O2.dat',filename:'RDF_CF3_sp3_O2.dat',file:source}]};
   w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{slot:'B',catalog}}));
   await waitFor(()=>d.querySelector('#datasetSelect').value==='B'&&d.querySelector('#heatmap')._heatmap?.pressuresPa?.[0]===25000);
-  const directory={component:d.querySelector('#componentSelect').options.length,pair:d.querySelector('#pairSelect').options.length,pressure:d.querySelector('#pressureSelect').options.length,heatmap:!!d.querySelector('#heatmap')._heatmap,curve:!!d.querySelector('#realRdfCanvas')._curve};
+  const directory={component:d.querySelector('#componentSelect').options.length,pair:d.querySelector('#pairSelect').options.length,pressure:d.querySelector('#pressureSelect').options.length,heatmap:!!d.querySelector('#heatmap')._heatmap,curve:!!d.querySelector('#realRdfCanvas')._curve,optionValues:[...d.querySelector('#datasetSelect').options].map(option=>option.value)};
   await waitFor(()=>loadedSlots.includes('A')&&loadedSlots.includes('B')&&d.querySelector('#comparisonGate').hidden&&d.querySelector('#compA').options.length&&d.querySelector('#pairA').options.length&&d.querySelector('#compB').options.length&&d.querySelector('#pairB').options.length);
   await waitFor(()=>d.querySelector('#compareRdf')._curve?.axisTitles);
   if(d.querySelector('#nearest'+'Match')||d.body.textContent.includes(['Legacy nearest','pressure match'].join(' ')))throw new Error('legacy nearest-pressure checkbox remains');
@@ -55,6 +57,6 @@ try {
   const adapterDiagnostic=d.querySelector('#statusB').textContent;
   if(errors.length)throw new Error(`uncaught page errors: ${errors.join('\n')}`);
   if(Object.values(compatibility).some(x=>!x)||Object.values(directory).some(x=>!x))throw new Error(`RDF state missing: ${JSON.stringify({compatibility,directory})}`);
-  result.textContent=JSON.stringify({ok:true,navigation:true,compatibility,directory,comparison,pressureMatching,adapterDiagnostic});
+  result.textContent=JSON.stringify({ok:true,navigation:true,initialDatasetOptionValues,compatibility,directory,comparison,pressureMatching,adapterDiagnostic});
 }catch(error){result.textContent=JSON.stringify({ok:false,error:error.stack||error.message,errors})}
 </script>
