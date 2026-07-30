@@ -1,0 +1,15 @@
+export const PRESSURE_UNITS=Object.freeze({Pa:{label:'Pa',paPerUnit:1},kPa:{label:'kPa',paPerUnit:1e3},bar:{label:'bar',paPerUnit:1e5},MPa:{label:'MPa',paPerUnit:1e6}});
+export const DEFAULT_ISOTHERM_PLOT_CONFIGURATION=Object.freeze({pressureScale:'log',pressureUnit:'Pa',xBounds:{minimum:null,maximum:null},yBounds:{minimum:null,maximum:null},showLines:true,showMarkers:true,showErrorBars:true,legend:{visible:true,placement:'outside-top',fontSize:13,labels:{},order:[]}});
+
+export function convertPressure(value,from='Pa',to='Pa'){
+  if(!PRESSURE_UNITS[from]||!PRESSURE_UNITS[to])throw new Error(`Unsupported pressure unit: ${!PRESSURE_UNITS[from]?from:to}`);
+  return Number(value)*PRESSURE_UNITS[from].paPerUnit/PRESSURE_UNITS[to].paPerUnit;
+}
+export function pressureAxisLabel(kind='pressure',unit='Pa'){if(!PRESSURE_UNITS[unit])throw new Error(`Unsupported pressure unit: ${unit}`);return `${kind==='fugacity'?'Fugacity, f':'Pressure, P'} (${unit})`}
+export function scalePressureRecord(record,{pressureUnit='Pa',pressureScale='linear',xKind='pressure'}={}){const canonical=Number(record.x??(xKind==='fugacity'?record.fugacityPa:record.pressurePa)),display=convertPressure(canonical,'Pa',pressureUnit);return {...record,canonicalPa:canonical,displayPressure:display,plotX:pressureScale==='log'&&display>0?Math.log10(display):pressureScale==='log'?null:display}}
+export function filterPlottablePressureRecords(records,configuration){const mapped=records.map(row=>scalePressureRecord(row,configuration)),included=mapped.filter(row=>Number.isFinite(row.plotX)),excluded=mapped.filter(row=>!Number.isFinite(row.plotX));return {included,excluded,warning:excluded.length?`${excluded.length} non-positive or non-finite pressure value(s) are retained in exports but excluded from the logarithmic plot.`:null}}
+export function normalizePlotConfiguration(value={}){const base=DEFAULT_ISOTHERM_PLOT_CONFIGURATION,legend={...base.legend,...(value.legend||{}),labels:{...base.legend.labels,...(value.legend?.labels||{})},order:[...(value.legend?.order||[])]};const out={...base,...value,xBounds:{...base.xBounds,...(value.xBounds||{})},yBounds:{...base.yBounds,...(value.yBounds||{})},legend};if(!['linear','log'].includes(out.pressureScale))throw new Error('Pressure scale must be linear or log');if(!PRESSURE_UNITS[out.pressureUnit])throw new Error(`Unsupported pressure unit: ${out.pressureUnit}`);return out}
+export function roundTripPlotConfiguration(value){return normalizePlotConfiguration(JSON.parse(JSON.stringify(normalizePlotConfiguration(value))))}
+
+/** Deterministic external legend layout used by canvas and vector exporters. */
+export function layoutLegend(items,{width=640,fontSize=13,sampleWidth=28,gap=16,padding=8,measure=text=>String(text).length*fontSize*.62}={}){let x=padding,y=padding,row=0;return items.map((item,index)=>{const label=String(item.label??item),w=sampleWidth+8+measure(label)+gap;if(x+w>width-padding&&x>padding){x=padding;y+=fontSize*1.45;row++}const placed={...item,index,label,x,y,width:w,row};x+=w;return placed})}
