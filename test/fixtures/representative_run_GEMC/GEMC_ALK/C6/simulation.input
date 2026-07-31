@@ -1,0 +1,32 @@
+SimulationType                MonteCarlo
+NumberOfCycles                75000
+NumberOfInitializationCycles  50000
+PrintEvery                    100
+RestartFile                   no
+
+Forcefield                    local
+
+CutOffVDW	14
+
+Box 0 #liquid
+BoxLengths XAL XAL XAL
+BoxAngles 90 90 90
+ExternalTemperature extT
+ComputeMolecularPressure yes
+
+Box 1 #vapor
+BoxLengths XAV XAV XAV 
+BoxAngles 90 90 90
+ExternalTemperature extT
+ComputeMolecularPressure yes
+
+GibbsVolumeChangeProbability 0.1
+
+Component 0 MoleculeName           		C6_alk
+            MoleculeDefinition       		local
+	    IdealGasRosenbluthWeight 	   0.0029553
+            TranslationProbability   		1
+            RotationProbability      		1
+	    PartialReinsertionProbability	1
+            GibbsSwapProbability     		1
+            CreateNumberOfMolecules  300 50 
