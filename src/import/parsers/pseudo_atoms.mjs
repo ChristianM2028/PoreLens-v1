@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=gemc-directory-fit-points';
-import { diagnostic } from '../diagnostics.mjs?rev=gemc-directory-fit-points';
+import { PseudoAtom } from '../models.mjs?rev=gemc-literature-three-column';
+import { diagnostic } from '../diagnostics.mjs?rev=gemc-literature-three-column';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

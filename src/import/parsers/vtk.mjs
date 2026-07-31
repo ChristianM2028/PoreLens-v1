@@ -1,4 +1,4 @@
-import { VTKRecord } from '../models.mjs?rev=gemc-directory-fit-points';
+import { VTKRecord } from '../models.mjs?rev=gemc-literature-three-column';
 export const VTK_HEADER_BYTES = 8192;
 export function indexVtk(path, header = '', context = {}) {
   const name = path.split(/[\\/]/).at(-1), number = [...name.matchAll(/(\d+)/g)].at(-1)?.[1];

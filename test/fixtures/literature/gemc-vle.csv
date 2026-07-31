@@ -1,0 +1,5 @@
+# Temperature K, liquid density, vapor density
+300.0, 610.25, 4.50
+
+; source values remain unconverted
+310.0, 580.00, 8.75

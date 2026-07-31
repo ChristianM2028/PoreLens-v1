@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './browser/directory-handle-discovery.mjs?rev=gemc-directory-fit-points';
+export * from './browser/directory-handle-discovery.mjs?rev=gemc-literature-three-column';
 
 /** Authorized-file index shared by every workspace; values stay lazy File/handle references. */
 export class AuthorizedRunCatalog {

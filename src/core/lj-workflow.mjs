@@ -1,6 +1,6 @@
-import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=gemc-directory-fit-points';
-import {expandFramework} from './raspa-package.mjs?rev=gemc-directory-fit-points';
-import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=gemc-directory-fit-points';
+import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=gemc-literature-three-column';
+import {expandFramework} from './raspa-package.mjs?rev=gemc-literature-three-column';
+import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=gemc-literature-three-column';
 
 export const LJ_COMPARISON_INPUT_FORMAT='porelens.lj-comparison-input';
 export const LJ_COMPARISON_INPUT_VERSION=1;

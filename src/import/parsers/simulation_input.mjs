@@ -1,6 +1,6 @@
-import { Component, Framework, SimulationSettings } from '../models.mjs?rev=gemc-directory-fit-points';
-import { diagnostic } from '../diagnostics.mjs?rev=gemc-directory-fit-points';
-import { cleanLines, finiteNumber } from './common.mjs?rev=gemc-directory-fit-points';
+import { Component, Framework, SimulationSettings } from '../models.mjs?rev=gemc-literature-three-column';
+import { diagnostic } from '../diagnostics.mjs?rev=gemc-literature-three-column';
+import { cleanLines, finiteNumber } from './common.mjs?rev=gemc-literature-three-column';
 
 const canonical = key => key.toLowerCase().replace(/[^a-z0-9]/g, '');
 const bool = value => /^(?:yes|true|on|1)$/i.test(value) ? true : /^(?:no|false|off|0)$/i.test(value) ? false : null;
