@@ -424,3 +424,7 @@ Recommended locations:
 ## Name
 
 This draft preserves the current repository title, **PoreLens**. If the project has officially been renamed **PoreView**, update the title and product-name references consistently before release.
+
+### Browser-local literature overlays
+
+Literature files remain browser-local and are observational plot overlays, not simulation inputs. Each series is scoped to exactly one plot/view (including separate VLE vapor/liquid branches and separate Henry coefficient/energy views), and its two columns are interpreted in the plot's current displayed coordinates and user-assumed units without implicit conversion. Changing an axis quantity or display unit invalidates the overlay until it is revalidated or reimported. Raw source order, malformed-row diagnostics, provenance, and log-axis exclusions remain exportable. Literature values are deliberately excluded from simulation diagnostics, regressions, critical-property calculations, and every other derived analysis; combining them with those calculations requires a future explicit feature.

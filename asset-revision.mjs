@@ -2,4 +2,4 @@
  * Release-time source of truth for immutable browser asset URLs.
  * Run `npm run assets:revision -- <new-revision>` when publishing changed assets.
  */
-export const ASSET_REVISION='porelens-20260731-phase-loaders-v1';
+export const ASSET_REVISION='porelens-20260731-literature-overlays-v1';
