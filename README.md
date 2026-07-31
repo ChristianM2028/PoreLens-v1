@@ -25,11 +25,12 @@ average pressure (or a visibly labelled instantaneous stress-trace fallback), cy
 number, original system identity, completion status, and source path. The lower-density
 box is classified as vapor. The displayed coexistence pressure is the arithmetic mean
 of the two box pressures; both inputs and their percent mismatch remain visible.
-Replicates are grouped by parsed temperature and by `(framework, component)`. The VLE
-view displays **imported simulation observations only**: it does not draw fitted,
-extrapolated, or literature-looking curves, and no literature VLE dataset is currently
-imported. Selecting “All” never joins components or frameworks into one curve; each
-group receives its own labelled vapor and liquid observation series.
+Replicates are grouped by parsed temperature and by `(framework, component)`. Densities
+are arithmetic means of finite replicate values. Coexistence pressure is the arithmetic
+mean of the finite replicate coexistence pressures; missing and nonfinite pressures are
+excluded from that average, with included/excluded counts and every source run retained.
+Selecting “All” never joins components or frameworks: every discovered group has an
+independent result, including a card explaining why an incomplete group was skipped.
 
 The accessible Clausius–Clapeyron view uses the same framework, component, and
 temperature selectors. For each group independently it plots `x = 1/T` in `K^-1` and
@@ -39,8 +40,39 @@ temperatures above 0 K and finite coexistence pressures above 0 kPa are eligible
 these derived coordinates. Excluded records remain in the raw table and CSV/JSON
 exports with actionable reasons, along with both box pressures and their mismatch
 diagnostic. Exports record every group, interval, formula, units, reference pressure,
-exclusions, active view, and provenance. No regression or critical estimate is run
-automatically; the current workspace offers observation views only.
+exclusions, active view, and provenance.
+
+Critical-property calculations use the six highest-temperature eligible, distinct
+coexistence points by default and fix `beta = 0.325`, matching
+`reference_scripts/gemc_vle(2).py`. At least three distinct temperatures with finite
+densities and `rho_l > rho_v >= 0` are required. The density model is the rectilinear
+diameter plus fixed-exponent scaling
+
+```text
+(rho_l + rho_v)/2 = a + b T
+(rho_l - rho_v)/2 = B (Tc - T)^beta
+rhoc = a + b Tc
+```
+
+The pressure fit independently requires at least two distinct temperatures with finite,
+positive arithmetic coexistence pressures and uses
+
+```text
+ln(P/P_ref) = intercept + slope/T
+Pc = P_ref exp(intercept + slope/Tc)
+Psat(0.7 Tc) = P_ref exp(intercept + slope/(0.7 Tc))
+acentric factor = -log10(Psat(0.7 Tc)/Pc) - 1
+```
+
+kPa is the canonical pressure unit and kg/m³ the canonical density unit. Fit inputs,
+coefficients, residuals, assumptions, replicate provenance, and interpolation or
+extrapolation flags are exported. `Tc` and `rhoc` remain available if the independent
+pressure fit fails, while `Pc`, `Psat(0.7 Tc)`, and acentric factor do not. A prominent
+warning marks `0.7 Tc` outside the observed pressure-fit interval: extrapolation,
+especially a long extrapolation, is not a reliable measured property. All outputs are
+**model-derived estimates**, not measurements or uncertainty-qualified reference values.
+Fitted coexistence branches and critical points are hidden unless the derived-results
+view is explicitly enabled, and browser-local literature overlays never enter a fit.
 
 ### Henry input and calculations
 

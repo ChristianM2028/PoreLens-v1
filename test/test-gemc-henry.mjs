@@ -32,3 +32,23 @@ test('Clausius–Clapeyron analysis separates groups and retains invalid raw obs
 test('Clausius–Clapeyron regression is explicit, group-local, and fully reports its model provenance',async()=>{
  const {clausiusClapeyronGroups,clausiusClapeyronRegression}=await import('../src/core/gemc.mjs');const records=[300,320,340].map((temperatureK,i)=>({framework:'F',component:'C6',temperatureK,coexistencePressureKPa:Math.exp(5-1000/temperatureK),runKey:String(i)}));const group=clausiusClapeyronGroups(records)[0];const fit=clausiusClapeyronRegression(group);assert.equal(fit.status,'available');assert.ok(Math.abs(fit.slope.value+1000)<1e-8);assert.ok(Math.abs(fit.intercept.value-5)<1e-8);assert.equal(fit.provenance.group,'F | C6');assert.equal(fit.enthalpyEstimate.label,'Clausius–Clapeyron model estimate');assert.equal(clausiusClapeyronRegression({eligiblePoints:[]}).status,'skipped');
 });
+
+test('group critical workflow isolates fluids, aggregates replicates, and exactly recovers analytic estimates',async()=>{
+ const {gemcCriticalParametersByGroup}=await import('../src/core/gemc.mjs');
+ const beta=.325,tc=500,rhoc=220,aSlope=.15,intercept=5,slope=-1000;
+ const analytic=(framework,component,temperatureK,runKey)=>{const diameter=rhoc+aSlope*(temperatureK-tc),gap=45*(tc-temperatureK)**beta,pressure=Math.exp(intercept+slope/temperatureK);return {framework,component,temperatureK,runKey,vaporDensityKgM3:diameter-gap,liquidDensityKgM3:diameter+gap,coexistencePressureKPa:pressure,vaporSourcePath:`${runKey}/v`,liquidSourcePath:`${runKey}/l`}};
+ const c4=[430,440,450,460,470,480].flatMap((t,i)=>[analytic('F1','C4',t,`a${i}`),analytic('F1','C4',t,`b${i}`)]),incomplete=[analytic('F2','C5',450,'only')];
+ c4[1].coexistencePressureKPa=null;
+ const results=gemcCriticalParametersByGroup([...c4,...incomplete],{fitPointCount:6,beta});
+ assert.equal(results.length,2);const fit=results.find(x=>x.component==='C4'),skip=results.find(x=>x.component==='C5');
+ assert.equal(fit.replicateAggregates[0].replicateCount,2);assert.equal(fit.replicateAggregates[0].pressureReplicateCount,1);assert.equal(fit.replicateAggregates[0].sourceRuns.length,2);
+ assert.ok(Math.abs(fit.criticalTemperatureK-tc)<.02);assert.ok(Math.abs(fit.criticalDensityKgM3-rhoc)<.02);assert.ok(Math.abs(fit.criticalPressureKPa-Math.exp(intercept+slope/tc))<1e-5);
+ assert.ok(Math.abs(fit.acentricFactor-(-Math.log10(fit.psatAt0_7TcKPa/fit.criticalPressureKPa)-1))<1e-12);assert.equal(fit.extrapolationFlags.psatAt0_7Tc,true);assert.match(fit.warnings.join(' '),/Prominent extrapolation warning/);
+ assert.equal(skip.criticalPressureKPa,null);assert.match(skip.skipReasons.join(' '),/Density fit unavailable/);
+});
+
+test('group critical workflow retains Tc when pressure fit is unavailable and enforces pressure temperature rules',async()=>{
+ const {gemcCriticalParametersByGroup}=await import('../src/core/gemc.mjs'),beta=.325,tc=400;
+ const records=[330,350,370].map((temperatureK,i)=>{const d=180+.1*(temperatureK-tc),g=30*(tc-temperatureK)**beta;return {framework:'F',component:'X',temperatureK,runKey:String(i),vaporDensityKgM3:d-g,liquidDensityKgM3:d+g,coexistencePressureKPa:i?0:-1}});
+ const result=gemcCriticalParametersByGroup(records,{fitPointCount:3,beta})[0];assert.ok(Number.isFinite(result.criticalTemperatureK));assert.ok(Number.isFinite(result.criticalDensityKgM3));assert.equal(result.criticalPressureKPa,null);assert.equal(result.acentricFactor,null);assert.match(result.skipReasons.join(' '),/Pressure fit unavailable/);
+});
