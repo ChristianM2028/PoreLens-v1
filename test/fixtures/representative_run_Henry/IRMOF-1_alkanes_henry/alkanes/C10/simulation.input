@@ -1,0 +1,23 @@
+SimulationType                MonteCarlo
+NumberOfCycles                100000
+NumberOfInitializationCycles  0
+PrintEvery                    1000
+PrintPropertiesEvery          1000
+Movies                        yes
+WriteMoviesEvery              1000
+RestartFile                   no
+
+Forcefield                    local
+UseChargesFromCIFFile         yes
+CutOffVDW                     12.8
+
+Framework 0
+FrameworkName IRMOF-1
+UnitCells 1 1 1
+ExternalTemperature 298.0
+
+Component 0 MoleculeName             C10
+            MoleculeDefinition       local
+            IdealGasRosenbluthWeight 1.6e-06
+            WidomProbability         1.0
+            CreateNumberOfMolecules  0

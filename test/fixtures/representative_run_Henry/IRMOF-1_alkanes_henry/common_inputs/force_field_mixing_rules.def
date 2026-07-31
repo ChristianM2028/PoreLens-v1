@@ -1,0 +1,15 @@
+#shifted vs truncated
+truncated
+# general rule tailcorrections
+yes
+# number of defined interactions
+6
+#type  type2     interaction
+C_                lennard-jones         52.84       3.43         // UFF
+H_                lennard-jones         22.14       2.57         // UFF
+O_                lennard-jones         30.19       3.12         // UFF
+Zn_               lennard-jones         62.3992     2.46         // UFF
+CH3_sp3           lennard-jones         98          3.75         // TraPPE
+CH2_sp3           lennard-jones         46          3.95         // TraPPE
+# general mixing rule for Lennard-Jones
+Lorentz-Berthelot
