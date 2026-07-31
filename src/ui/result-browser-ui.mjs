@@ -1,4 +1,4 @@
-import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=gemc-directory-fit-points';
 
 export const PROVENANCE_SCHEMA='porelens.run-provenance';
 const value=(x,fallback=null)=>x??fallback;

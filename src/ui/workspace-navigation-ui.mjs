@@ -1,4 +1,4 @@
-import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=gemc-directory-fit-points';
 const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison','gemc','henry'];
 const controller=new AnalysisWorkspaces();
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
@@ -108,11 +108,11 @@ function loadFeature(feature,source){return import(source).catch(error=>{reportF
 // Each optional entry point is imported independently so one parser or renderer cannot
 // prevent the progressively enhanced shell from remaining usable.
 if(document.documentElement){
-  void loadFeature('rdf','./app.js?rev=porelens-20260731-gemc-critical-v1');
-  void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=porelens-20260731-gemc-critical-v1');
-  void loadFeature('result-browser','./result-browser-ui.mjs?rev=porelens-20260731-gemc-critical-v1');
-  void loadFeature('catalog','./directory-import-ui.mjs?rev=porelens-20260731-gemc-critical-v1');
-  void loadFeature('phase-workspaces','./phase-workspaces.mjs?rev=porelens-20260731-gemc-critical-v1');
+  void loadFeature('rdf','./app.js?rev=gemc-directory-fit-points');
+  void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=gemc-directory-fit-points');
+  void loadFeature('result-browser','./result-browser-ui.mjs?rev=gemc-directory-fit-points');
+  void loadFeature('catalog','./directory-import-ui.mjs?rev=gemc-directory-fit-points');
+  void loadFeature('phase-workspaces','./phase-workspaces.mjs?rev=gemc-directory-fit-points');
 }
 
 export {controller,activate,activateComparisonTab,activateLocation,attachChainRenderer,loadFeature,navigate,openRdfEvidence,reportFeatureUnavailable};

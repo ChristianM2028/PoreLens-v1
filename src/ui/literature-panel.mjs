@@ -1,4 +1,4 @@
-import {createLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {createLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=gemc-directory-fit-points';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];

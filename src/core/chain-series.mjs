@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { parseSimulationInput } from './trajectory.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=porelens-20260731-gemc-critical-v1';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=gemc-directory-fit-points';
+import { parseSimulationInput } from './trajectory.mjs?rev=gemc-directory-fit-points';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=gemc-directory-fit-points';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=gemc-directory-fit-points';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=gemc-directory-fit-points';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=gemc-directory-fit-points';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

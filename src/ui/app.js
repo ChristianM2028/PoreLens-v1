@@ -1,19 +1,19 @@
-import {controller as analysisController,navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { importBrowserFiles } from '../import/importers.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { buildHeatmap, nearestPressureIndex, mapAnnotations, highRegions } from '../core/analysis.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {compareRdfSelections} from '../core/comparison-state.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { DatasetWorkspace } from '../core/workspace.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { groupDiagnostics } from '../core/ui-state.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {PLOT_THEME, markerIndices, linearTicks, formatTick, formatPressureTick, comparisonCurveLayout, comparisonHeatmapLayout} from './plot-theme.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {importRunPackage} from '../core/raspa-package.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {distributionView} from '../core/result-types.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {setupOccupancyDensityUi} from './occupancy-density-ui.mjs?rev=porelens-20260731-gemc-critical-v1';
-import {evidenceCatalogs,parsedResultCache,registerEvidence,removeEvidence,relabelEvidence,evidenceFor} from './evidence-model.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {controller as analysisController,navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=gemc-directory-fit-points';
+import { importBrowserFiles } from '../import/importers.mjs?rev=gemc-directory-fit-points';
+import { buildHeatmap, nearestPressureIndex, mapAnnotations, highRegions } from '../core/analysis.mjs?rev=gemc-directory-fit-points';
+import {compareRdfSelections} from '../core/comparison-state.mjs?rev=gemc-directory-fit-points';
+import { DatasetWorkspace } from '../core/workspace.mjs?rev=gemc-directory-fit-points';
+import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=gemc-directory-fit-points';
+import { groupDiagnostics } from '../core/ui-state.mjs?rev=gemc-directory-fit-points';
+import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=gemc-directory-fit-points';
+import {PLOT_THEME, markerIndices, linearTicks, formatTick, formatPressureTick, comparisonCurveLayout, comparisonHeatmapLayout} from './plot-theme.mjs?rev=gemc-directory-fit-points';
+import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=gemc-directory-fit-points';
+import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=gemc-directory-fit-points';
+import {importRunPackage} from '../core/raspa-package.mjs?rev=gemc-directory-fit-points';
+import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=gemc-directory-fit-points';
+import {distributionView} from '../core/result-types.mjs?rev=gemc-directory-fit-points';
+import {setupOccupancyDensityUi} from './occupancy-density-ui.mjs?rev=gemc-directory-fit-points';
+import {evidenceCatalogs,parsedResultCache,registerEvidence,removeEvidence,relabelEvidence,evidenceFor} from './evidence-model.mjs?rev=gemc-directory-fit-points';
 
 const $=selector=>document.querySelector(selector), ws=new DatasetWorkspace();
 setupOccupancyDensityUi();
@@ -138,12 +138,12 @@ $('#suggestPeaks').onclick=()=>{const index=nearestPressureIndex(currentMap.pres
 let rdfDrag=null;$('#realRdfCanvas').onpointerdown=e=>{rdfDrag={x:e.clientX};e.currentTarget.setPointerCapture(e.pointerId)};$('#realRdfCanvas').onpointerup=e=>{const canvas=e.currentTarget,m=canvas._curve;if(!m||!rdfDrag)return;const rect=canvas.getBoundingClientRect(),toDistance=x=>m.xmin+Math.max(0,Math.min(m.plotW,x-rect.left-m.pad.l))/m.plotW*(m.xmax-m.xmin),a=snapRdf(m.records,toDistance(rdfDrag.x)),b=snapRdf(m.records,toDistance(e.clientX)),context=annotationContext();if(Math.abs(e.clientX-rdfDrag.x)<5)annotationStore.create(context,{type:'peak',distanceA:b.distanceA,gR:b.gR},annotationFields());else annotationStore.create(context,{type:'span',startA:Math.min(a.distanceA,b.distanceA),endA:Math.max(a.distanceA,b.distanceA),gR:[a.gR,b.gR]},annotationFields());rdfDrag=null;renderAnnotationTable();selectPressure(false);};
 let heatDrag=null;$('#heatmap').onpointerdown=e=>{if(e.shiftKey){heatDrag={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId)}};$('#heatmap').onpointerup=e=>{if(!heatDrag)return;const m=e.currentTarget._heatmap,rect=e.currentTarget.getBoundingClientRect(),pw=m.pw,toR=x=>m.map.distances[Math.max(0,Math.min(m.map.distances.length-1,Math.round((x-rect.left-m.pad.l)/pw*(m.map.distances.length-1))))],toP=y=>m.map.pressuresPa[Math.max(0,Math.min(m.map.pressuresPa.length-1,Math.floor((y-rect.top-m.pad.t)/m.ph*m.map.pressuresPa.length)))],r1=toR(heatDrag.x),r2=toR(e.clientX),p1=toP(heatDrag.y),p2=toP(e.clientY),row=m.map.rows[nearestPressureIndex(m.map.pressuresPa,p1)];annotationStore.create(annotationContext(elements.datasetSelect.value,row),{type:'region',startA:Math.min(r1,r2),endA:Math.max(r1,r2),pressureMinPa:Math.min(p1,p2),pressureMaxPa:Math.max(p1,p2)},annotationFields());heatDrag=null;renderAnnotationTable();selectPressure(false);};
 window.addEventListener('beforeunload',e=>{if(annotationStore.dirty){e.preventDefault();e.returnValue='';}});syncDatasetLabels();renderAnnotationTable();
-import('./lj-ui.mjs?rev=porelens-20260731-gemc-critical-v1')
+import('./lj-ui.mjs?rev=gemc-directory-fit-points')
   .then(({setupLjWorkflow})=>setupLjWorkflow({workspace:ws,annotationStore}))
-  .catch(error=>import('./workspace-navigation-ui.mjs?rev=porelens-20260731-gemc-critical-v1').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
+  .catch(error=>import('./workspace-navigation-ui.mjs?rev=gemc-directory-fit-points').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
 // GEMC and Henry are progressively enhanced independent stores; this import does not
 // read, merge, or derive metadata from either GCMC slot.
-import('./phase-workspaces.mjs?rev=porelens-20260731-gemc-critical-v1').catch(error=>console.error('[PoreLens phase workspaces]',error));
+import('./phase-workspaces.mjs?rev=gemc-directory-fit-points').catch(error=>console.error('[PoreLens phase workspaces]',error));
 
 let pressureRegionStart=null;
 $('#annotatePressurePoint').onclick=()=>{const context=annotationContext();annotationStore.create(context,pressurePointGeometry(context.run,context.pressurePa),annotationFields());renderAnnotationTable();selectPressure(false);};
