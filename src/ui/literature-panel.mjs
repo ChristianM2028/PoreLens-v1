@@ -1,4 +1,4 @@
-import {createLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=porelens-20260731-literature-axis-v2';
+import {createLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=porelens-20260731-literature-axis-v3';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];

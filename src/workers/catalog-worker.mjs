@@ -1,2 +1,2 @@
-import {parseSimulationInput} from '../import/parsers/simulation_input.mjs?rev=porelens-20260731-literature-axis-v2';
+import {parseSimulationInput} from '../import/parsers/simulation_input.mjs?rev=porelens-20260731-literature-axis-v3';
 self.onmessage=event=>{const {id,text}=event.data;try{self.postMessage({id,value:parseSimulationInput(text)})}catch(error){self.postMessage({id,error:error.message})}};

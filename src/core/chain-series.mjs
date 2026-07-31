@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=porelens-20260731-literature-axis-v2';
-import { parseSimulationInput } from './trajectory.mjs?rev=porelens-20260731-literature-axis-v2';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=porelens-20260731-literature-axis-v2';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=porelens-20260731-literature-axis-v2';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=porelens-20260731-literature-axis-v2';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=porelens-20260731-literature-axis-v2';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=porelens-20260731-literature-axis-v3';
+import { parseSimulationInput } from './trajectory.mjs?rev=porelens-20260731-literature-axis-v3';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=porelens-20260731-literature-axis-v3';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=porelens-20260731-literature-axis-v3';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=porelens-20260731-literature-axis-v3';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=porelens-20260731-literature-axis-v3';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

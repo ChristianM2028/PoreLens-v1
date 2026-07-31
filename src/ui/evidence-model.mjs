@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=porelens-20260731-literature-axis-v2';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=porelens-20260731-literature-axis-v3';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();
