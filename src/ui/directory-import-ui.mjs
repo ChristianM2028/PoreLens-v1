@@ -1,4 +1,4 @@
-import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=gemc-directory-fit-points';
 const $=s=>document.querySelector(s),SLOTS=['A','B'];
 
 /** Slot-scoped scan ownership. A callback is accepted only while its scan is current. */

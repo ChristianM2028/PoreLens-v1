@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=porelens-20260731-gemc-critical-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260731-gemc-critical-v1';
+import { PseudoAtom } from '../models.mjs?rev=gemc-directory-fit-points';
+import { diagnostic } from '../diagnostics.mjs?rev=gemc-directory-fit-points';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

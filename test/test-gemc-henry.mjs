@@ -52,3 +52,34 @@ test('group critical workflow retains Tc when pressure fit is unavailable and en
  const records=[330,350,370].map((temperatureK,i)=>{const d=180+.1*(temperatureK-tc),g=30*(tc-temperatureK)**beta;return {framework:'F',component:'X',temperatureK,runKey:String(i),vaporDensityKgM3:d-g,liquidDensityKgM3:d+g,coexistencePressureKPa:i?0:-1}});
  const result=gemcCriticalParametersByGroup(records,{fitPointCount:3,beta})[0];assert.ok(Number.isFinite(result.criticalTemperatureK));assert.ok(Number.isFinite(result.criticalDensityKgM3));assert.equal(result.criticalPressureKPa,null);assert.equal(result.acentricFactor,null);assert.match(result.skipReasons.join(' '),/Pressure fit unavailable/);
 });
+
+test('vapor-pressure fit matches trusted Python quadratic and linear branches',async()=>{
+ const {fitVaporPressure}=await import('../src/core/gemc.mjs'),tc=500;
+ const quadratic=[410,430,450,470].map(temperatureK=>({temperatureK,coexistencePressureKPa:Math.exp(2.5-1200/temperatureK+80000/temperatureK**2)}));
+ const q=fitVaporPressure(quadratic,tc);assert.equal(q.degree,2);assert.ok(Math.abs(q.criticalPressureKPa-Math.exp(.42))<1e-12);assert.ok(Math.abs(q.coefficients[0]-80000)<1e-6);assert.ok(Math.abs(q.coefficients[1]+1200)<1e-8);assert.ok(Math.abs(q.coefficients[2]-2.5)<1e-11);assert.ok(q.rmseLogPressure<1e-14);assert.equal(q.residuals.length,4);
+ const linear=[420,450,480].map(temperatureK=>({temperatureK,coexistencePressureKPa:Math.exp(5-1000/temperatureK)}));
+ const l=fitVaporPressure(linear,tc);assert.equal(l.degree,1);assert.ok(Math.abs(l.criticalPressureKPa-Math.exp(3))<1e-12);assert.deepEqual(l.temperatureIntervalK,[420,480]);assert.ok(l.rmseLogPressure<1e-14);
+});
+
+test('Pc uses only pressures in the selected highest-temperature density window',async()=>{
+ const {gemcCriticalParametersByGroup}=await import('../src/core/gemc.mjs'),beta=.325,tc=500;
+ const make=(temperatureK,pressure)=>{const diameter=220+.15*(temperatureK-tc),gap=45*(tc-temperatureK)**beta;return {framework:'F',component:'C6',temperatureK,runKey:String(temperatureK),vaporDensityKgM3:diameter-gap,liquidDensityKgM3:diameter+gap,coexistencePressureKPa:pressure}};
+ const high=[440,450,460,470,480].map(t=>make(t,Math.exp(4-900/t))),low=[390,400].map(t=>make(t,1e-9));
+ const first=gemcCriticalParametersByGroup([...low,...high],{fitPointCount:5,beta})[0],changed=gemcCriticalParametersByGroup([...low.map(p=>({...p,coexistencePressureKPa:1e9})),...high],{fitPointCount:5,beta})[0];
+ assert.equal(first.pressureFit.degree,2);assert.deepEqual(first.pressureFit.selectedPoints.map(p=>p.temperatureK),[440,450,460,470,480]);assert.equal(first.criticalPressureKPa,changed.criticalPressureKPa);assert.deepEqual(first.selectedTemperatureIntervals.pressureK,[440,480]);
+});
+
+test('reference-consistent alkane series naturally reproduces decreasing critical pressure',async()=>{
+ const {gemcCriticalParametersByGroup}=await import('../src/core/gemc.mjs'),beta=.325;
+ const fluids=[['C4',425,3800],['C5',470,3370],['C6',510,3030]],records=[];
+ for(const [component,tc,pc] of fluids)for(const fraction of [.78,.82,.86,.9,.94]){const temperatureK=tc*fraction,diameter=220+.12*(temperatureK-tc),gap=40*(tc-temperatureK)**beta,logPressure=Math.log(pc)-1500*(1/temperatureK-1/tc);records.push({framework:'reference alkane series',component,temperatureK,runKey:String(fraction),vaporDensityKgM3:diameter-gap,liquidDensityKgM3:diameter+gap,coexistencePressureKPa:Math.exp(logPressure)})}
+ const fitted=gemcCriticalParametersByGroup(records,{fitPointCount:5,beta}).sort((a,b)=>a.component.localeCompare(b.component,{numeric:true}));
+ assert.ok(fitted.every(x=>x.pressureFit.degree===2));assert.ok(fitted[0].criticalPressureKPa>fitted[1].criticalPressureKPa&&fitted[1].criticalPressureKPa>fitted[2].criticalPressureKPa);assert.ok(Math.abs(fitted[2].criticalPressureKPa-3030)<1);
+});
+
+test('group-specific fit-point selections independently control each imported directory',async()=>{
+ const {gemcCriticalParametersByGroup}=await import('../src/core/gemc.mjs'),beta=.325,records=[];
+ for(const component of ['C4','C5'])for(const temperatureK of [430,440,450,460,470,480]){const tc=500,diameter=220+.1*(temperatureK-tc),gap=40*(tc-temperatureK)**beta;records.push({framework:'F',component,temperatureK,runKey:`${component}/${temperatureK}`,vaporDensityKgM3:diameter-gap,liquidDensityKgM3:diameter+gap,coexistencePressureKPa:Math.exp(4-900/temperatureK)})}
+ const results=gemcCriticalParametersByGroup(records,{fitPointCountsByGroup:{'F | C4':3,'F | C5':5},beta});
+ assert.equal(results.find(x=>x.component==='C4').fitPointCount,3);assert.equal(results.find(x=>x.component==='C4').densityFit.selected.length,3);assert.equal(results.find(x=>x.component==='C5').fitPointCount,5);assert.equal(results.find(x=>x.component==='C5').densityFit.selected.length,5);
+});

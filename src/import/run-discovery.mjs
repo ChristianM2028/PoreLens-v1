@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './browser/file-list-discovery.mjs?rev=porelens-20260731-gemc-critical-v1';
+export * from './browser/file-list-discovery.mjs?rev=gemc-directory-fit-points';
 
 /** Resolve annotations without pressure tolerances. Missing and ambiguous rows remain diagnostics. */
 export function resolveAnnotationRuns(annotation,runs,{datasetFingerprint=annotation.datasetFingerprint}={}){
