@@ -25,17 +25,22 @@ average pressure (or a visibly labelled instantaneous stress-trace fallback), cy
 number, original system identity, completion status, and source path. The lower-density
 box is classified as vapor. The displayed coexistence pressure is the arithmetic mean
 of the two box pressures; both inputs and their percent mismatch remain visible.
-Replicates are grouped by parsed temperature. The coexistence plot and logarithmic
-vapor-pressure data follow the bundled Python reference workflow.
+Replicates are grouped by parsed temperature and by `(framework, component)`. The VLE
+view displays **imported simulation observations only**: it does not draw fitted,
+extrapolated, or literature-looking curves, and no literature VLE dataset is currently
+imported. Selecting “All” never joins components or frameworks into one curve; each
+group receives its own labelled vapor and liquid observation series.
 
-Critical-property analysis is explicitly parameterized by the number of highest-
-temperature fit points and fixed exponent β (default 0.326). Its assumptions are
-rectilinear-diameter and coexistence-density scaling plus a vapor-pressure fit.
-Fit ranges, polynomial degree, residuals, skip reasons, and whether `Pc` is unavailable
-belong in JSON provenance. `Tc`, critical density, and optional `Pc` are **fitted
-quantities, not measurements**. The current browser milestone exposes and records the
-workflow eligibility and assumptions; numerical nonlinear critical fitting remains a
-documented limitation when fewer than three complete temperatures are imported.
+The accessible Clausius–Clapeyron view uses the same framework, component, and
+temperature selectors. For each group independently it plots `x = 1/T` in `K^-1` and
+`y = ln(P/P_ref)`, where `P` is the arithmetic mean of the paired vapor- and liquid-box
+pressures in kPa and the displayed, user-set `P_ref` is also in kPa. Only finite
+temperatures above 0 K and finite coexistence pressures above 0 kPa are eligible for
+these derived coordinates. Excluded records remain in the raw table and CSV/JSON
+exports with actionable reasons, along with both box pressures and their mismatch
+diagnostic. Exports record every group, interval, formula, units, reference pressure,
+exclusions, active view, and provenance. No regression or critical estimate is run
+automatically; the current workspace offers observation views only.
 
 ### Henry input and calculations
 
@@ -62,8 +67,8 @@ Selectors and numerical tables are dynamic and preserve source paths.
 
 CSV exports are tidy records using the field names shown by each table. JSON exports
 include raw parsed/derived records, diagnostics, analysis settings, source provenance,
-and unit definitions. Canvas plots can be exported as PNG. SVG export and a complete
-nonlinear critical/vapor-pressure fitter with residual plots are current limitations.
+and unit definitions. Canvas plots can be exported as view-specific PNG files. SVG export and optional
+user-controlled Clausius–Clapeyron regression controls are current limitations.
 
 ### Launch
 
