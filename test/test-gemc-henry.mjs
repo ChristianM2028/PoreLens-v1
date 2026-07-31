@@ -13,9 +13,22 @@ test('critical workflow recovers exact rectilinear-diameter fixed-beta coexisten
  assert.equal(result.status,'available');assert.ok(Math.abs(result.critical.temperatureK-tc)<.02);assert.ok(Math.abs(result.critical.densityKgM3-rhoc)<.02);assert.equal(result.provenance.highestTemperaturePointCount,5);assert.equal(result.provenance.fixedBeta,beta);assert.equal(result.fitted.length,5);
 });
 test('critical workflow rejects insufficient and invalid inputs',()=>{assert.equal(criticalWorkflow([]).status,'skipped');assert.match(criticalWorkflow([{temperatureK:1,vaporDensityKgM3:2,liquidDensityKgM3:1}],{beta:-1}).reason,/positive/);assert.match(criticalWorkflow([],{fitPointCount:2}).reason,/at least three/)});
+test('critical workflow prohibits pooled framework/component analysis',()=>{const points=[300,310,320].flatMap((temperatureK,i)=>['C4','C5'].map(component=>({framework:'F',component,temperatureK,vaporDensityKgM3:10+i,liquidDensityKgM3:100-i})));const result=criticalWorkflow(points);assert.equal(result.status,'skipped');assert.match(result.reason,/pooled multi-fluid analysis is prohibited/);assert.deepEqual(result.groups,['F | C4','F | C5'])});
 test('Henry parser supports summary whitespace, unicode uncertainty, and final-block derivation',()=>{
  const formatted=`External temperature: 310\nFramework name: F\n[C7] Average Henry constant  : 2.0E-4 ± 1.0E-5 [ mol / kg / kPa ]\n[C7] Average adsorption energy <U_gh>_1 - <U_h>_0: -1200 ± 20 [K] (-9.977355 ± 0.166289 kJ/mol)\nSimulation finished, 0 warnings`;
  const parsed=parseHenryOutput(formatted);assert.equal(parsed.henryUnit,'mol/kg/kPa');assert.equal(parsed.adsorptionEnergySource,'final_summary');
  const blocks=`ExternalTemperature 300\nAverage Henry coefficient:\n[C4] Average Henry coefficient: 1 +/- .1 [mol/kg/Pa]\nAverage adsorption energy <U_gh>_1-<U_h>_0 obtained from Widom-insertion:\nBlock[0] -1000 [K]\nBlock[1] -1100 [K]\nBlock[2] -900 [K]\nSimulation finished, 0 warnings`;
  const derived=parseHenryOutput(blocks);assert.equal(derived.adsorptionEnergySource,'derived_final_blocks');assert.equal(derived.adsorptionEnergyK,-1000);assert.ok(Math.abs(derived.adsorptionEnergyUncertaintyK-57.735)<.01);assert.ok(derived.diagnostics.some(d=>d.code==='adsorption_energy_derived_from_final_blocks'));
+});
+
+test('Clausius–Clapeyron analysis separates groups and retains invalid raw observations',async()=>{
+ const {clausiusClapeyronGroups}=await import('../src/core/gemc.mjs');
+ const base={framework:'IRMOF-1',temperatureK:300,vaporPressureKPa:1,liquidPressureKPa:3,coexistencePressureKPa:2};
+ const records=[{...base,component:'C4',runKey:'ok'},{...base,component:'C5',runKey:'zero',coexistencePressureKPa:0},{...base,component:'C5',runKey:'negative',coexistencePressureKPa:-1},{...base,component:'C5',runKey:'missing',coexistencePressureKPa:null},{...base,component:'C5',runKey:'nonfinite',coexistencePressureKPa:Infinity}];
+ const groups=clausiusClapeyronGroups(records,{referencePressureKPa:1});
+ assert.equal(groups.length,2);assert.deepEqual(groups.map(g=>g.component),['C4','C5']);assert.equal(groups[0].eligiblePoints.length,1);assert.equal(groups[1].excludedPoints.length,4);assert.equal(groups[1].records,undefined);assert.equal(groups[1].excludedPoints[0].record,records[1]);assert.match(groups[1].excludedPoints.flatMap(x=>x.reasons).join(' '),/greater than 0|missing|finite/);assert.equal(groups[0].pressureDefinition,'arithmetic mean of the paired vapor-box and liquid-box pressures');assert.deepEqual(groups[0].temperatureIntervalK,[300,300]);assert.equal(groups[0].eligiblePoints[0].logReducedPressure,Math.log(2));
+});
+
+test('Clausius–Clapeyron regression is explicit, group-local, and fully reports its model provenance',async()=>{
+ const {clausiusClapeyronGroups,clausiusClapeyronRegression}=await import('../src/core/gemc.mjs');const records=[300,320,340].map((temperatureK,i)=>({framework:'F',component:'C6',temperatureK,coexistencePressureKPa:Math.exp(5-1000/temperatureK),runKey:String(i)}));const group=clausiusClapeyronGroups(records)[0];const fit=clausiusClapeyronRegression(group);assert.equal(fit.status,'available');assert.ok(Math.abs(fit.slope.value+1000)<1e-8);assert.ok(Math.abs(fit.intercept.value-5)<1e-8);assert.equal(fit.provenance.group,'F | C6');assert.equal(fit.enthalpyEstimate.label,'Clausius–Clapeyron model estimate');assert.equal(clausiusClapeyronRegression({eligiblePoints:[]}).status,'skipped');
 });
