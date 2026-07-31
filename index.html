@@ -20,6 +20,8 @@
   <a class="brand" href="#adsorption-isotherms" aria-label="PoreLens analysis workspaces"><span class="brand-mark">P</span><span>PoreLens</span><small>RDF workstation</small></a>
   <span class="local-status"><i></i> Local session · no telemetry</span>
   <nav class="workspace-navigation" aria-label="Analysis workspaces">
+    <a href="#gemc-workspace" data-workspace="gemc">GEMC</a>
+    <a href="#henry-workspace" data-workspace="henry">Henry</a>
     <a href="#adsorption-isotherms" data-workspace="isotherm" aria-current="page">Adsorption Isotherms</a>
     <a href="#rdf-workspace" data-workspace="rdf">RDFs &amp; Heatmaps</a>
     <a href="#end-to-end-histograms" data-workspace="end_to_end">End-to-End Histograms</a>
@@ -143,6 +145,24 @@
       <section id="comparison-panel-end-to-end" role="tabpanel" aria-labelledby="comparison-tab-end-to-end" data-comparison-panel="end_to_end" hidden><div id="comparisonHistogramChoices" class="compare-controls"></div><div id="comparisonHistogramStatus" class="capability-message" role="status">Histogram evidence has not been parsed yet.</div><article class="plot-panel"><header><h3>Mapped end-to-end distributions</h3></header><canvas id="comparisonHistogramCanvas" width="1200" height="420" aria-label="Compared end-to-end distributions"></canvas></article></section>
       <section id="comparison-panel-lj" role="tabpanel" aria-labelledby="comparison-tab-lj" data-comparison-panel="lj" hidden><p class="capability-message">LJ evidence is unavailable until both runs have validated coordinates, force-field parameters, mixing rules, exclusions, cutoff treatment, and periodic-boundary behavior. RDF peaks are not energetic attribution.</p></section>
     </div>
+  </section>
+
+  <section class="workspace analysis-workspace phase-workspace" id="gemc-workspace" data-analysis-workspace="gemc" hidden aria-labelledby="gemc-heading">
+    <div class="workspace-head"><div><p class="kicker">Independent local dataset</p><h2 id="gemc-heading">GEMC vapor–liquid equilibrium</h2></div><div class="analysis-actions"><label class="button">Choose GEMC directory<input id="gemcFiles" type="file" multiple webkitdirectory accept=".data,.input"></label><button id="gemcCancel" class="quiet-button">Cancel import</button><button id="gemcReset" class="quiet-button">Remove GEMC dataset</button></div></div>
+    <p id="gemcState" class="selection-strip" role="status" aria-live="polite"></p>
+    <div class="phase-controls"><label>Framework<select id="gemcFramework"></select></label><label>Component<select id="gemcComponent"></select></label><label>Temperature<select id="gemcTemperature"></select></label><label>Highest-temperature fit points<input id="gemcFitPoints" type="number" min="3" value="5"></label><label>Fixed β<input id="gemcBeta" type="number" step="0.001" value="0.326"></label></div>
+    <div class="phase-grid"><figure><canvas id="gemcPlot" width="800" height="330" role="img" aria-label="Vapor and liquid density coexistence plot"></canvas><figcaption>Boxes are classified by parsed density, never by system number. Coexistence pressure is the arithmetic mean of available box pressures; disagreement remains visible. Critical quantities are fitted, not measured.</figcaption></figure><article><h3>Diagnostics</h3><ul id="gemcDiagnostics" class="diagnostics"></ul></article></div>
+    <div class="table-scroll"><table><thead><tr><th>T (K)</th><th>Run</th><th>Vapor density (kg/m³)</th><th>Liquid density (kg/m³)</th><th>Vapor P (kPa)</th><th>Liquid P (kPa)</th><th>Coexistence P (kPa)</th><th>Mismatch (%)</th><th>Sources</th></tr></thead><tbody id="gemcRows"></tbody></table></div>
+    <div class="phase-exports"><button id="gemcExportCsv">Export CSV</button><button id="gemcExportJson">Export JSON + provenance</button><button id="gemcExportPng">Export PNG</button></div>
+  </section>
+
+  <section class="workspace analysis-workspace phase-workspace" id="henry-workspace" data-analysis-workspace="henry" hidden aria-labelledby="henry-heading">
+    <div class="workspace-head"><div><p class="kicker">Independent local dataset</p><h2 id="henry-heading">Widom / Henry analysis</h2></div><div class="analysis-actions"><label class="button">Choose Henry directory<input id="henryFiles" type="file" multiple webkitdirectory accept=".data,.out,.log,.input"></label><button id="henryCancel" class="quiet-button">Cancel import</button><button id="henryReset" class="quiet-button">Remove Henry dataset</button></div></div>
+    <p id="henryState" class="selection-strip" role="status" aria-live="polite"></p>
+    <div class="phase-controls"><label>Framework<select id="henryFramework"></select></label><label>Component<select id="henryComponent"></select></label><label>Temperature<select id="henryTemperature"></select></label></div>
+    <div class="phase-grid"><figure><canvas id="henryPlot" width="800" height="330" role="img" aria-label="Henry coefficient plot with logarithmic scale when values are positive"></canvas><figcaption>Henry coefficients and Widom adsorption energies are separate reported simulation quantities. Error bars and original units remain in the numerical table and exports.</figcaption></figure><article><h3>Diagnostics</h3><ul id="henryDiagnostics" class="diagnostics"></ul></article></div>
+    <div class="table-scroll"><table><thead><tr><th>Framework</th><th>Component</th><th>T (K)</th><th>Henry coefficient</th><th>Adsorption energy</th><th>Status</th><th>Source</th></tr></thead><tbody id="henryRows"></tbody></table></div>
+    <div class="phase-exports"><button id="henryExportCsv">Export CSV</button><button id="henryExportJson">Export JSON + provenance</button><button id="henryExportPng">Export PNG</button></div>
   </section>
 </main>
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>

@@ -141,6 +141,9 @@ window.addEventListener('beforeunload',e=>{if(annotationStore.dirty){e.preventDe
 import('./lj-ui.mjs?rev=porelens-20260730-isotherm-export-v3')
   .then(({setupLjWorkflow})=>setupLjWorkflow({workspace:ws,annotationStore}))
   .catch(error=>import('./workspace-navigation-ui.mjs?rev=porelens-20260730-isotherm-export-v3').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
+// GEMC and Henry are progressively enhanced independent stores; this import does not
+// read, merge, or derive metadata from either GCMC slot.
+import('./phase-workspaces.mjs?rev=porelens-20260730-isotherm-export-v3').catch(error=>console.error('[PoreLens phase workspaces]',error));
 
 let pressureRegionStart=null;
 $('#annotatePressurePoint').onclick=()=>{const context=annotationContext();annotationStore.create(context,pressurePointGeometry(context.run,context.pressurePa),annotationFields());renderAnnotationTable();selectPressure(false);};
