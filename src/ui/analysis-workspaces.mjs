@@ -1,5 +1,5 @@
 /** Independent UI state containers for each scientific workspace. */
-import {createComparisonState,COMPARISON_VIEWS,synchronizeDistanceInterval} from '../core/comparison-state.mjs?rev=porelens-20260731-literature-overlays-v1';
+import {createComparisonState,COMPARISON_VIEWS,synchronizeDistanceInterval} from '../core/comparison-state.mjs?rev=porelens-20260731-literature-axis-v2';
 export const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison','gemc','henry'];
 export class AnalysisWorkspaces {
   constructor(){this.active='isotherm';this.states=Object.fromEntries(WORKSPACE_IDS.map(id=>[id,{selection:{},error:null,loading:false}]));this.comparison=createComparisonState();}

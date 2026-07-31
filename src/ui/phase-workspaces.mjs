@@ -1,9 +1,9 @@
-import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {literatureExportRows} from '../core/literature-series.mjs?rev=porelens-20260731-literature-overlays-v1';
+import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=porelens-20260731-literature-axis-v2';
+import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=porelens-20260731-literature-axis-v2';
+import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=porelens-20260731-literature-axis-v2';
+import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=porelens-20260731-literature-axis-v2';
+import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=porelens-20260731-literature-axis-v2';
+import {literatureExportRows} from '../core/literature-series.mjs?rev=porelens-20260731-literature-axis-v2';
 
 export const phaseStores=new IndependentWorkspaceStores();
 const $=id=>document.getElementById(id),filePath=file=>file.webkitRelativePath||file.name;
