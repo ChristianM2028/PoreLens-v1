@@ -1,5 +1,5 @@
 import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=porelens-20260730-isotherm-export-v3';
-const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison'];
+const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison','gemc','henry'];
 const controller=new AnalysisWorkspaces();
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
 const chainSelections=new Map();
@@ -9,6 +9,8 @@ const navigationPaths={
   rdf:{hash:'#rdf-workspace',workspace:'rdf',rdfEvidence:false},
   end_to_end:{hash:'#end-to-end-histograms',workspace:'end_to_end',rdfEvidence:false},
   comparison:{hash:'#comparison',workspace:'comparison',rdfEvidence:false},
+  gemc:{hash:'#gemc-workspace',workspace:'gemc',rdfEvidence:false},
+  henry:{hash:'#henry-workspace',workspace:'henry',rdfEvidence:false},
   rdfEvidence:{hash:'#trajectory-energetics',workspace:'rdf',rdfEvidence:true}
 };
 const pathByHash=Object.fromEntries(Object.entries(navigationPaths).map(([name,path])=>[path.hash,{name,...path}]));
@@ -110,6 +112,7 @@ if(document.documentElement){
   void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=porelens-20260730-isotherm-export-v3');
   void loadFeature('result-browser','./result-browser-ui.mjs?rev=porelens-20260730-isotherm-export-v3');
   void loadFeature('catalog','./directory-import-ui.mjs?rev=porelens-20260730-isotherm-export-v3');
+  void loadFeature('phase-workspaces','./phase-workspaces.mjs?rev=porelens-20260730-isotherm-export-v3');
 }
 
 export {controller,activate,activateComparisonTab,activateLocation,attachChainRenderer,loadFeature,navigate,openRdfEvidence,reportFeatureUnavailable};

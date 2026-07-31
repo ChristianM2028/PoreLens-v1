@@ -1,0 +1,13 @@
+const FLOAT='[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[Ee][-+]?\\d+)?';
+const n=x=>{const value=Number(x);return Number.isFinite(value)?value:null};
+export const HENRY_UNITS={"mol/kg/Pa":{dimension:'amount per adsorbent mass per pressure',toMolKgPa:1},"mol/kg/kPa":{dimension:'amount per adsorbent mass per pressure',toMolKgPa:1e-3}};
+export function convertHenry(value,from,to){if(!HENRY_UNITS[from]||!HENRY_UNITS[to])throw new Error(`Unsupported Henry unit conversion: ${from} to ${to}`);return value*HENRY_UNITS[from].toMolKgPa/HENRY_UNITS[to].toMolKgPa}
+export function parseHenryOutput(text,{sourcePath=''}={}){
+ const temperatureK=n(text.match(new RegExp(`(?:External\\s+temperature\\s*:|ExternalTemperature)\\s*(${FLOAT})`,'i'))?.[1]);
+ const framework=text.match(/Framework name\s*:\s*([^\n\r]+)/i)?.[1]?.trim()??text.match(/FrameworkName\s+([^\s]+)/i)?.[1]??null;
+ const matches=[...text.matchAll(new RegExp(`\\[([^\\]]+)\\]\\s+Average\\s+Henry\\s+(?:coefficient|constant):\\s*(${FLOAT})\\s*\\+/-\\s*(${FLOAT})\\s*\\[([^\\]]+)\\]`,'gi'))],last=matches.at(-1);
+ const energy=[...text.matchAll(new RegExp(`\\[([^\\]]+)\\]\\s+Average\\s+<U_gh>_1-<U_h>_0:\\s*(${FLOAT})\\s*\\+/-\\s*(${FLOAT})\\s*\\[K\\][^\\n]*?\\(\\s*(${FLOAT})\\s*\\+/-\\s*(${FLOAT})\\s*kJ/mol\\)`,'gi'))].at(-1);
+ const warnings=n(text.match(/Simulation finished,\s*(\d+)\s+warnings?/i)?.[1]),diagnostics=[];if(!last)diagnostics.push({severity:'error',code:'missing_final_henry',message:'Final Average Henry coefficient summary is missing or malformed.'});if(!energy)diagnostics.push({severity:'warning',code:'missing_adsorption_energy',message:'Optional final Widom adsorption energy is unavailable.'});
+ return {sourcePath,component:last?.[1]??energy?.[1]??null,framework,temperatureK,henryCoefficient:n(last?.[2]),henryUncertainty:n(last?.[3]),henryUnit:last?.[4]?.trim()??null,adsorptionEnergyK:n(energy?.[2]),adsorptionEnergyUncertaintyK:n(energy?.[3]),adsorptionEnergyKJMol:n(energy?.[4]),adsorptionEnergyUncertaintyKJMol:n(energy?.[5]),adsorptionEnergyUnit:energy?'kJ/mol':null,complete:/Simulation finished/i.test(text),warnings,status:!last?'rejected':/Simulation finished/i.test(text)?(warnings?'warning':'complete'):'incomplete',diagnostics};
+}
+export function deduplicateHenry(records){const diagnostics=[],map=new Map();for(const record of records){const key=[record.framework,record.component,record.temperatureK].join('|');if(map.has(key))diagnostics.push({severity:'warning',code:'duplicate_output',message:`Duplicate Henry output for ${key}; the later input was retained.`});map.set(key,record)}return {records:[...map.values()].filter(x=>x.henryCoefficient!==null),diagnostics}}

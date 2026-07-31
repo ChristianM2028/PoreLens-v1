@@ -1,6 +1,6 @@
 /** Independent UI state containers for each scientific workspace. */
 import {createComparisonState,COMPARISON_VIEWS,synchronizeDistanceInterval} from '../core/comparison-state.mjs?rev=porelens-20260730-isotherm-export-v3';
-export const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison'];
+export const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison','gemc','henry'];
 export class AnalysisWorkspaces {
   constructor(){this.active='isotherm';this.states=Object.fromEntries(WORKSPACE_IDS.map(id=>[id,{selection:{},error:null,loading:false}]));this.comparison=createComparisonState();}
   activate(id){if(!WORKSPACE_IDS.includes(id))throw new Error(`Unknown analysis workspace ${id}`);this.active=id;return this.state(id)}

@@ -1,5 +1,76 @@
 # PoreLens
 
+## Three independent local workflows
+
+PoreLens has three deliberately isolated dataset lifecycles. **GCMC adsorption/RDF**
+accepts the existing manifest or raw-project inputs and supports adsorption isotherms,
+RDFs, sampling-weight diagnostics, and trajectory evidence. **GEMC** analyzes two-box
+vapor–liquid coexistence. **Henry** analyzes final Widom/Henry summaries. Importing or
+resetting one workflow cannot replace, merge with, or supply metadata to another. All
+file reads and calculations occur locally in the browser; PoreLens has no upload or
+telemetry endpoint.
+
+### GEMC input and calculations
+
+Choose a directory containing one or more discovered run roots with paired files such
+as `run/Output/System_0/output_*.data` and
+`run/Output/System_1/output_*.data`. A nearby `simulation.input` may supply
+`ExternalTemperature` when the output does not. Folder names, system order, chain
+lengths, and temperature-directory conventions are not assumed. Explicit `.data`
+outputs can also be selected through the browser file control where directory upload
+is supported.
+
+For every box, PoreLens retains complete periodic cycle observations, density,
+average pressure (or a visibly labelled instantaneous stress-trace fallback), cycle
+number, original system identity, completion status, and source path. The lower-density
+box is classified as vapor. The displayed coexistence pressure is the arithmetic mean
+of the two box pressures; both inputs and their percent mismatch remain visible.
+Replicates are grouped by parsed temperature. The coexistence plot and logarithmic
+vapor-pressure data follow the bundled Python reference workflow.
+
+Critical-property analysis is explicitly parameterized by the number of highest-
+temperature fit points and fixed exponent β (default 0.326). Its assumptions are
+rectilinear-diameter and coexistence-density scaling plus a vapor-pressure fit.
+Fit ranges, polynomial degree, residuals, skip reasons, and whether `Pc` is unavailable
+belong in JSON provenance. `Tc`, critical density, and optional `Pc` are **fitted
+quantities, not measurements**. The current browser milestone exposes and records the
+workflow eligibility and assumptions; numerical nonlinear critical fitting remains a
+documented limitation when fewer than three complete temperatures are imported.
+
+### Henry input and calculations
+
+Choose a project directory containing discovered RASPA `output*.data` (or explicit
+`.out`/`.log`) files. Frameworks, components, and temperatures are parsed from each
+output rather than inferred from a fixed directory hierarchy. PoreLens reads the final
+`Average Henry coefficient` summary, uncertainty and unit, and the optional final Widom
+adsorption-energy summary with uncertainty. Intermediate cycle snapshots are not used
+as final values. Incomplete runs remain browsable and missing energy produces a
+diagnostic rather than removing an otherwise valid Henry result.
+
+The Henry plot uses logarithmic scaling only when all coefficients are positive and
+keeps Henry coefficients distinct from adsorption energies. Original units are stored;
+tested conversions currently cover `mol/kg/Pa` and `mol/kg/kPa`. No affinity,
+causality, binding-strength, or confidence claim is inferred from either quantity.
+
+### Diagnostics and exports
+
+Each workflow reports explicit empty, importing, partial-success, error, cancelled,
+and ready states. Diagnostics identify discovered and usable sources, malformed final
+summaries, missing partners, duplicate outputs, missing pressures, incomplete runs,
+and optional missing energy. A bad run does not prevent usable runs from being shown.
+Selectors and numerical tables are dynamic and preserve source paths.
+
+CSV exports are tidy records using the field names shown by each table. JSON exports
+include raw parsed/derived records, diagnostics, analysis settings, source provenance,
+and unit definitions. Canvas plots can be exported as PNG. SVG export and a complete
+nonlinear critical/vapor-pressure fitter with residual plots are current limitations.
+
+### Launch
+
+Run `npm start` from this repository and open `http://127.0.0.1:4173`. Run the pure
+parser and state tests with `npm test`. Opening `index.html` directly with `file://`
+is unsupported because browser ES modules require the local loopback server.
+
 PoreLens is a local-first browser workspace for organizing, validating, visualizing, and comparing pressure-dependent RASPA simulation campaigns.
 
 It is designed for researchers who need to move from a directory tree full of RASPA runs to a defensible scientific interpretation without manually matching pressures, components, trajectories, RDFs, histograms, VTK grids, and force-field inputs one file at a time.
