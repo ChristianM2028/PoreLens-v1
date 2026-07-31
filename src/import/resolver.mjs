@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { diagnostic } from './diagnostics.mjs?rev=porelens-20260731-literature-overlays-v1';
+import { diagnostic } from './diagnostics.mjs?rev=porelens-20260731-literature-axis-v2';
 
 const specialDefinitions = /^(?:pseudo_atoms|force_field(?:_mixing_rules)?)\.def$/i;
 async function exists(file) { try { return (await fs.stat(file)).isFile(); } catch { return false; } }

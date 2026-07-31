@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><style>iframe{width:1200px;height:900px}</style><pre id="result">running</pre><iframe></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('iframe'),wait=async(fn,n=400)=>{for(let i=0;i<n;i++){const v=fn();if(v)return v;await new Promise(r=>setTimeout(r,20))}throw Error('timeout')};
+try{
+ frame.src='../../index.html#adsorption-isotherms';await new Promise(r=>frame.onload=r);const w=frame.contentWindow,d=w.document,change=el=>el.dispatchEvent(new w.Event('change',{bubbles:true}));
+ const files=['final_abs_pressure_up','final_abs_fug_up'].map((name,i)=>{const f=new w.File([i?'1000 4 .1\n10000 5 .1\n':'1 2 .1\n10 3 .1\n'],name);Object.defineProperty(f,'webkitRelativePath',{value:`dataset/C2/${name}`});return f});
+ w.dispatchEvent(new w.CustomEvent('porelens:dataset-loaded',{detail:{source:'files',slot:'A',name:'axis fixture',files}}));
+ const canvas=await wait(()=>d.querySelector('#chainCanvas')._axisMetadata&&d.querySelector('#chainCanvas'));
+ if(canvas._axisMetadata.xLabel!=='Pressure (Pa)'||canvas._axisMetadata.yLabel!=='Absolute loading (mol/kg framework)')throw Error(`initial labels ${JSON.stringify(canvas._axisMetadata)}`);
+ const panel=d.querySelector('#isothermLiteraturePanel'),input=panel.querySelector('[data-literature-file]'),trigger=panel.querySelector(`label[for="${input.id}"]`);if(!trigger||trigger.getBoundingClientRect().width<=0||w.getComputedStyle(trigger).display==='none')throw Error('chooser is not visible');
+ const text=await (await fetch('../../test/fixtures/literature/ethane.tsv')).text(),dt=new w.DataTransfer();dt.items.add(new w.File([text],'ethane.tsv',{type:'text/tab-separated-values'}));input.files=dt.files;change(input);if(panel.querySelector('[data-literature-filename]').textContent!=='ethane.tsv')throw Error('selected filename absent');panel.querySelector('[data-literature-add]').click();await wait(()=>canvas._visible?.some(x=>x.literature));if(!panel.querySelector('[data-literature-list]').textContent.includes('Literature'))throw Error('imported series absent');
+ const unit=d.querySelector('#chainPressureUnit');unit.value='bar';change(unit);await wait(()=>canvas._axisMetadata.xLabel==='Pressure (bar)');if(canvas._axisDomain.minimum!==-5||canvas._axisDomain.maximum!==-4)throw Error(`bar coordinates ${JSON.stringify(canvas._axisDomain)}`);
+ const x=d.querySelector('#chainXAxis');x.value='fugacity';change(x);await wait(()=>canvas._axisMetadata.xLabel==='Fugacity (bar)'&&canvas._axisDomain.minimum===-2);if(canvas._axisDomain.maximum!==-1)throw Error(`fugacity coordinates ${JSON.stringify(canvas._axisDomain)}`);
+ frame.style.width='390px';await new Promise(r=>w.requestAnimationFrame(()=>w.requestAnimationFrame(r)));if(canvas.getBoundingClientRect().width>390||canvas._axisMetadata.yLabel!=='Absolute loading (mol/kg framework)')throw Error('mobile canvas titles unavailable');
+ result.textContent=JSON.stringify({ok:true});
+}catch(e){result.textContent=JSON.stringify({ok:false,error:e.stack||String(e)})}
+</script>

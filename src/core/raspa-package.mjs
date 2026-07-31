@@ -1,7 +1,7 @@
-import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {parsePdbCryst1,SPATIAL_REGISTRATION_TOLERANCES} from './spatial-registration.mjs?rev=porelens-20260731-literature-overlays-v1';
+import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=porelens-20260731-literature-axis-v2';
+import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=porelens-20260731-literature-axis-v2';
+import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=porelens-20260731-literature-axis-v2';
+import {parsePdbCryst1,SPATIAL_REGISTRATION_TOLERANCES} from './spatial-registration.mjs?rev=porelens-20260731-literature-axis-v2';
 
 export function parseCif(text){
   const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));

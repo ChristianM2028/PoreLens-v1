@@ -1,5 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=porelens-20260731-literature-overlays-v1';
-import {parseVtkCellParameters} from './spatial-registration.mjs?rev=porelens-20260731-literature-overlays-v1';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=porelens-20260731-literature-axis-v2';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=porelens-20260731-literature-axis-v2';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));

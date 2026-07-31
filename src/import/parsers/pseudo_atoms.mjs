@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=porelens-20260731-literature-overlays-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260731-literature-overlays-v1';
+import { PseudoAtom } from '../models.mjs?rev=porelens-20260731-literature-axis-v2';
+import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260731-literature-axis-v2';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];
