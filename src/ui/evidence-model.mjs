@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=gemc-directory-fit-points';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=gemc-literature-three-column';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();

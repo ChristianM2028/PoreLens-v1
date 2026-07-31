@@ -1,2 +1,2 @@
-import { EndToEndRecord } from '../models.mjs?rev=gemc-directory-fit-points';
+import { EndToEndRecord } from '../models.mjs?rev=gemc-literature-three-column';
 export function indexEndToEnd(path, context = {}) { const stem = path.split(/[\\/]/).at(-1).replace(/\.[^.]+$/, ''), componentName = context.componentNames?.find(name => stem.toLowerCase().includes(name.toLowerCase())) ?? (context.componentNames?.length === 1 ? context.componentNames[0] : null); return new EndToEndRecord({ path, componentName, endpoints: context.endpoints?.[componentName] ?? [], columns: ['distance', 'stored_value'], units: 'angstrom', pressurePa: context.pressurePa, temperatureK: context.temperatureK }); }

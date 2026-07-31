@@ -1,5 +1,5 @@
-import { RDFRecord } from '../models.mjs?rev=gemc-directory-fit-points';
-import { diagnostic } from '../diagnostics.mjs?rev=gemc-directory-fit-points';
+import { RDFRecord } from '../models.mjs?rev=gemc-literature-three-column';
+import { diagnostic } from '../diagnostics.mjs?rev=gemc-literature-three-column';
 
 export function resolveRdfPair(filename, knownNames = []) {
   const stem = filename.split(/[\\/]/).at(-1).replace(/^RDF_/i, '').replace(/\.[^.]+$/, ''), names = [...new Set(['Framework', ...knownNames])].sort((a, b) => b.length - a.length);

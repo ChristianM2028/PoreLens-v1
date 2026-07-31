@@ -1,12 +1,12 @@
-import {resolvePairName} from '../import/importers.mjs?rev=gemc-directory-fit-points';
-import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=gemc-directory-fit-points';
-import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=gemc-directory-fit-points';
-import {cellMatrix} from '../core/raspa-physics.mjs?rev=gemc-directory-fit-points';
-import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=gemc-directory-fit-points';
-import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=gemc-directory-fit-points';
-import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=gemc-directory-fit-points';
-import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=gemc-directory-fit-points';
-import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=gemc-directory-fit-points';
+import {resolvePairName} from '../import/importers.mjs?rev=gemc-literature-three-column';
+import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=gemc-literature-three-column';
+import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=gemc-literature-three-column';
+import {cellMatrix} from '../core/raspa-physics.mjs?rev=gemc-literature-three-column';
+import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=gemc-literature-three-column';
+import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=gemc-literature-three-column';
+import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=gemc-literature-three-column';
+import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=gemc-literature-three-column';
+import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=gemc-literature-three-column';
 export {validateSpatialRegistration};
 
 export class LjResultRegistry{

@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=gemc-directory-fit-points';
-import { parseSimulationInput } from './trajectory.mjs?rev=gemc-directory-fit-points';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=gemc-directory-fit-points';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=gemc-directory-fit-points';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=gemc-directory-fit-points';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=gemc-directory-fit-points';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=gemc-literature-three-column';
+import { parseSimulationInput } from './trajectory.mjs?rev=gemc-literature-three-column';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=gemc-literature-three-column';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=gemc-literature-three-column';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=gemc-literature-three-column';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=gemc-literature-three-column';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

@@ -1,16 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { SimulationRun } from './models.mjs?rev=gemc-directory-fit-points';
-import { diagnostic } from './diagnostics.mjs?rev=gemc-directory-fit-points';
-import { parseSimulationInput } from './parsers/simulation_input.mjs?rev=gemc-directory-fit-points';
-import { parsePseudoAtoms } from './parsers/pseudo_atoms.mjs?rev=gemc-directory-fit-points';
-import { parseMixingRules } from './parsers/mixing_rules.mjs?rev=gemc-directory-fit-points';
-import { parseMoleculeDefinition } from './parsers/molecule_definition.mjs?rev=gemc-directory-fit-points';
-import { indexRdf } from './parsers/rdf.mjs?rev=gemc-directory-fit-points';
-import { indexEndToEnd } from './parsers/end_to_end.mjs?rev=gemc-directory-fit-points';
-import { indexVtk } from './parsers/vtk.mjs?rev=gemc-directory-fit-points';
-import { resolveRunInputs } from './resolver.mjs?rev=gemc-directory-fit-points';
-import { fingerprint } from './cache.mjs?rev=gemc-directory-fit-points';
+import { SimulationRun } from './models.mjs?rev=gemc-literature-three-column';
+import { diagnostic } from './diagnostics.mjs?rev=gemc-literature-three-column';
+import { parseSimulationInput } from './parsers/simulation_input.mjs?rev=gemc-literature-three-column';
+import { parsePseudoAtoms } from './parsers/pseudo_atoms.mjs?rev=gemc-literature-three-column';
+import { parseMixingRules } from './parsers/mixing_rules.mjs?rev=gemc-literature-three-column';
+import { parseMoleculeDefinition } from './parsers/molecule_definition.mjs?rev=gemc-literature-three-column';
+import { indexRdf } from './parsers/rdf.mjs?rev=gemc-literature-three-column';
+import { indexEndToEnd } from './parsers/end_to_end.mjs?rev=gemc-literature-three-column';
+import { indexVtk } from './parsers/vtk.mjs?rev=gemc-literature-three-column';
+import { resolveRunInputs } from './resolver.mjs?rev=gemc-literature-three-column';
+import { fingerprint } from './cache.mjs?rev=gemc-literature-three-column';
 
 const rel = (root, value) => value ? path.relative(root, value).split(path.sep).join('/') : null;
 async function walk(root, nestedRuns, output = []) { for (const entry of await fs.readdir(root, { withFileTypes: true })) { if (entry.name === '.poreview') continue; const file = path.join(root, entry.name); if (entry.isDirectory()) { if (!nestedRuns.has(path.resolve(file))) await walk(file, nestedRuns, output); } else if (entry.isFile()) output.push(file); } return output; }

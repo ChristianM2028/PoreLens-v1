@@ -1,5 +1,5 @@
-import { VdwParameter } from '../models.mjs?rev=gemc-directory-fit-points';
-import { diagnostic } from '../diagnostics.mjs?rev=gemc-directory-fit-points';
+import { VdwParameter } from '../models.mjs?rev=gemc-literature-three-column';
+import { diagnostic } from '../diagnostics.mjs?rev=gemc-literature-three-column';
 
 export function parseMixingRules(text, source = 'force_field_mixing_rules.def') {
   const parameters = [], diagnostics = [], data = text.split(/\r?\n/).map(x => x.replace(/\/\/.*$/, '').trim()).filter(x => x && !x.startsWith('#'));
