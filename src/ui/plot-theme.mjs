@@ -59,6 +59,29 @@ export function comparisonHeatmapLayout({width,height,measure,pressureTickLabels
 // Okabe-Ito-derived mapping extended with high-contrast tones. It is stable by chain length.
 const COLORS = ['#0072B2','#E69F00','#009E73','#D55E00','#CC79A7','#56B4E9','#7A5C00','#882255','#332288'];
 const MARKERS = ['circle','square','triangle','diamond','cross','down','plus','hexagon','star'];
+
+/** Deterministic GEMC encodings. The input order is deliberately ignored: an
+ * identity always hashes to the same palette slot, while collisions are
+ * resolved against the complete sorted identity set. */
+export const GEMC_COLORS=Object.freeze(['#0072B2','#E69F00','#009E73','#D55E00','#CC79A7','#56B4E9','#882255','#332288']);
+const hashKey=key=>[...String(key)].reduce((h,c)=>Math.imul(h^c.codePointAt(0),16777619)>>>0,2166136261);
+const fallbackColor=i=>{const hue=(i*137.508+23)%360;return `hsl(${hue.toFixed(1)} 62% ${i%2?38:48}%)`};
+export function allocateGemcStyles(groupKeys){
+  const keys=[...new Set(groupKeys.map(String))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),free=new Set(GEMC_COLORS.keys()),out={};
+  for(const key of keys){let slot=hashKey(key)%GEMC_COLORS.length;if(free.size){while(!free.has(slot))slot=(slot+1)%GEMC_COLORS.length;free.delete(slot)}const overflow=Object.keys(out).length>=GEMC_COLORS.length,index=Object.keys(out).length;out[key]=Object.freeze({groupId:key,color:overflow?fallbackColor(index):GEMC_COLORS[slot],pattern:overflow?index%3:0,vapor:Object.freeze({dash:[],marker:'circle'}),liquid:Object.freeze({dash:[7,4],marker:'triangle'})})}
+  return Object.freeze(out);
+}
+
+export const clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
+export function canvasPointer(canvas,event){const r=canvas.getBoundingClientRect();return {x:clamp((event.clientX-r.left)*(canvas.width/(r.width||1)),0,canvas.width),y:clamp((event.clientY-r.top)*(canvas.height/(r.height||1)),0,canvas.height)}}
+export function moveNormalizedLegend(position,dx,dy,geometry){const maxX=Math.max(0,geometry.canvas.width-geometry.legend.width),maxY=Math.max(0,geometry.canvas.height-geometry.legend.height);return {x:maxX?clamp((position.x*maxX)+dx,0,maxX)/maxX:0,y:maxY?clamp((position.y*maxY)+dy,0,maxY)/maxY:0}}
+export function hitRect(point,rect){return point.x>=rect.x&&point.x<=rect.x+rect.width&&point.y>=rect.y&&point.y<=rect.y+rect.height}
+/** Pure, measured canvas geometry used by rendering, dragging, and tests. */
+export function canvasPlotLayout({width,height,measure,labels=[],position={x:1,y:0},overlay=false}={}){
+ const margin={left:92,right:24,top:52,bottom:68},available=Math.max(80,width-margin.left-margin.right),labelWidths=labels.map(x=>Math.ceil(measure(String(x))||0));let flow=measuredLegendLayout({availableWidth:Math.min(available,560),labelWidths,swatchSize:42,horizontalGap:7,fontHeight:PLOT_THEME.legendPx,verticalGap:7}),pad=9,maxRows=Math.max(1,Math.floor((height-pad*2)/(PLOT_THEME.legendPx+7)));if(flow.rows>maxRows){const columns=Math.ceil(labels.length/maxRows),itemWidth=Math.max(1,Math.min(560,width-pad*2)/columns),items=labels.map((_,index)=>{const row=index%maxRows,column=Math.floor(index/maxRows),maxLabelWidth=Math.max(0,itemWidth-49);return {index,row,column,x:column*itemWidth,y:row*(PLOT_THEME.legendPx+7),width:itemWidth,height:PLOT_THEME.legendPx,textX:column*itemWidth+49,maxLabelWidth,measuredLabelWidth:labelWidths[index],clipped:labelWidths[index]>maxLabelWidth}});flow={width:itemWidth*columns,height:maxRows*PLOT_THEME.legendPx+(maxRows-1)*7,rows:maxRows,columns,items,policy:'clip'}}const lw=Math.min(width,flow.width+pad*2),lh=Math.min(height,flow.height+pad*2),maxX=Math.max(0,width-lw),maxY=Math.max(0,height-lh),legend={x:clamp(position.x??1,0,1)*maxX,y:clamp(position.y??0,0,1)*maxY,width:lw,height:lh,items:flow.items.map(item=>({...item,x:clamp(position.x??1,0,1)*maxX+pad+item.x,y:clamp(position.y??0,0,1)*maxY+pad+item.y}))};
+ const top=overlay?margin.top:Math.max(margin.top,legend.y+legend.height+10),data={x:margin.left,y:top,width:Math.max(0,width-margin.left-margin.right),height:Math.max(0,height-top-margin.bottom)};
+ return {canvas:{width,height},data,legend,overlay,transform:{x:n=>data.x+clamp(n,0,1)*data.width,y:n=>data.y+(1-clamp(n,0,1))*data.height}};
+}
 export function chainStyle(chainLength) {
   const n = Math.max(2, Number(chainLength) || 2), i = (n - 2) % COLORS.length;
   return Object.freeze({ color: COLORS[i], marker: MARKERS[i] });
