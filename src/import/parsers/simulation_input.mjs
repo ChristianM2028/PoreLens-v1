@@ -1,6 +1,6 @@
-import { Component, Framework, SimulationSettings } from '../models.mjs?rev=porelens-20260731-phase-loaders-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260731-phase-loaders-v1';
-import { cleanLines, finiteNumber } from './common.mjs?rev=porelens-20260731-phase-loaders-v1';
+import { Component, Framework, SimulationSettings } from '../models.mjs?rev=porelens-20260731-literature-overlays-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260731-literature-overlays-v1';
+import { cleanLines, finiteNumber } from './common.mjs?rev=porelens-20260731-literature-overlays-v1';
 
 const canonical = key => key.toLowerCase().replace(/[^a-z0-9]/g, '');
 const bool = value => /^(?:yes|true|on|1)$/i.test(value) ? true : /^(?:no|false|off|0)$/i.test(value) ? false : null;

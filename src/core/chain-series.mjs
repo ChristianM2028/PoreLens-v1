@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=porelens-20260731-phase-loaders-v1';
-import { parseSimulationInput } from './trajectory.mjs?rev=porelens-20260731-phase-loaders-v1';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=porelens-20260731-phase-loaders-v1';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=porelens-20260731-phase-loaders-v1';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=porelens-20260731-phase-loaders-v1';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=porelens-20260731-phase-loaders-v1';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=porelens-20260731-literature-overlays-v1';
+import { parseSimulationInput } from './trajectory.mjs?rev=porelens-20260731-literature-overlays-v1';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=porelens-20260731-literature-overlays-v1';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=porelens-20260731-literature-overlays-v1';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=porelens-20260731-literature-overlays-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=porelens-20260731-literature-overlays-v1';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;
@@ -174,6 +174,6 @@ export function plottedExport(curves, configuration) {
 }
 
 export function exportCsv(exported) {
-  const columns = Object.keys(exported.data[0] || {}), quote = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
+  const columns = [...new Set(exported.data.flatMap(Object.keys))], quote = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
   return [columns.join(','), ...exported.data.map(row => columns.map(column => quote(row[column])).join(','))].join('\n');
 }

@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=porelens-20260731-phase-loaders-v1';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=porelens-20260731-literature-overlays-v1';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();
