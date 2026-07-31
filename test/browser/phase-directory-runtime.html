@@ -1,0 +1,41 @@
+<!doctype html><meta charset="utf-8"><pre id="result">waiting</pre><iframe id="app" style="width:1280px;height:1000px"></iframe>
+<script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('#app');
+const waitFor=async(fn,ms=12000)=>{const end=Date.now()+ms;while(Date.now()<end){const value=fn();if(value)return value;await new Promise(resolve=>setTimeout(resolve,25))}throw new Error('timed out')};
+const fixtureFiles={
+  gemc:[
+    'test/fixtures/representative_run_GEMC/GEMC_ALK/C6/5_439.000/Output/System_0/output_Box_1.1.1_439.000000_0.data',
+    'test/fixtures/representative_run_GEMC/GEMC_ALK/C6/5_439.000/Output/System_1/output_Box_1.1.1_439.000000_0.data'
+  ],
+  henry:[
+    'test/fixtures/representative_run_Henry/IRMOF-1_alkanes_henry/alkanes/C10/Output/System_0/output_IRMOF-1_1.1.1_298.000000_0.data'
+  ]
+};
+async function selectDirectory(win,input,paths){
+  const transfer=new win.DataTransfer();
+  for(const path of paths){
+    const response=await fetch('../../'+path),blob=await response.blob(),file=new win.File([blob],path.split('/').at(-1));
+    Object.defineProperty(file,'webkitRelativePath',{value:path.replace(/^test\/fixtures\/[^/]+\//,'')});
+    transfer.items.add(file);
+  }
+  Object.defineProperty(input,'files',{configurable:true,value:transfer.files});
+  input.dispatchEvent(new win.Event('change',{bubbles:true}));
+}
+try{
+  frame.src='../../index.html#gemc-workspace';
+  await new Promise((resolve,reject)=>{frame.onload=resolve;setTimeout(()=>reject(new Error('application load timeout')),10000)});
+  const win=frame.contentWindow,doc=win.document,revision=doc.querySelector('meta[name="porelens-revision"]').content;
+  const module=await import(`../../src/ui/phase-workspaces.mjs?rev=${revision}`);
+  const linkingErrors=[];
+  win.addEventListener('error',event=>linkingErrors.push(event.message));
+  win.addEventListener('unhandledrejection',event=>linkingErrors.push(String(event.reason)));
+  await waitFor(()=>doc.querySelector('#gemcFiles')&&module.phaseStores.gemc.status==='empty');
+  const transitions={gemc:[module.phaseStores.gemc.status],henry:[module.phaseStores.henry.status]};
+  await selectDirectory(win,doc.querySelector('#gemcFiles'),fixtureFiles.gemc);
+  await waitFor(()=>{const status=module.phaseStores.gemc.status;if(transitions.gemc.at(-1)!==status)transitions.gemc.push(status);return ['ready','partial-success'].includes(status)});
+  await selectDirectory(win,doc.querySelector('#henryFiles'),fixtureFiles.henry);
+  await waitFor(()=>{const status=module.phaseStores.henry.status;if(transitions.henry.at(-1)!==status)transitions.henry.push(status);return ['ready','partial-success'].includes(status)});
+  await new Promise(resolve=>setTimeout(resolve,100));
+  result.textContent=JSON.stringify({ok:true,revision,transitions,gemc:{status:module.phaseStores.gemc.status,records:module.phaseStores.gemc.records.length},henry:{status:module.phaseStores.henry.status,records:module.phaseStores.henry.records.length},linkingErrors});
+}catch(error){result.textContent=JSON.stringify({ok:false,error:error.stack||error.message})}
+</script>

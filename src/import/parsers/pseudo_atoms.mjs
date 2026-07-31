@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=porelens-20260730-isotherm-export-v3';
-import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260730-isotherm-export-v3';
+import { PseudoAtom } from '../models.mjs?rev=porelens-20260731-phase-loaders-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=porelens-20260731-phase-loaders-v1';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

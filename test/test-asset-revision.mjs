@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {dirname,join,normalize} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {ASSET_REVISION} from '../asset-revision.mjs';
@@ -17,6 +18,28 @@ async function filesBelow(directory){
 const browserUrlPattern=/["'](\.{1,2}\/[^"']+\.(?:mjs|js)(?:\?rev=([^"']+))?)["']/g;
 const references=source=>[...source.matchAll(browserUrlPattern)].map(match=>({url:match[1],revision:match[2]}));
 const pathFor=(owner,url)=>normalize(join(dirname(owner),url.replace(/\?.*$/,'')));
+
+test('published immutable asset manifest matches browser-served bytes for the entire module graph',async()=>{
+  const published=JSON.parse(await readFile('test/fixtures/deployment/immutable-asset-manifest.json','utf8'));
+  assert.equal(published.algorithm,'sha256');
+  assert.equal(published.revision,ASSET_REVISION,'changed browser assets require a new published release revision');
+  const html=await readFile('index.html','utf8'),pending=references(html).map(({url})=>pathFor('index.html',url));
+  const graph=new Set(['index.html','styles.css']);
+  while(pending.length){
+    const path=pending.pop();
+    if(graph.has(path))continue;
+    graph.add(path);
+    const source=await readFile(path,'utf8');
+    for(const {url} of references(source))pending.push(pathFor(path,url));
+  }
+  assert.ok(graph.has('src/ui/phase-workspaces.mjs'),'lazy phase workspace is content-locked');
+  assert.ok(graph.has('src/ui/plot-theme.mjs'),'transitive plot theme is content-locked');
+  assert.deepEqual(Object.keys(published.assets).sort(),[...graph].sort(),'published manifest inventories the complete served graph');
+  for(const path of graph){
+    const digest=createHash('sha256').update(await readFile(path)).digest('hex');
+    assert.equal(digest,published.assets[path],`${path} bytes changed without publishing a new immutable asset manifest and revision`);
+  }
+});
 
 test('server, HTML, CSS, entry points, transitive modules, and workers use the release revision',async()=>{
   const paths=(await filesBelow('src')).filter(path=>/\.(?:mjs|js)$/.test(path)&&path!=='src/import/cli.mjs');
