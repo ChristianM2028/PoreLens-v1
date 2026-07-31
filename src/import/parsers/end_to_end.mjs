@@ -1,2 +1,2 @@
-import { EndToEndRecord } from '../models.mjs?rev=porelens-20260731-literature-axis-v3';
+import { EndToEndRecord } from '../models.mjs?rev=porelens-20260731-gemc-critical-v1';
 export function indexEndToEnd(path, context = {}) { const stem = path.split(/[\\/]/).at(-1).replace(/\.[^.]+$/, ''), componentName = context.componentNames?.find(name => stem.toLowerCase().includes(name.toLowerCase())) ?? (context.componentNames?.length === 1 ? context.componentNames[0] : null); return new EndToEndRecord({ path, componentName, endpoints: context.endpoints?.[componentName] ?? [], columns: ['distance', 'stored_value'], units: 'angstrom', pressurePa: context.pressurePa, temperatureK: context.temperatureK }); }

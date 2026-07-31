@@ -1,8 +1,8 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=porelens-20260731-literature-axis-v3';
-import {parseCif} from '../../core/raspa-package.mjs?rev=porelens-20260731-literature-axis-v3';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=porelens-20260731-literature-axis-v3';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=porelens-20260731-literature-axis-v3';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=porelens-20260731-literature-axis-v3';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {parseCif} from '../../core/raspa-package.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=porelens-20260731-gemc-critical-v1';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);

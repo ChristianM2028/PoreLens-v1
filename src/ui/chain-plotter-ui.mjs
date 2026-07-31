@@ -1,11 +1,11 @@
-import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=porelens-20260731-literature-axis-v3';
-import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=porelens-20260731-literature-axis-v3';
-import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=porelens-20260731-literature-axis-v3';
-import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=porelens-20260731-literature-axis-v3';
-import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,measuredLegendLayout,EXPORT_PRESETS} from './plot-theme.mjs?rev=porelens-20260731-literature-axis-v3';
-import {convertPressure} from '../core/plot-configuration.mjs?rev=porelens-20260731-literature-axis-v3';
-import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=porelens-20260731-literature-axis-v3';
-import {literatureExportRows} from '../core/literature-series.mjs?rev=porelens-20260731-literature-axis-v3';
+import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,measuredLegendLayout,EXPORT_PRESETS} from './plot-theme.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {convertPressure} from '../core/plot-configuration.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=porelens-20260731-gemc-critical-v1';
+import {literatureExportRows} from '../core/literature-series.mjs?rev=porelens-20260731-gemc-critical-v1';
 
 const $=s=>document.querySelector(s),histogramSelections=new Map(),histogramVisibility=new Map(); let curves=[], zoom=1, renderGeneration=0,selectionInitialized=false,savedConfigurationRestored=false;
 const ids=['chainErrors','chainPreset','chainDatasetA','chainDatasetB','chainResult','chainLengths','chainPair','chainMatch','chainPressure','chainTolerance','chainCompare','chainXAxis','chainAxis','chainPressureUnit','chainManual','chainLoading','chainAnnotations','chainUnits','chainLoadingKind','chainLoadingUnit','chainLines','chainLegend'];
