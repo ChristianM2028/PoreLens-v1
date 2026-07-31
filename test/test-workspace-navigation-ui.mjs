@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {ASSET_REVISION} from '../asset-revision.mjs';
 
 async function navigationHarness(initialHash='#adsorption-isotherms'){
   const listeners=new Map(),windowListeners=new Map();
@@ -119,13 +120,13 @@ test('HTML exposes Isotherms before enhancement and delegates optional features 
   assert.match(html,/id="adsorption-isotherms" data-analysis-workspace="isotherm" aria-labelledby=/);
   assert.doesNotMatch(html,/id="adsorption-isotherms"[^>]*\shidden(?:\s|>)/);
   for(const id of ['rdf-workspace','end-to-end-histograms','trajectory-energetics'])assert.match(html,new RegExp(`id="${id}"[^>]*\\shidden(?:\\s|>)`));
-  assert.match(html,/import\('\.\/src\/ui\/workspace-navigation-ui\.mjs\?rev=porelens-20260730-isotherm-export-v3'\)/);
+  assert.match(html,new RegExp(`import\\('\\./src/ui/workspace-navigation-ui\\.mjs\\?rev=${ASSET_REVISION}'\\)`));
   for(const legacy of ['src="app.js"','src="chain-plotter-ui.mjs"','src="result-browser-ui.mjs"','src="directory-import-ui.mjs"'])assert.doesNotMatch(html,new RegExp(legacy));
   assert.match(navigation,/import \{AnalysisWorkspaces\}/);
-  assert.ok(navigation.indexOf('if(!activateLocation())')<navigation.indexOf("loadFeature('rdf','./app.js?rev=porelens-20260730-isotherm-export-v3')"));
+  assert.ok(navigation.indexOf('if(!activateLocation())')<navigation.indexOf(`loadFeature('rdf','./app.js?rev=${ASSET_REVISION}')`));
   assert.match(navigation,/rdfEvidence:\{hash:'#trajectory-energetics',workspace:'rdf',rdfEvidence:true\}/);
   assert.match(navigation,/reportFeatureUnavailable/);
   assert.doesNotMatch(app,/^import \{ setupLjWorkflow \}/m);
-  assert.match(app,/import\('\.\/lj-ui\.mjs\?rev=porelens-20260730-isotherm-export-v3'\)/);
+  assert.match(app,new RegExp(`import\\('\\./lj-ui\\.mjs\\?rev=${ASSET_REVISION}'\\)`));
   assert.match(html,/<script nomodule>/);
 });

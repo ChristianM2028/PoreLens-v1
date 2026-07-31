@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=porelens-20260730-isotherm-export-v3';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=porelens-20260731-phase-loaders-v1';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();
