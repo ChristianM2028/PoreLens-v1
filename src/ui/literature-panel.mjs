@@ -1,4 +1,4 @@
-import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=gemc-literature-three-column';
+import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=histogram-inset-legend';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];

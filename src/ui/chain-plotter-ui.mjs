@@ -1,11 +1,11 @@
-import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=gemc-literature-three-column';
-import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=gemc-literature-three-column';
-import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=gemc-literature-three-column';
-import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=gemc-literature-three-column';
-import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,measuredLegendLayout,EXPORT_PRESETS} from './plot-theme.mjs?rev=gemc-literature-three-column';
-import {convertPressure} from '../core/plot-configuration.mjs?rev=gemc-literature-three-column';
-import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=gemc-literature-three-column';
-import {literatureExportRows} from '../core/literature-series.mjs?rev=gemc-literature-three-column';
+import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=histogram-inset-legend';
+import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=histogram-inset-legend';
+import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=histogram-inset-legend';
+import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=histogram-inset-legend';
+import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,measuredLegendLayout,EXPORT_PRESETS} from './plot-theme.mjs?rev=histogram-inset-legend';
+import {convertPressure} from '../core/plot-configuration.mjs?rev=histogram-inset-legend';
+import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=histogram-inset-legend';
+import {literatureExportRows} from '../core/literature-series.mjs?rev=histogram-inset-legend';
 
 const $=s=>document.querySelector(s),histogramSelections=new Map(),histogramVisibility=new Map(); let curves=[], zoom=1, renderGeneration=0,selectionInitialized=false,savedConfigurationRestored=false;
 const ids=['chainErrors','chainPreset','chainDatasetA','chainDatasetB','chainResult','chainLengths','chainPair','chainMatch','chainPressure','chainTolerance','chainCompare','chainXAxis','chainAxis','chainPressureUnit','chainManual','chainLoading','chainAnnotations','chainUnits','chainLoadingKind','chainLoadingUnit','chainLines','chainLegend'];

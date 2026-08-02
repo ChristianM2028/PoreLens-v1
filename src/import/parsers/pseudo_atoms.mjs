@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=gemc-literature-three-column';
-import { diagnostic } from '../diagnostics.mjs?rev=gemc-literature-three-column';
+import { PseudoAtom } from '../models.mjs?rev=histogram-inset-legend';
+import { diagnostic } from '../diagnostics.mjs?rev=histogram-inset-legend';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

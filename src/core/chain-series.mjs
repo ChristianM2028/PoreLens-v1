@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=gemc-literature-three-column';
-import { parseSimulationInput } from './trajectory.mjs?rev=gemc-literature-three-column';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=gemc-literature-three-column';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=gemc-literature-three-column';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=gemc-literature-three-column';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=gemc-literature-three-column';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=histogram-inset-legend';
+import { parseSimulationInput } from './trajectory.mjs?rev=histogram-inset-legend';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=histogram-inset-legend';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=histogram-inset-legend';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=histogram-inset-legend';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=histogram-inset-legend';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

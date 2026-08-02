@@ -1,4 +1,4 @@
-import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=gemc-literature-three-column';
+import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=histogram-inset-legend';
 const $=s=>document.querySelector(s),SLOTS=['A','B'];
 
 /** Slot-scoped scan ownership. A callback is accepted only while its scan is current. */

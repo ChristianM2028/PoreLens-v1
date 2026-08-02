@@ -1,9 +1,9 @@
-import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,gemcCriticalParametersByGroup,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=gemc-literature-three-column';
-import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=gemc-literature-three-column';
-import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=gemc-literature-three-column';
-import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=gemc-literature-three-column';
-import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=gemc-literature-three-column';
-import {literatureExportRows} from '../core/literature-series.mjs?rev=gemc-literature-three-column';
+import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,gemcCriticalParametersByGroup,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=histogram-inset-legend';
+import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=histogram-inset-legend';
+import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=histogram-inset-legend';
+import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=histogram-inset-legend';
+import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=histogram-inset-legend';
+import {literatureExportRows} from '../core/literature-series.mjs?rev=histogram-inset-legend';
 
 export const phaseStores=new IndependentWorkspaceStores();
 const $=id=>document.getElementById(id),filePath=file=>file.webkitRelativePath||file.name;

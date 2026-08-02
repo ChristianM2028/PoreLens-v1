@@ -56,6 +56,28 @@ test('A/B legends are measured and wrap within their bounded region without coll
   const mobile=comparisonCurveLayout({width:320,height:400,measure:measuredText,legendLabels:['A · C10 · CF2_sp3 ↔ Zn1','B · C10 · CF2_sp3 ↔ Zn1']});
   assert.equal(mobile.legend.columns,1);assert.equal(mobile.legend.rows,2);
 });
+test('inset comparison legends remain inside the plot at desktop and narrow widths without reducing its height',()=>{
+  for(const [width,height] of [[700,430],[320,400]]){
+    const labels=['Primary experimental dataset','Comparison simulation dataset'];
+    const inset=comparisonCurveLayout({width,height,measure:measuredText,yTickLabels:['0','100'],legendLabels:labels,insetLegend:true});
+    const flowing=comparisonCurveLayout({width,height,measure:measuredText,yTickLabels:['0','100'],legendLabels:labels});
+    const box=inset.legend.background;
+    assert.ok(inset.legend.inset);
+    assert.ok(box.x>=inset.left&&box.y>=inset.top,`${width}px inset starts inside plot`);
+    assert.ok(box.x+box.width<=inset.left+inset.plotW&&box.y+box.height<=inset.top+inset.plotH,`${width}px inset ends inside plot`);
+    assert.ok(inset.legend.items.every(item=>item.x>=box.x&&item.x+item.width<=box.x+box.width));
+    assert.ok(inset.plotH>flowing.plotH,'inset does not reserve vertical data space');
+  }
+});
+test('end-to-end comparison uses dataset-only visible labels while retaining run and pressure provenance',async()=>{
+  const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8');
+  const render=source.slice(source.indexOf('async function renderComparisonHistograms'),source.indexOf('function renderActiveComparisonEvidence'));
+  assert.match(render,/label:datasetLabel\(slot\)/);
+  assert.doesNotMatch(render,/label:`[^`]*run|label:`[^`]*Pa/);
+  assert.match(render,/description:`[^`]*run \$\{chosen\.run\}[^`]*\$\{chosen\.pressurePa\} Pa[^`]*\$\{chosen\.pressureSource/);
+  assert.match(render,/messages\.push\(`[^`]*run \$\{chosen\.run\}[^`]*\$\{chosen\.pressurePa\} Pa \(\$\{chosen\.pressureSource/);
+  assert.match(render,/insetLegend:true/);
+});
 test('measured legend items stay bounded, do not intersect, and add rows on narrow plots',()=>{
   const widths=[245,224,238],wide=measuredLegendLayout({availableWidth:760,labelWidths:widths,swatchSize:24,fontHeight:14,horizontalGap:7,verticalGap:5}),narrow=measuredLegendLayout({availableWidth:180,labelWidths:widths,swatchSize:24,fontHeight:14,horizontalGap:7,verticalGap:5});
   assert.ok(narrow.rows>wide.rows);assert.equal(narrow.columns,1);assert.equal(narrow.policy,'clip');

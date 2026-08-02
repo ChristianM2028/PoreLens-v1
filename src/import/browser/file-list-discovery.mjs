@@ -1,8 +1,8 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=gemc-literature-three-column';
-import {parseCif} from '../../core/raspa-package.mjs?rev=gemc-literature-three-column';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=gemc-literature-three-column';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=gemc-literature-three-column';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=gemc-literature-three-column';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=histogram-inset-legend';
+import {parseCif} from '../../core/raspa-package.mjs?rev=histogram-inset-legend';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=histogram-inset-legend';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=histogram-inset-legend';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=histogram-inset-legend';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);

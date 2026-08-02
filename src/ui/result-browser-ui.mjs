@@ -1,4 +1,4 @@
-import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=gemc-literature-three-column';
+import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=histogram-inset-legend';
 
 export const PROVENANCE_SCHEMA='porelens.run-provenance';
 const value=(x,fallback=null)=>x??fallback;

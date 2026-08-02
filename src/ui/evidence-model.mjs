@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=gemc-literature-three-column';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=histogram-inset-legend';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();

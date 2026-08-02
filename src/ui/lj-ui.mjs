@@ -1,12 +1,12 @@
-import {resolvePairName} from '../import/importers.mjs?rev=gemc-literature-three-column';
-import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=gemc-literature-three-column';
-import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=gemc-literature-three-column';
-import {cellMatrix} from '../core/raspa-physics.mjs?rev=gemc-literature-three-column';
-import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=gemc-literature-three-column';
-import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=gemc-literature-three-column';
-import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=gemc-literature-three-column';
-import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=gemc-literature-three-column';
-import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=gemc-literature-three-column';
+import {resolvePairName} from '../import/importers.mjs?rev=histogram-inset-legend';
+import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=histogram-inset-legend';
+import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=histogram-inset-legend';
+import {cellMatrix} from '../core/raspa-physics.mjs?rev=histogram-inset-legend';
+import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=histogram-inset-legend';
+import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=histogram-inset-legend';
+import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=histogram-inset-legend';
+import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=histogram-inset-legend';
+import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=histogram-inset-legend';
 export {validateSpatialRegistration};
 
 export class LjResultRegistry{
