@@ -1,4 +1,4 @@
-import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=histogram-inset-legend';
+import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=inset-legend-canvas-coordinates';
 
 export const PROVENANCE_SCHEMA='porelens.run-provenance';
 const value=(x,fallback=null)=>x??fallback;

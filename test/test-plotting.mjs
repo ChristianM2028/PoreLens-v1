@@ -57,15 +57,28 @@ test('A/B legends are measured and wrap within their bounded region without coll
   assert.equal(mobile.legend.columns,1);assert.equal(mobile.legend.rows,2);
 });
 test('inset comparison legends remain inside the plot at desktop and narrow widths without reducing its height',()=>{
-  for(const [width,height] of [[700,430],[320,400]]){
-    const labels=['Primary experimental dataset','Comparison simulation dataset'];
+  const cases=[
+    [700,430,['nonideal_PFA','nonideal_PFA']],
+    [320,400,['Primary experimental dataset','Comparison simulation dataset']]
+  ];
+  for(const [width,height,labels] of cases){
     const inset=comparisonCurveLayout({width,height,measure:measuredText,yTickLabels:['0','100'],legendLabels:labels,insetLegend:true});
     const flowing=comparisonCurveLayout({width,height,measure:measuredText,yTickLabels:['0','100'],legendLabels:labels});
     const box=inset.legend.background;
     assert.ok(inset.legend.inset);
     assert.ok(box.x>=inset.left&&box.y>=inset.top,`${width}px inset starts inside plot`);
     assert.ok(box.x+box.width<=inset.left+inset.plotW&&box.y+box.height<=inset.top+inset.plotH,`${width}px inset ends inside plot`);
-    assert.ok(inset.legend.items.every(item=>item.x>=box.x&&item.x+item.width<=box.x+box.width));
+    for(const item of inset.legend.items){
+      const clip={x:item.textX,y:item.y,width:item.maxLabelWidth,height:PLOT_THEME.legendPx+4};
+      assert.ok(item.x>=box.x&&item.x+item.width<=box.x+box.width);
+      assert.ok(item.textX>item.x+18,`${width}px label starts beyond its swatch endpoint`);
+      assert.ok(clip.x>=box.x&&clip.x+clip.width<=box.x+box.width,`${width}px text clip is horizontally inside background`);
+      assert.ok(clip.y>=box.y&&clip.y+clip.height<=box.y+box.height,`${width}px text clip is vertically inside background`);
+      for(const swatchItem of inset.legend.items){
+        const sameRow=clip.y<swatchItem.y+PLOT_THEME.legendPx&&swatchItem.y<clip.y+clip.height;
+        assert.ok(!sameRow||clip.x>=swatchItem.x+18||clip.x+clip.width<=swatchItem.x,`${width}px label clip does not overlap item ${swatchItem.index}'s swatch`);
+      }
+    }
     assert.ok(inset.plotH>flowing.plotH,'inset does not reserve vertical data space');
   }
 });

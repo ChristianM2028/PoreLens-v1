@@ -1,4 +1,4 @@
-import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=histogram-inset-legend';
+import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=inset-legend-canvas-coordinates';
 const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison','gemc','henry'];
 const controller=new AnalysisWorkspaces();
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
@@ -108,11 +108,11 @@ function loadFeature(feature,source){return import(source).catch(error=>{reportF
 // Each optional entry point is imported independently so one parser or renderer cannot
 // prevent the progressively enhanced shell from remaining usable.
 if(document.documentElement){
-  void loadFeature('rdf','./app.js?rev=histogram-inset-legend');
-  void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=histogram-inset-legend');
-  void loadFeature('result-browser','./result-browser-ui.mjs?rev=histogram-inset-legend');
-  void loadFeature('catalog','./directory-import-ui.mjs?rev=histogram-inset-legend');
-  void loadFeature('phase-workspaces','./phase-workspaces.mjs?rev=histogram-inset-legend');
+  void loadFeature('rdf','./app.js?rev=inset-legend-canvas-coordinates');
+  void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=inset-legend-canvas-coordinates');
+  void loadFeature('result-browser','./result-browser-ui.mjs?rev=inset-legend-canvas-coordinates');
+  void loadFeature('catalog','./directory-import-ui.mjs?rev=inset-legend-canvas-coordinates');
+  void loadFeature('phase-workspaces','./phase-workspaces.mjs?rev=inset-legend-canvas-coordinates');
 }
 
 export {controller,activate,activateComparisonTab,activateLocation,attachChainRenderer,loadFeature,navigate,openRdfEvidence,reportFeatureUnavailable};

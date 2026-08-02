@@ -51,7 +51,7 @@ export function comparisonCurveLayout({width,height,measure,yTickLabels=[],legen
   const legendHeight=!inset&&measuredLegend.height?measuredLegend.height+role.legendGap:0;
   const top=role.top+legendHeight, bottom=role.bottom+tickH+role.gap+PLOT_THEME.axisTitlePx;
   const legendX=inset?left+insetOffset+insetPadding:left,legendY=inset?top+insetOffset+insetPadding:role.top;
-  const legend={...measuredLegend,x:legendX,y:legendY,height:inset?measuredLegend.height:legendHeight,inset,background:inset?{x:legendX-insetPadding,y:legendY-insetPadding,width:measuredLegend.width+insetPadding*2,height:measuredLegend.height+insetPadding*2,padding:insetPadding}:null,items:measuredLegend.items.map(item=>({...item,x:legendX+item.x,y:legendY+item.y}))};
+  const legend={...measuredLegend,x:legendX,y:legendY,height:inset?measuredLegend.height:legendHeight,inset,background:inset?{x:legendX-insetPadding,y:legendY-insetPadding,width:measuredLegend.width+insetPadding*2,height:measuredLegend.height+insetPadding*2,padding:insetPadding}:null,items:measuredLegend.items.map(item=>({...item,x:legendX+item.x,y:legendY+item.y,textX:legendX+item.textX}))};
   return {left,right:role.right,top,bottom,plotW:Math.max(0,width-left-role.right),plotH:Math.max(0,height-top-bottom),legend,minimum:{width:role.minDataWidth,height:role.minDataHeight}};
 }
 export function comparisonHeatmapLayout({width,height,measure,pressureTickLabels=[],colorTickLabels=[]}) {

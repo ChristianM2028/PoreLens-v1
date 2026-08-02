@@ -1,8 +1,8 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=histogram-inset-legend';
-import {parseCif} from '../../core/raspa-package.mjs?rev=histogram-inset-legend';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=histogram-inset-legend';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=histogram-inset-legend';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=histogram-inset-legend';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=inset-legend-canvas-coordinates';
+import {parseCif} from '../../core/raspa-package.mjs?rev=inset-legend-canvas-coordinates';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=inset-legend-canvas-coordinates';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=inset-legend-canvas-coordinates';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=inset-legend-canvas-coordinates';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);

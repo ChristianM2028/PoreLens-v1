@@ -1,5 +1,5 @@
-import { RDFRecord } from '../models.mjs?rev=histogram-inset-legend';
-import { diagnostic } from '../diagnostics.mjs?rev=histogram-inset-legend';
+import { RDFRecord } from '../models.mjs?rev=inset-legend-canvas-coordinates';
+import { diagnostic } from '../diagnostics.mjs?rev=inset-legend-canvas-coordinates';
 
 export function resolveRdfPair(filename, knownNames = []) {
   const stem = filename.split(/[\\/]/).at(-1).replace(/^RDF_/i, '').replace(/\.[^.]+$/, ''), names = [...new Set(['Framework', ...knownNames])].sort((a, b) => b.length - a.length);

@@ -1,5 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=histogram-inset-legend';
-import {parseVtkCellParameters} from './spatial-registration.mjs?rev=histogram-inset-legend';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=inset-legend-canvas-coordinates';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=inset-legend-canvas-coordinates';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));
