@@ -1,19 +1,19 @@
-import {controller as analysisController,navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=gemc-literature-three-column';
-import { importBrowserFiles } from '../import/importers.mjs?rev=gemc-literature-three-column';
-import { buildHeatmap, nearestPressureIndex, mapAnnotations, highRegions } from '../core/analysis.mjs?rev=gemc-literature-three-column';
-import {compareRdfSelections} from '../core/comparison-state.mjs?rev=gemc-literature-three-column';
-import { DatasetWorkspace } from '../core/workspace.mjs?rev=gemc-literature-three-column';
-import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=gemc-literature-three-column';
-import { groupDiagnostics } from '../core/ui-state.mjs?rev=gemc-literature-three-column';
-import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=gemc-literature-three-column';
-import {PLOT_THEME, markerIndices, linearTicks, formatTick, formatPressureTick, comparisonCurveLayout, comparisonHeatmapLayout} from './plot-theme.mjs?rev=gemc-literature-three-column';
-import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=gemc-literature-three-column';
-import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=gemc-literature-three-column';
-import {importRunPackage} from '../core/raspa-package.mjs?rev=gemc-literature-three-column';
-import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=gemc-literature-three-column';
-import {distributionView} from '../core/result-types.mjs?rev=gemc-literature-three-column';
-import {setupOccupancyDensityUi} from './occupancy-density-ui.mjs?rev=gemc-literature-three-column';
-import {evidenceCatalogs,parsedResultCache,registerEvidence,removeEvidence,relabelEvidence,evidenceFor} from './evidence-model.mjs?rev=gemc-literature-three-column';
+import {controller as analysisController,navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=histogram-inset-legend';
+import { importBrowserFiles } from '../import/importers.mjs?rev=histogram-inset-legend';
+import { buildHeatmap, nearestPressureIndex, mapAnnotations, highRegions } from '../core/analysis.mjs?rev=histogram-inset-legend';
+import {compareRdfSelections} from '../core/comparison-state.mjs?rev=histogram-inset-legend';
+import { DatasetWorkspace } from '../core/workspace.mjs?rev=histogram-inset-legend';
+import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=histogram-inset-legend';
+import { groupDiagnostics } from '../core/ui-state.mjs?rev=histogram-inset-legend';
+import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=histogram-inset-legend';
+import {PLOT_THEME, markerIndices, linearTicks, formatTick, formatPressureTick, comparisonCurveLayout, comparisonHeatmapLayout} from './plot-theme.mjs?rev=histogram-inset-legend';
+import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=histogram-inset-legend';
+import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=histogram-inset-legend';
+import {importRunPackage} from '../core/raspa-package.mjs?rev=histogram-inset-legend';
+import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=histogram-inset-legend';
+import {distributionView} from '../core/result-types.mjs?rev=histogram-inset-legend';
+import {setupOccupancyDensityUi} from './occupancy-density-ui.mjs?rev=histogram-inset-legend';
+import {evidenceCatalogs,parsedResultCache,registerEvidence,removeEvidence,relabelEvidence,evidenceFor} from './evidence-model.mjs?rev=histogram-inset-legend';
 
 const $=selector=>document.querySelector(selector), ws=new DatasetWorkspace();
 setupOccupancyDensityUi();
@@ -35,7 +35,7 @@ function selectorTrace(slot,component=null,pair=null){return deriveRdfSelectorSt
 function inventory(slot,component=null){const trace=selectorTrace(slot,component);return {components:selectorTrace(slot).chains,pairs:trace.pairs};}
 function reportSelectorTrace(slot,component=null,pair=null){const trace=selectorTrace(slot,component,pair);console.info('[PoreLens RDF selector trace]',{datasetSlot:slot,'Raw RDF records':trace.rawRdfRecords,'After dataset filter':trace.afterDatasetFilter,'After type filter':trace.afterTypeFilter,'With chain key':trace.withChainKey,'Unique chain keys':trace.chains,'Selected-chain RDFs':trace.selectedChainRdfs,'Unique pair keys':trace.pairs,'RDF records lacking pair metadata':trace.missingPair,'Selected-pair RDFs':trace.selectedPairRdfs,'Unique pressures':trace.pressures,'RDF records lacking valid pressure metadata':trace.missingPressure});return trace;}
 function axisTitle(label,unit){return `${label} (${unit})`;}
-function drawCurve(canvas,series,{x,y,xLabel,xUnit,yLabel,yUnit,difference=false,panels=false,annotations=null,display='raw',window=5}={}) {
+function drawCurve(canvas,series,{x,y,xLabel,xUnit,yLabel,yUnit,difference=false,panels=false,annotations=null,display='raw',window=5,insetLegend=false}={}) {
   const missing=[['x',x],['y',y],['xLabel',xLabel],['xUnit',xUnit],['yLabel',yLabel],['yUnit',yUnit]].filter(([,value])=>typeof value!=='function'&&!String(value||'').trim()).map(([name])=>name);
   if(missing.length){const message=`Curve plot requires explicit axis metadata and accessors; missing: ${missing.join(', ')}`;canvas._plotDiagnostic=message;canvas.setAttribute?.('aria-label',message);throw new TypeError(message)}
   delete canvas._plotDiagnostic;
@@ -44,7 +44,7 @@ function drawCurve(canvas,series,{x,y,xLabel,xUnit,yLabel,yUnit,difference=false
   const xmin=Math.min(...all.map(p=>p.distanceA)),xmax=Math.max(...all.map(p=>p.distanceA)),ymin=difference?Math.min(0,...all.map(p=>p.gR)):0,ymax=Math.max(1,...all.map(p=>p.gR)),xTitle=axisTitle(xLabel,xUnit),yTitle=axisTitle(yLabel,yUnit);
   const xt=linearTicks(xmin,xmax,w<500?4:6),yt=linearTicks(ymin,ymax,h<320?4:6),xstep=xt[1]-xt[0]||xmax-xmin,ystep=yt[1]-yt[0]||ymax-ymin;
   c.font=`${PLOT_THEME.tickPx}px ${PLOT_THEME.fontFamily}`;
-  const measure=text=>c.measureText(String(text)).width, labels=prepared.map(s=>s.label),layout=comparisonCurveLayout({width:w,height:h,measure,yTickLabels:yt.map(v=>formatTick(v,ystep)),legendLabels:labels}),pad={l:layout.left,r:layout.right,t:layout.top,b:layout.bottom},plotW=layout.plotW,plotH=layout.plotH;
+  const measure=text=>c.measureText(String(text)).width, labels=prepared.map(s=>s.label),layout=comparisonCurveLayout({width:w,height:h,measure,yTickLabels:yt.map(v=>formatTick(v,ystep)),legendLabels:labels,insetLegend}),pad={l:layout.left,r:layout.right,t:layout.top,b:layout.bottom},plotW=layout.plotW,plotH=layout.plotH;
   const xScale=value=>pad.l+(value-xmin)/(xmax-xmin||1)*plotW,yScale=(value,index=0)=>{const panelH=panels?plotH/prepared.length:plotH,offset=panels?index*panelH:0;return pad.t+offset+panelH-(value-ymin)/(ymax-ymin||1)*panelH};
   c.clearRect(0,0,w,h);c.fillStyle=PLOT_THEME.background;c.fillRect(0,0,w,h);
   c.save();c.beginPath();c.rect(pad.l,pad.t,plotW,plotH);c.clip();c.strokeStyle=PLOT_THEME.gridColor;c.lineWidth=1;
@@ -55,6 +55,7 @@ function drawCurve(canvas,series,{x,y,xLabel,xUnit,yLabel,yUnit,difference=false
   c.strokeStyle=PLOT_THEME.axisColor;c.lineWidth=PLOT_THEME.axisWidth;c.strokeRect(pad.l,pad.t,plotW,plotH);c.fillStyle=PLOT_THEME.axisColor;c.font=`${PLOT_THEME.tickPx}px ${PLOT_THEME.fontFamily}`;c.textBaseline='middle';
   c.textAlign='right';yt.forEach(v=>c.fillText(formatTick(v,ystep),pad.l-8,yScale(v)));
   c.textAlign='center';xt.forEach(v=>c.fillText(formatTick(v,xstep),xScale(v),pad.t+plotH+PLOT_THEME.tickPx));
+  if(layout.legend.background){const box=layout.legend.background;c.fillStyle='rgba(255,255,255,.92)';c.strokeStyle='rgba(38,51,46,.45)';c.lineWidth=1;c.fillRect(box.x,box.y,box.width,box.height);c.strokeRect(box.x,box.y,box.width,box.height)}
   prepared.forEach((s,j)=>{const item=layout.legend.items[j],itemY=item.y+PLOT_THEME.legendPx/2;c.strokeStyle=s.color;c.lineWidth=3;c.beginPath();c.moveTo(item.x,itemY);c.lineTo(item.x+18,itemY);c.stroke();c.fillStyle=PLOT_THEME.axisColor;c.textAlign='left';c.save();c.beginPath();c.rect(item.textX,item.y,item.maxLabelWidth,PLOT_THEME.legendPx+4);c.clip();c.fillText(s.label,item.textX,itemY);c.restore()});
   c.font=`${PLOT_THEME.axisTitlePx}px ${PLOT_THEME.fontFamily}`;c.textAlign='center';c.fillText(xTitle,pad.l+plotW/2,h-10);c.save();c.translate(12,pad.t+plotH/2);c.rotate(-Math.PI/2);c.fillText(yTitle,0,0);c.restore();
   const descriptions=prepared.map(s=>s.description||s.label).join('; ');canvas.setAttribute?.('aria-label',`${xTitle}; ${yTitle}; curves: ${descriptions}`);canvas._curve={rawSeries:series.map(item=>item.records),records:series[0]?.records||[],pad,plotW,plotH,xmin,xmax,display,window,layout,ticks:{x:xt,y:yt},axisTitles:{x:xTitle,y:yTitle}};
@@ -91,9 +92,9 @@ function distributionOrdinate(mode,semantics){if(mode==='density')return {yLabel
 async function renderComparisonHistograms(){
   const status=$('#comparisonHistogramStatus'),choices=$('#comparisonHistogramChoices'),canvas=$('#comparisonHistogramCanvas'),series=[],messages=[];choices.replaceChildren();status.textContent='Histogram records are indexed but not parsed yet…';
   for(const [index,slot] of ['A','B'].entries()){const side=comparisonSide(slot),entries=evidenceFor({slot,component:side.component,run:side.run,type:'end_to_end'});if(!entries.length){messages.push(evidenceDiagnostic(slot,'histogram',0));continue}const key=`${slot}\0${side.component}\0${side.run}`;let chosen=entries.length===1?entries[0]:entries.find(x=>x.path===comparisonHistogramSelections.get(key));if(entries.length>1){const label=document.createElement('label');label.textContent=`${datasetLabel(slot)} histogram `;const select=document.createElement('select');select.append(Object.assign(document.createElement('option'),{value:'',textContent:'Select an indexed histogram…'}),...entries.map(x=>Object.assign(document.createElement('option'),{value:x.path,textContent:x.filename,selected:x.path===comparisonHistogramSelections.get(key)})));select.onchange=()=>{comparisonHistogramSelections.set(key,select.value);renderComparisonHistograms()};label.append(select);choices.append(label);if(!chosen){messages.push(`${evidenceDiagnostic(slot,'histogram',entries.length,'ambiguous selection')} ${entries.length} candidates exist for run ${side.run}; select one explicitly.`);continue}}
-    try{const parsed=await parsedResultCache.get(chosen.file,'end_to_end'),view=distributionView(parsed,'density'),records=view.map(point=>({distanceA:point.distanceA,value:point.value}));series.push({...chosen,records,color:index?'#ff7247':'#2b7055',label:`${datasetLabel(slot)} · run ${chosen.run} · ${chosen.pressurePa} Pa`,normalizationMode:'density',storedValueSemantics:parsed.semantics});messages.push(`${datasetLabel(slot)}: run ${chosen.run}, canonical pressure ${chosen.pressurePa} Pa (${chosen.pressureSource||'indexed metadata'}), probability density normalized to integral 1.`)}catch(error){messages.push(`${evidenceDiagnostic(slot,'histogram',entries.length,'parse failed')} ${error.message}`)}
+    try{const parsed=await parsedResultCache.get(chosen.file,'end_to_end'),view=distributionView(parsed,'density'),records=view.map(point=>({distanceA:point.distanceA,value:point.value}));series.push({...chosen,records,color:index?'#ff7247':'#2b7055',label:datasetLabel(slot),description:`${datasetLabel(slot)} · run ${chosen.run} · ${chosen.pressurePa} Pa · pressure source ${chosen.pressureSource||'indexed metadata'}`,normalizationMode:'density',storedValueSemantics:parsed.semantics});messages.push(`${datasetLabel(slot)}: run ${chosen.run}, canonical pressure ${chosen.pressurePa} Pa (${chosen.pressureSource||'indexed metadata'}), probability density normalized to integral 1.`)}catch(error){messages.push(`${evidenceDiagnostic(slot,'histogram',entries.length,'parse failed')} ${error.message}`)}
   }
-  if(series.length){drawCurve(canvas,series,{x:point=>point.distanceA,y:point=>point.value,xLabel:'End-to-end distance, R',xUnit:'Å',...distributionOrdinate('density',series[0].storedValueSemantics)});canvas._distributions=series}else delete canvas._curve;status.textContent=messages.join(' ')||'Histogram evidence unavailable.';
+  if(series.length){drawCurve(canvas,series,{x:point=>point.distanceA,y:point=>point.value,xLabel:'End-to-end distance, R',xUnit:'Å',...distributionOrdinate('density',series[0].storedValueSemantics),insetLegend:true});canvas._distributions=series}else delete canvas._curve;status.textContent=messages.join(' ')||'Histogram evidence unavailable.';
 }
 function renderActiveComparisonEvidence(view=analysisController.comparison.activeView){if(!ws.slots.A||!ws.slots.B)return;if(view==='end_to_end')return renderComparisonHistograms();if(view==='rdf_curves'||view==='rdf_heatmaps')return renderComparison();}
 function comparisonChoice(slot,componentSelect,pairSelect){const saved=analysisController.comparison[slot],components=inventory(slot).components;options(componentSelect,components);if(saved.component&&components.includes(saved.component))componentSelect.value=saved.component;const pairs=inventory(slot,componentSelect.value).pairs;options(pairSelect,pairs);if(saved.pair&&pairs.includes(saved.pair))pairSelect.value=saved.pair;analysisController.selectComparisonSide(slot,{datasetId:slot,component:componentSelect.value,chain:componentSelect.value,pair:pairSelect.value});return {component:componentSelect.value,pair:pairSelect.value};}
@@ -138,12 +139,12 @@ $('#suggestPeaks').onclick=()=>{const index=nearestPressureIndex(currentMap.pres
 let rdfDrag=null;$('#realRdfCanvas').onpointerdown=e=>{rdfDrag={x:e.clientX};e.currentTarget.setPointerCapture(e.pointerId)};$('#realRdfCanvas').onpointerup=e=>{const canvas=e.currentTarget,m=canvas._curve;if(!m||!rdfDrag)return;const rect=canvas.getBoundingClientRect(),toDistance=x=>m.xmin+Math.max(0,Math.min(m.plotW,x-rect.left-m.pad.l))/m.plotW*(m.xmax-m.xmin),a=snapRdf(m.records,toDistance(rdfDrag.x)),b=snapRdf(m.records,toDistance(e.clientX)),context=annotationContext();if(Math.abs(e.clientX-rdfDrag.x)<5)annotationStore.create(context,{type:'peak',distanceA:b.distanceA,gR:b.gR},annotationFields());else annotationStore.create(context,{type:'span',startA:Math.min(a.distanceA,b.distanceA),endA:Math.max(a.distanceA,b.distanceA),gR:[a.gR,b.gR]},annotationFields());rdfDrag=null;renderAnnotationTable();selectPressure(false);};
 let heatDrag=null;$('#heatmap').onpointerdown=e=>{if(e.shiftKey){heatDrag={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId)}};$('#heatmap').onpointerup=e=>{if(!heatDrag)return;const m=e.currentTarget._heatmap,rect=e.currentTarget.getBoundingClientRect(),pw=m.pw,toR=x=>m.map.distances[Math.max(0,Math.min(m.map.distances.length-1,Math.round((x-rect.left-m.pad.l)/pw*(m.map.distances.length-1))))],toP=y=>m.map.pressuresPa[Math.max(0,Math.min(m.map.pressuresPa.length-1,Math.floor((y-rect.top-m.pad.t)/m.ph*m.map.pressuresPa.length)))],r1=toR(heatDrag.x),r2=toR(e.clientX),p1=toP(heatDrag.y),p2=toP(e.clientY),row=m.map.rows[nearestPressureIndex(m.map.pressuresPa,p1)];annotationStore.create(annotationContext(elements.datasetSelect.value,row),{type:'region',startA:Math.min(r1,r2),endA:Math.max(r1,r2),pressureMinPa:Math.min(p1,p2),pressureMaxPa:Math.max(p1,p2)},annotationFields());heatDrag=null;renderAnnotationTable();selectPressure(false);};
 window.addEventListener('beforeunload',e=>{if(annotationStore.dirty){e.preventDefault();e.returnValue='';}});syncDatasetLabels();renderAnnotationTable();
-import('./lj-ui.mjs?rev=gemc-literature-three-column')
+import('./lj-ui.mjs?rev=histogram-inset-legend')
   .then(({setupLjWorkflow})=>setupLjWorkflow({workspace:ws,annotationStore}))
-  .catch(error=>import('./workspace-navigation-ui.mjs?rev=gemc-literature-three-column').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
+  .catch(error=>import('./workspace-navigation-ui.mjs?rev=histogram-inset-legend').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
 // GEMC and Henry are progressively enhanced independent stores; this import does not
 // read, merge, or derive metadata from either GCMC slot.
-import('./phase-workspaces.mjs?rev=gemc-literature-three-column').catch(error=>console.error('[PoreLens phase workspaces]',error));
+import('./phase-workspaces.mjs?rev=histogram-inset-legend').catch(error=>console.error('[PoreLens phase workspaces]',error));
 
 let pressureRegionStart=null;
 $('#annotatePressurePoint').onclick=()=>{const context=annotationContext();annotationStore.create(context,pressurePointGeometry(context.run,context.pressurePa),annotationFields());renderAnnotationTable();selectPressure(false);};

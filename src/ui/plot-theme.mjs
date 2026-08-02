@@ -40,13 +40,19 @@ export function measuredLegendLayout({availableWidth,labelWidths=[],swatchSize=2
   }
   return {width,height:rows*fontHeight+(rows-1)*verticalGap,rows,columns,items,policy:'clip'};
 }
-export function comparisonCurveLayout({width,height,measure,yTickLabels=[],legendLabels=[]}) {
+export function comparisonCurveLayout({width,height,measure,yTickLabels=[],legendLabels=[],insetLegend=false}) {
   const role=COMPARISON_LAYOUTS.curve, tickH=PLOT_THEME.tickPx+5, yWidth=Math.max(0,...yTickLabels.map(x=>measured(measure,x)));
   const left=role.titleGap+PLOT_THEME.axisTitlePx+role.gap+yWidth+role.gap;
-  const available=Math.max(0,width-left-role.right), measuredLegend=measuredLegendLayout({availableWidth:available,labelWidths:legendLabels.map(x=>measured(measure,x)),swatchSize:18,fontHeight:PLOT_THEME.legendPx,horizontalGap:7,verticalGap:5});
-  const legendHeight=measuredLegend.height?measuredLegend.height+role.legendGap:0;
+  const available=Math.max(0,width-left-role.right), labelWidths=legendLabels.map(x=>measured(measure,x)), inset=Boolean(insetLegend);
+  const insetPadding=7,insetOffset=8,insetAvailable=Math.max(0,available-insetOffset*2-insetPadding*2);
+  const naturalLegendWidth=labelWidths.reduce((sum,value)=>sum+18+7+value,0);
+  const legendAvailable=inset?Math.min(insetAvailable,naturalLegendWidth):available;
+  const measuredLegend=measuredLegendLayout({availableWidth:legendAvailable,labelWidths,swatchSize:18,fontHeight:PLOT_THEME.legendPx,horizontalGap:7,verticalGap:5});
+  const legendHeight=!inset&&measuredLegend.height?measuredLegend.height+role.legendGap:0;
   const top=role.top+legendHeight, bottom=role.bottom+tickH+role.gap+PLOT_THEME.axisTitlePx;
-  return {left,right:role.right,top,bottom,plotW:Math.max(0,width-left-role.right),plotH:Math.max(0,height-top-bottom),legend:{...measuredLegend,x:left,y:role.top,height:legendHeight,items:measuredLegend.items.map(item=>({...item,x:left+item.x,y:role.top+item.y}))},minimum:{width:role.minDataWidth,height:role.minDataHeight}};
+  const legendX=inset?left+insetOffset+insetPadding:left,legendY=inset?top+insetOffset+insetPadding:role.top;
+  const legend={...measuredLegend,x:legendX,y:legendY,height:inset?measuredLegend.height:legendHeight,inset,background:inset?{x:legendX-insetPadding,y:legendY-insetPadding,width:measuredLegend.width+insetPadding*2,height:measuredLegend.height+insetPadding*2,padding:insetPadding}:null,items:measuredLegend.items.map(item=>({...item,x:legendX+item.x,y:legendY+item.y}))};
+  return {left,right:role.right,top,bottom,plotW:Math.max(0,width-left-role.right),plotH:Math.max(0,height-top-bottom),legend,minimum:{width:role.minDataWidth,height:role.minDataHeight}};
 }
 export function comparisonHeatmapLayout({width,height,measure,pressureTickLabels=[],colorTickLabels=[]}) {
   const role=COMPARISON_LAYOUTS.heatmap, pressureWidth=Math.max(0,...pressureTickLabels.map(x=>measured(measure,x))), colorWidth=Math.max(0,...colorTickLabels.map(x=>measured(measure,x)));
