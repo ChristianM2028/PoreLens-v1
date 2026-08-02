@@ -1,6 +1,6 @@
-import { Component, Framework, SimulationSettings } from '../models.mjs?rev=histogram-inset-legend';
-import { diagnostic } from '../diagnostics.mjs?rev=histogram-inset-legend';
-import { cleanLines, finiteNumber } from './common.mjs?rev=histogram-inset-legend';
+import { Component, Framework, SimulationSettings } from '../models.mjs?rev=inset-legend-canvas-coordinates';
+import { diagnostic } from '../diagnostics.mjs?rev=inset-legend-canvas-coordinates';
+import { cleanLines, finiteNumber } from './common.mjs?rev=inset-legend-canvas-coordinates';
 
 const canonical = key => key.toLowerCase().replace(/[^a-z0-9]/g, '');
 const bool = value => /^(?:yes|true|on|1)$/i.test(value) ? true : /^(?:no|false|off|0)$/i.test(value) ? false : null;

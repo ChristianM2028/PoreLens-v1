@@ -1,4 +1,4 @@
-import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=histogram-inset-legend';
+import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=inset-legend-canvas-coordinates';
 const $=s=>document.querySelector(s),SLOTS=['A','B'];
 
 /** Slot-scoped scan ownership. A callback is accepted only while its scan is current. */

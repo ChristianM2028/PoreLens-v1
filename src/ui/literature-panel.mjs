@@ -1,4 +1,4 @@
-import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=histogram-inset-legend';
+import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=inset-legend-canvas-coordinates';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];

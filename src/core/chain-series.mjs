@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=histogram-inset-legend';
-import { parseSimulationInput } from './trajectory.mjs?rev=histogram-inset-legend';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=histogram-inset-legend';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=histogram-inset-legend';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=histogram-inset-legend';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=histogram-inset-legend';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=inset-legend-canvas-coordinates';
+import { parseSimulationInput } from './trajectory.mjs?rev=inset-legend-canvas-coordinates';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=inset-legend-canvas-coordinates';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=inset-legend-canvas-coordinates';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=inset-legend-canvas-coordinates';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=inset-legend-canvas-coordinates';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

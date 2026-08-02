@@ -1,6 +1,6 @@
-import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=histogram-inset-legend';
-import {expandFramework} from './raspa-package.mjs?rev=histogram-inset-legend';
-import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=histogram-inset-legend';
+import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=inset-legend-canvas-coordinates';
+import {expandFramework} from './raspa-package.mjs?rev=inset-legend-canvas-coordinates';
+import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=inset-legend-canvas-coordinates';
 
 export const LJ_COMPARISON_INPUT_FORMAT='porelens.lj-comparison-input';
 export const LJ_COMPARISON_INPUT_VERSION=1;

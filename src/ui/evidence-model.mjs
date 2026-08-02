@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=histogram-inset-legend';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=inset-legend-canvas-coordinates';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();

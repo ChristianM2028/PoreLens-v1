@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PoreLens — scientific analysis workspaces</title>
-  <meta name="porelens-revision" content="histogram-inset-legend">
-  <link rel="stylesheet" href="styles.css?rev=histogram-inset-legend">
+  <meta name="porelens-revision" content="inset-legend-canvas-coordinates">
+  <link rel="stylesheet" href="styles.css?rev=inset-legend-canvas-coordinates">
 </head>
 <body>
 <div id="fileLaunchWarning" class="notice" role="alert" hidden>
@@ -173,7 +173,7 @@
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
 <div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
 <script type="module">
-  import('./src/ui/workspace-navigation-ui.mjs?rev=histogram-inset-legend').catch(error => {
+  import('./src/ui/workspace-navigation-ui.mjs?rev=inset-legend-canvas-coordinates').catch(error => {
     const message = document.getElementById('shellStartupFailure');
     message.hidden = false;
     message.append(document.createTextNode(` ${error.message}`));

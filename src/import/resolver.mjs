@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { diagnostic } from './diagnostics.mjs?rev=histogram-inset-legend';
+import { diagnostic } from './diagnostics.mjs?rev=inset-legend-canvas-coordinates';
 
 const specialDefinitions = /^(?:pseudo_atoms|force_field(?:_mixing_rules)?)\.def$/i;
 async function exists(file) { try { return (await fs.stat(file)).isFile(); } catch { return false; } }

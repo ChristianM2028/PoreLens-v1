@@ -1,4 +1,4 @@
-import {parseRdf} from '../importers.mjs?rev=histogram-inset-legend';
+import {parseRdf} from '../importers.mjs?rev=inset-legend-canvas-coordinates';
 const LEGACY_STANDALONE_LABELS=['CH3_sp3','CH2_sp3','CF3_sp3','CF2_sp3','Zn1','O1','O2','C1','C2','C3','H1'];
 
 /** Resolve only complete known labels; never split each underscore. */
