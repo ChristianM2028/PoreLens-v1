@@ -1,9 +1,9 @@
-import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,gemcCriticalParametersByGroup,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=publication-inset-legends-v2';
-import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=publication-inset-legends-v2';
-import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=publication-inset-legends-v2';
-import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=publication-inset-legends-v2';
-import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=publication-inset-legends-v2';
-import {literatureExportRows} from '../core/literature-series.mjs?rev=publication-inset-legends-v2';
+import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,gemcCriticalParametersByGroup,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=draggable-chain-legend-v1';
+import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=draggable-chain-legend-v1';
+import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=draggable-chain-legend-v1';
+import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=draggable-chain-legend-v1';
+import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=draggable-chain-legend-v1';
+import {literatureExportRows} from '../core/literature-series.mjs?rev=draggable-chain-legend-v1';
 
 export const phaseStores=new IndependentWorkspaceStores();
 const $=id=>document.getElementById(id),filePath=file=>file.webkitRelativePath||file.name;

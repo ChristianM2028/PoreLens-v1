@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PoreLens — scientific analysis workspaces</title>
-  <meta name="porelens-revision" content="publication-inset-legends-v2">
-  <link rel="stylesheet" href="styles.css?rev=publication-inset-legends-v2">
+  <meta name="porelens-revision" content="draggable-chain-legend-v1">
+  <link rel="stylesheet" href="styles.css?rev=draggable-chain-legend-v1">
 </head>
 <body>
 <div id="fileLaunchWarning" class="notice" role="alert" hidden>
@@ -173,7 +173,7 @@
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
 <div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
 <script type="module">
-  import('./src/ui/workspace-navigation-ui.mjs?rev=publication-inset-legends-v2').catch(error => {
+  import('./src/ui/workspace-navigation-ui.mjs?rev=draggable-chain-legend-v1').catch(error => {
     const message = document.getElementById('shellStartupFailure');
     message.hidden = false;
     message.append(document.createTextNode(` ${error.message}`));

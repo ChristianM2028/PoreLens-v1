@@ -104,8 +104,8 @@ export function chainLegendModel(curves){
   const datasets=[...new Map(sim.map(c=>[String(c.datasetId),{kind:'dataset',datasetId:String(c.datasetId),label:String(c.datasetLabel||c.legendLabel||c.datasetId),...datasetStyle(c.datasetId)}])).values()];
   return {chains,datasets,literature:literature.map(c=>({kind:'literature',label:String(c.legendLabel||'Literature'),color:c.resolvedColor||'#555',dash:[]}))};
 }
-/** Measured legend groups. Inside mode overlays the upper-right data corner. */
-export function chainLegendGeometry({width,height,measure,model,mode='inside',margins=PLOT_THEME.margins}={}){
+/** Measured legend groups. Inside mode overlays a normalized, canvas-bounded data-area position. */
+export function chainLegendGeometry({width,height,measure,model,mode='inside',position={x:1,y:0},margins=PLOT_THEME.margins}={}){
   const t=PLOT_THEME,groups=[['Chain',model.chains],['Dataset',model.datasets],['Literature',model.literature]].filter(([,items])=>items.length),pad=10,inset=8,swatch=24,textGap=8,itemGap=14;
   const headingHeight=t.legendHeadingPx+t.textLineGapPx,rowHeight=t.legendPx+t.textLineGapPx,maxBoxWidth=Math.max(1,width-margins.left-margins.right-(mode==='inside'?inset*2:0)),maxContentWidth=Math.max(1,maxBoxWidth-pad*2);
   const measuredGroups=groups.map(([title,items])=>[title,items.map(item=>({...item,measuredLabelWidth:Math.ceil(measure(String(item.label))||0)}))]);
@@ -114,9 +114,11 @@ export function chainLegendGeometry({width,height,measure,model,mode='inside',ma
   const layoutFor=contentWidth=>{let y=0,usedWidth=0;const laid=[];for(const [title,items] of measuredGroups){if(laid.length)y+=t.legendGroupGapPx;laid.push({heading:true,title,x:0,y,width:Math.min(contentWidth,Math.ceil(measure(title)||0)),height:headingHeight});y+=headingHeight+t.legendRowGapPx;let x=0,rowTop=y;for(const item of items){const natural=swatch+textGap+item.measuredLabelWidth,itemWidth=Math.min(natural,contentWidth);if(x&&x+itemWidth>contentWidth){x=0;rowTop+=rowHeight+t.legendRowGapPx}const maxLabelWidth=Math.max(0,itemWidth-swatch-textGap);laid.push({...item,x,y:rowTop,width:itemWidth,height:rowHeight,maxLabelWidth,clipped:item.measuredLabelWidth>maxLabelWidth});usedWidth=Math.max(usedWidth,x+itemWidth);x+=itemWidth+itemGap}y=rowTop+rowHeight}return {items:laid,width:Math.max(1,usedWidth),height:y}};
   let flow=layoutFor(widths[0]);if(mode==='inside')for(const candidate of widths){const next=layoutFor(candidate);flow=next;if(next.height<=maxInsideHeight)break}
   const box={width:Math.min(maxBoxWidth,flow.width+pad*2),height:Math.min(mode==='inside'?maxInsideHeight:height,flow.height+pad*2)};
-  box.x=mode==='inside'?width-margins.right-inset-box.width:margins.left;box.y=mode==='inside'?margins.top+inset:8;
+  const canvas=mode==='inside'?{width:Math.max(0,width-margins.left-margins.right-inset*2),height:Math.max(0,height-margins.top-margins.bottom-inset*2)}:{width,height};
+  const origin=mode==='inside'?{x:margins.left+inset,y:margins.top+inset}:{x:0,y:0},normalized={x:clamp(Number(position?.x)||0,0,1),y:clamp(Number(position?.y)||0,0,1)};
+  box.x=mode==='inside'?origin.x+normalized.x*Math.max(0,canvas.width-box.width):margins.left;box.y=mode==='inside'?origin.y+normalized.y*Math.max(0,canvas.height-box.height):8;
   const reservedTop=mode==='outside-top'?Math.max(margins.top,box.y+box.height+8):margins.top;
-  return {mode,box,metrics:{headingHeight,rowHeight,headingPx:t.legendHeadingPx,labelPx:t.legendPx,lineGap:t.textLineGapPx,rowGap:t.legendRowGapPx,groupGap:t.legendGroupGapPx,padding:pad,swatch,textGap},items:flow.items.map(item=>({...item,x:box.x+pad+item.x,y:box.y+pad+item.y})),reservedTop,draw:mode!=='hidden'};
+  return {mode,canvas,legend:box,box,position:normalized,metrics:{headingHeight,rowHeight,headingPx:t.legendHeadingPx,labelPx:t.legendPx,lineGap:t.textLineGapPx,rowGap:t.legendRowGapPx,groupGap:t.legendGroupGapPx,padding:pad,swatch,textGap},items:flow.items.map(item=>({...item,x:box.x+pad+item.x,y:box.y+pad+item.y})),reservedTop,draw:mode!=='hidden'};
 }
 export function chainStyle(chainLength) {
   const n = Math.max(2, Number(chainLength) || 2), i = (n - 2) % COLORS.length;
@@ -159,8 +161,8 @@ export function markerIndices(length, count = 10) {
 export const EXPORT_PRESETS=Object.freeze({single:{width:720,height:540,scale:2},double:{width:1200,height:800,scale:2}});
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-export function buildLineSvg(curves,{width=1200,height=800,xLabel='Distance, r (Å)',yLabel='g(r)',logX=false,errorBars=true,markerCount=10,legendMode='inside'}={}) {
-  const t=PLOT_THEME,shown=curves.filter(c=>c.visible!==false),model=chainLegendModel(shown),geometry=chainLegendGeometry({width,height,measure:text=>String(text).length*t.legendPx*.58,model,mode:legendMode}),m={...t.margins,top:geometry.reservedTop};
+export function buildLineSvg(curves,{width=1200,height=800,xLabel='Distance, r (Å)',yLabel='g(r)',logX=false,errorBars=true,markerCount=10,legendMode='inside',legendPosition={x:1,y:0}}={}) {
+  const t=PLOT_THEME,shown=curves.filter(c=>c.visible!==false),model=chainLegendModel(shown),geometry=chainLegendGeometry({width,height,measure:text=>String(text).length*t.legendPx*.58,model,mode:legendMode,position:legendPosition}),m={...t.margins,top:geometry.reservedTop};
   const rows=shown.flatMap(c=>c.records.map(r=>({x:Number(r.x??r.distanceA),y:Number(r.y??r.gR??r.probabilityDensityPerA)}))).filter(p=>p.x>=(logX?Number.MIN_VALUE:-Infinity)&&Number.isFinite(p.x+p.y));
   if(!rows.length)return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"></svg>`;
   let xmin=Math.min(...rows.map(p=>p.x)),xmax=Math.max(...rows.map(p=>p.x)),ymin=Math.min(0,...rows.map(p=>p.y)),ymax=Math.max(...rows.map(p=>p.y));if(logX){xmin=Math.log10(xmin);xmax=Math.log10(xmax)}
