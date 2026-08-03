@@ -26,7 +26,7 @@ test('hidden comparison heatmap does not reserve an empty grid row',async()=>{co
 test('representative parsed RDF maps one-for-one to raw line coordinates',async()=>{const {readFile}=await import('node:fs/promises'),rdf=parseRdf(await readFile(new URL('./fixtures/representative_run/RDF_CF3_sp3_C1.dat',import.meta.url),'utf8')),line=prepareRawLine(rdf.records);assert.deepEqual(line.map(x=>[x.distanceA,x.gR]),rdf.records.map(x=>[x.distanceA,x.gR]));assert.ok(line.every(x=>x.valid))});
 
 import {PLOT_THEME, chainStyle, conciseCurveLabel, linearTicks, logTicks, markerIndices, buildLineSvg} from '../src/ui/plot-theme.mjs';
-test('one shared publication theme supplies stable chain encodings and readable ticks',()=>{assert.equal(chainStyle(2).color,chainStyle(2).color);assert.notEqual(chainStyle(2).color,chainStyle(3).color);assert.equal(PLOT_THEME.axisTitlePx,17);assert.ok(linearTicks(0,4.8).length>=5);assert.deepEqual(markerIndices(50,10),[0,5,11,16,22,27,33,38,44,49]);assert.deepEqual(logTicks(1,1e4).major.map(x=>x.label),['10⁰','10¹','10²','10³','10⁴']);assert.equal(conciseCurveLabel({component:'C10'}),'C₁₀')});
+test('one shared publication theme supplies stable chain encodings and readable ticks',()=>{assert.equal(chainStyle(2).color,chainStyle(2).color);assert.notEqual(chainStyle(2).color,chainStyle(3).color);assert.ok(PLOT_THEME.axisTitlePx>=20);assert.ok(PLOT_THEME.tickPx>=16);assert.ok(PLOT_THEME.legendPx>=16);assert.ok(PLOT_THEME.legendHeadingPx>=17);assert.ok(linearTicks(0,4.8).length>=5);assert.deepEqual(markerIndices(50,10),[0,5,11,16,22,27,33,38,44,49]);assert.deepEqual(logTicks(1,1e4).major.map(x=>x.label),['10⁰','10¹','10²','10³','10⁴']);assert.equal(conciseCurveLabel({component:'C10'}),'C₁₀')});
 test('publication SVG has numeric ticks, concise legend, and no interface or provenance text',()=>{const records=Array.from({length:50},(_,i)=>({x:10**(i/10),y:i/10,uncertainty:.02})),svg=buildLineSvg([{component:'C2',chainLength:2,family:'PFA',records}],{logX:true,xLabel:'Pressure, P (Pa)',yLabel:'Absolute loading (mol kg⁻¹ framework)'});assert.match(svg,/class="tick x-tick"/);assert.match(svg,/10⁰/);assert.match(svg,/C₂/);assert.match(svg,/Absolute loading \(mol kg⁻¹ framework\)/);assert.match(svg,/class="error-bar"/);for(const forbidden of ['Adsorption Isotherms','checkbox','final_abs_pressure_up','wheel to zoom','provenance'])assert.doesNotMatch(svg,new RegExp(forbidden,'i'))});
 
 test('workspace curve renderer requires generic accessors and explicit axis metadata',async()=>{const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8'),draw=source.slice(source.indexOf('function drawCurve'),source.indexOf('function viridis'));assert.match(draw,/\{x,y,xLabel,xUnit,yLabel,yUnit,/);assert.match(draw,/missing: \$\{missing\.join/);assert.doesNotMatch(draw,/x\?\?r\.distanceA|y\?\?r\.gR/);assert.match(source,/yLabel:'Radial distribution function, g\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Δg\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Probability density',yUnit:'Å⁻¹'/)});
@@ -137,4 +137,37 @@ test('inside, outside, hidden, and long-label chain legend geometry preserve spa
 test('SVG uses the shared dataset resolver and independent legend keys',()=>{
  const curves=[{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Renamed A',records:[{x:1,y:1},{x:2,y:2}]},{component:'C2',chainLength:2,datasetId:'B',datasetLabel:'Renamed B',records:[{x:1,y:2},{x:2,y:3}]}],svg=buildLineSvg(curves,{legendMode:'inside'});
  assert.equal((svg.match(/legend-chain/g)||[]).length,1);assert.equal((svg.match(/legend-dataset/g)||[]).length,2);assert.match(svg,/data-dataset-style="solid"/);assert.match(svg,/data-dataset-style="dashed"[^>]*stroke-dasharray="8 5"/);assert.match(svg,/class="legend-box"/);
+});
+
+
+test('publication inset legends keep measured text boxes within data axes for desktop and export presets',async()=>{
+  const {chainLegendModel,chainLegendGeometry,EXPORT_PRESETS}=await import('../src/ui/plot-theme.mjs');
+  const curves=Array.from({length:9},(_,i)=>({component:`C${i+2}`,chainLength:i+2,datasetId:i%2?'B':'A',datasetLabel:i%2?'Comparison dataset with a deliberately long publication name':'Primary dataset with a deliberately long publication name',visible:true}));
+  const model=chainLegendModel(curves),cases=[[960,620],...Object.values(EXPORT_PRESETS).map(({width,height})=>[width,height])];
+  for(const [width,height] of cases){
+    const g=chainLegendGeometry({width,height,measure:text=>String(text).length*PLOT_THEME.legendPx*.58,model});
+    const axes={left:PLOT_THEME.margins.left,right:width-PLOT_THEME.margins.right,top:PLOT_THEME.margins.top,bottom:height-PLOT_THEME.margins.bottom};
+    assert.equal(g.mode,'inside');assert.ok(g.box.x>=axes.left&&g.box.y>=axes.top);assert.ok(g.box.x+g.box.width<=axes.right&&g.box.y+g.box.height<=axes.bottom);
+    for(const [i,a] of g.items.entries()){
+      assert.ok(a.x>=g.box.x&&a.y>=g.box.y&&a.x+a.width<=g.box.x+g.box.width&&a.y+a.height<=g.box.y+g.box.height,`${width}: item ${i} bounded`);
+      for(const b of g.items.slice(i+1))assert.ok(a.y+a.height<=b.y||b.y+b.height<=a.y||a.x+a.width<=b.x||b.x+b.width<=a.x,`${width}: text boxes do not overlap`);
+    }
+  }
+});
+
+test('narrow inset wrapping is deterministic and canvas renderer consumes shared geometry metrics',async()=>{
+  const {chainLegendModel,chainLegendGeometry}=await import('../src/ui/plot-theme.mjs'),{readFile}=await import('node:fs/promises');
+  const model=chainLegendModel(Array.from({length:9},(_,i)=>({component:`C${i+2}`,chainLength:i+2,datasetId:i%2?'B':'A',datasetLabel:i%2?'Very long secondary dataset name':'Very long primary dataset name',visible:true})));
+  const args={width:390,height:520,measure:text=>String(text).length*9,model},a=chainLegendGeometry(args),b=chainLegendGeometry(args);
+  assert.deepEqual(a,b);assert.ok(new Set(a.items.filter(x=>!x.heading).map(x=>x.y)).size>2,'adds rows');
+  for(const [i,x] of a.items.entries())for(const y of a.items.slice(i+1))assert.ok(x.y+x.height<=y.y||y.y+y.height<=x.y||x.x+x.width<=y.x||y.x+y.width<=x.x);
+  const source=await readFile(new URL('../src/ui/chain-plotter-ui.mjs',import.meta.url),'utf8');
+  assert.match(source,/legend\.metrics\.rowHeight/);assert.match(source,/legend\.metrics\.swatch\+legend\.metrics\.textGap/);assert.match(source,/if\(item\.clipped\)\{ctx\.save\(\)/);assert.match(source,/rgba\(255,255,255,\.96\)/);
+});
+
+test('new sessions and SVG exports default to a publication-sized inset legend',async()=>{
+  const {readFile}=await import('node:fs/promises'),html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+  assert.match(html,/id="chainLegend"[\s\S]*?<option value="inside" selected>/);
+  const svg=buildLineSvg([{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Long dataset label',records:[{x:1,y:1},{x:2,y:2}]}]);
+  assert.match(svg,/class="legend-box"/);assert.match(svg,new RegExp(`\\.tick\\{font-size:${PLOT_THEME.tickPx}px\\}`));assert.match(svg,new RegExp(`\\.axis-title\\{font-size:${PLOT_THEME.axisTitlePx}px\\}`));assert.match(svg,new RegExp(`\\.legend-heading\\{font-size:${PLOT_THEME.legendHeadingPx}px`));
 });

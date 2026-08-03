@@ -1,6 +1,6 @@
-import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=chain-legend-keys';
-import {expandFramework} from './raspa-package.mjs?rev=chain-legend-keys';
-import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=chain-legend-keys';
+import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=publication-inset-legends-v2';
+import {expandFramework} from './raspa-package.mjs?rev=publication-inset-legends-v2';
+import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=publication-inset-legends-v2';
 
 export const LJ_COMPARISON_INPUT_FORMAT='porelens.lj-comparison-input';
 export const LJ_COMPARISON_INPUT_VERSION=1;

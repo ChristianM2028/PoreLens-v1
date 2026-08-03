@@ -1,4 +1,4 @@
-import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=chain-legend-keys';
+import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=publication-inset-legends-v2';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];
