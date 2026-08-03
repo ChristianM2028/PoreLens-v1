@@ -134,9 +134,27 @@ test('inside, outside, hidden, and long-label chain legend geometry preserve spa
   assert.ok(inside.items.filter(x=>!x.heading).some(x=>x.y>inside.items.filter(y=>!y.heading)[0].y),'long entries wrap into measured rows');
 });
 
+test('chain legend normalized position moves, clamps, and survives canvas resizing',async()=>{
+  const {chainLegendModel,chainLegendGeometry,moveNormalizedLegend,hitRect}=await import('../src/ui/plot-theme.mjs');
+  const model=chainLegendModel([{component:'C4',chainLength:4,datasetId:'A',datasetLabel:'Primary',visible:true}]),measure=x=>x.length*8;
+  const topLeft=chainLegendGeometry({width:640,height:420,measure,model,mode:'inside',position:{x:0,y:0}}),bottomRight=chainLegendGeometry({width:640,height:420,measure,model,mode:'inside',position:{x:1,y:1}});
+  assert.ok(hitRect({x:topLeft.box.x+1,y:topLeft.box.y+1},topLeft.box));assert.ok(!hitRect({x:0,y:0},topLeft.box));
+  assert.ok(bottomRight.box.x>topLeft.box.x&&bottomRight.box.y>topLeft.box.y);
+  assert.deepEqual(moveNormalizedLegend({x:1,y:1},100,100,bottomRight),{x:1,y:1});
+  const moved=moveNormalizedLegend({x:0,y:0},32,24,topLeft),resized=chainLegendGeometry({width:900,height:600,measure,model,mode:'inside',position:moved});
+  assert.deepEqual(resized.position,moved);assert.ok(resized.box.x+resized.box.width<=900&&resized.box.y+resized.box.height<=600);
+  const outside=chainLegendGeometry({width:640,height:420,measure,model,mode:'outside-top',position:{x:.4,y:.6}}),hidden=chainLegendGeometry({width:640,height:420,measure,model,mode:'hidden',position:{x:.4,y:.6}});
+  assert.equal(outside.box.x,topLeft.box.x-8);assert.equal(hidden.draw,false);assert.equal(hidden.reservedTop,66);
+});
+
 test('SVG uses the shared dataset resolver and independent legend keys',()=>{
  const curves=[{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Renamed A',records:[{x:1,y:1},{x:2,y:2}]},{component:'C2',chainLength:2,datasetId:'B',datasetLabel:'Renamed B',records:[{x:1,y:2},{x:2,y:3}]}],svg=buildLineSvg(curves,{legendMode:'inside'});
  assert.equal((svg.match(/legend-chain/g)||[]).length,1);assert.equal((svg.match(/legend-dataset/g)||[]).length,2);assert.match(svg,/data-dataset-style="solid"/);assert.match(svg,/data-dataset-style="dashed"[^>]*stroke-dasharray="8 5"/);assert.match(svg,/class="legend-box"/);
+});
+
+test('SVG export uses the saved normalized legend position',()=>{
+ const curves=[{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'A',records:[{x:1,y:1},{x:2,y:2}]}],left=buildLineSvg(curves,{legendPosition:{x:0,y:0}}),right=buildLineSvg(curves,{legendPosition:{x:1,y:0}}),x=svg=>Number(svg.match(/class="legend-box" x="([\d.]+)/)?.[1]);
+ assert.ok(x(right)>x(left));
 });
 
 

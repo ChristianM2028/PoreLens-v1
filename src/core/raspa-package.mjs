@@ -1,7 +1,7 @@
-import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=publication-inset-legends-v2';
-import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=publication-inset-legends-v2';
-import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=publication-inset-legends-v2';
-import {parsePdbCryst1,SPATIAL_REGISTRATION_TOLERANCES} from './spatial-registration.mjs?rev=publication-inset-legends-v2';
+import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=draggable-chain-legend-v1';
+import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=draggable-chain-legend-v1';
+import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=draggable-chain-legend-v1';
+import {parsePdbCryst1,SPATIAL_REGISTRATION_TOLERANCES} from './spatial-registration.mjs?rev=draggable-chain-legend-v1';
 
 export function parseCif(text){
   const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));

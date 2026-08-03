@@ -1,7 +1,7 @@
-import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=publication-inset-legends-v2';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=publication-inset-legends-v2';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=publication-inset-legends-v2';
-import {parseCif} from '../../core/raspa-package.mjs?rev=publication-inset-legends-v2';
+import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=draggable-chain-legend-v1';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=draggable-chain-legend-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=draggable-chain-legend-v1';
+import {parseCif} from '../../core/raspa-package.mjs?rev=draggable-chain-legend-v1';
 
 const CHAIN=/^C\d+$/i, RUN=/^\d+(?:_|$)/;
 const SUMMARIES=new Map([['final_abs_pressure_up','pressure'],['final_abs_fug_up','fugacity']]);
@@ -19,7 +19,7 @@ export class DirectoryCatalogScanner {
   constructor(root,{batchSize=100,onUpdate=()=>{},previous=null}={}){
     this.root=root;this.batchSize=batchSize;this.onUpdate=onUpdate;this.previous=previous;
     this.cancelled=false;this.initialized=false;this.cursor=0;this.queue=[];this.supporting=[];this.catalog={version:3,name:root.name,runs:[],summaries:[],ignoredFiles:[],diagnostics:[],manifest:null,startedAt:Date.now(),finished:false,authorized:true,stats:stats()};
-    this.worker=typeof Worker!=='undefined'?new Worker(new URL('../../workers/catalog-worker.mjs?rev=publication-inset-legends-v2',import.meta.url),{type:'module'}):null;this.workerId=0;
+    this.worker=typeof Worker!=='undefined'?new Worker(new URL('../../workers/catalog-worker.mjs?rev=draggable-chain-legend-v1',import.meta.url),{type:'module'}):null;this.workerId=0;
   }
   async parseSimulation(text){if(!this.worker)return parseSimulationInput(text);const id=++this.workerId;return new Promise((resolve,reject)=>{const receive=event=>{if(event.data.id!==id)return;this.worker.removeEventListener('message',receive);event.data.error?reject(new Error(event.data.error)):resolve(event.data.value)};this.worker.addEventListener('message',receive);this.worker.postMessage({id,text})})}
   ignored(path,reason,parentOutputDirectory=null){const name=path.split('/').at(-1);this.catalog.ignoredFiles.push({relativePath:path,filename:name,extension:extension(name),parentOutputDirectory,reason});this.catalog.stats.ignored++}

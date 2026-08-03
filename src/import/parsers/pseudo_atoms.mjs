@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=publication-inset-legends-v2';
-import { diagnostic } from '../diagnostics.mjs?rev=publication-inset-legends-v2';
+import { PseudoAtom } from '../models.mjs?rev=draggable-chain-legend-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=draggable-chain-legend-v1';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

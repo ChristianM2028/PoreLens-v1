@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=publication-inset-legends-v2';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=draggable-chain-legend-v1';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();
