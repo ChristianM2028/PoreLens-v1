@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './browser/file-list-discovery.mjs?rev=chain-legend-keys';
+export * from './browser/file-list-discovery.mjs?rev=publication-inset-legends-v2';
 
 /** Resolve annotations without pressure tolerances. Missing and ambiguous rows remain diagnostics. */
 export function resolveAnnotationRuns(annotation,runs,{datasetFingerprint=annotation.datasetFingerprint}={}){

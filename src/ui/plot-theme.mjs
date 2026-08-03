@@ -1,7 +1,8 @@
 /** Shared, publication-oriented visual language for every PoreLens plot. */
 export const PLOT_THEME = Object.freeze({
-  fontFamily: 'Arial, Helvetica, sans-serif', axisTitlePx: 17, tickPx: 14,
-  legendPx: 14, axisColor: '#26332e', gridColor: '#e1e5e3', axisWidth: 1.4,
+  fontFamily: 'Arial, Helvetica, sans-serif', axisTitlePx: 20, tickPx: 16,
+  legendPx: 16, legendHeadingPx: 17, textLineGapPx: 4, legendRowGapPx: 5,
+  legendGroupGapPx: 9, axisColor: '#26332e', gridColor: '#e1e5e3', axisWidth: 1.4,
   lineWidth: 2, markerSize: 6, errorWidth: 1.1, errorCap: 4,
   background: '#ffffff', margins: Object.freeze({ left: 112, right: 30, top: 66, bottom: 82 })
 });
@@ -9,7 +10,7 @@ export const PLOT_THEME = Object.freeze({
 /** Compact, role-specific geometry for canvases in the comparison workspace. */
 export const COMPARISON_LAYOUTS = Object.freeze({
   curve: Object.freeze({ top: 14, right: 16, bottom: 16, gap: 8, titleGap: 12, legendGap: 10, minDataWidth: 180, minDataHeight: 150 }),
-  heatmap: Object.freeze({ top: 14, right: 12, bottom: 16, gap: 8, titleGap: 12, colorBarWidth: 14, colorBarGap: 10, minDataWidth: 140, minDataHeight: 120 })
+  heatmap: Object.freeze({ top: 14, right: 12, bottom: 16, gap: 8, titleGap: 10, colorBarWidth: 14, colorBarGap: 10, minDataWidth: 140, minDataHeight: 120 })
 });
 
 const measured=(measure,text)=>Math.ceil(measure(String(text))||0);
@@ -104,14 +105,18 @@ export function chainLegendModel(curves){
   return {chains,datasets,literature:literature.map(c=>({kind:'literature',label:String(c.legendLabel||'Literature'),color:c.resolvedColor||'#555',dash:[]}))};
 }
 /** Measured legend groups. Inside mode overlays the upper-right data corner. */
-export function chainLegendGeometry({width,height,measure,model,mode='outside-top',margins=PLOT_THEME.margins}={}){
-  const groups=[['Chain',model.chains],['Dataset',model.datasets],['Literature',model.literature]].filter(([,items])=>items.length),pad=9,heading=16,row=19,gap=8,maxBox=mode==='inside'?Math.min(420,width-margins.left-margins.right-16):width-margins.left-margins.right;
-  let x=pad,y=pad,contentW=0;const laid=[];
-  for(const [title,items] of groups){if(y>pad)y+=gap;laid.push({heading:true,title,x,y});y+=heading;for(const item of items){const natural=42+measure(item.label);if(x>pad&&x+natural>maxBox-pad){x=pad;y+=row}laid.push({...item,x,y,maxLabelWidth:Math.max(30,Math.min(natural-42,maxBox-pad-x-42))});x+=Math.min(natural,maxBox-pad*2);contentW=Math.max(contentW,x);if(x>maxBox-pad-50){x=pad;y+=row}}x=pad;y+=row}
-  const box={width:Math.min(maxBox,Math.max(150,contentW+pad)),height:y};
-  box.x=mode==='inside'?width-margins.right-8-box.width:margins.left;box.y=mode==='inside'?margins.top+8:8;
+export function chainLegendGeometry({width,height,measure,model,mode='inside',margins=PLOT_THEME.margins}={}){
+  const t=PLOT_THEME,groups=[['Chain',model.chains],['Dataset',model.datasets],['Literature',model.literature]].filter(([,items])=>items.length),pad=10,inset=8,swatch=24,textGap=8,itemGap=14;
+  const headingHeight=t.legendHeadingPx+t.textLineGapPx,rowHeight=t.legendPx+t.textLineGapPx,maxBoxWidth=Math.max(1,width-margins.left-margins.right-(mode==='inside'?inset*2:0)),maxContentWidth=Math.max(1,maxBoxWidth-pad*2);
+  const measuredGroups=groups.map(([title,items])=>[title,items.map(item=>({...item,measuredLabelWidth:Math.ceil(measure(String(item.label))||0)}))]);
+  const maxInsideHeight=Math.max(1,height-margins.top-margins.bottom-inset*2),minimumWidth=Math.min(maxContentWidth,130);
+  const widths=[];for(let candidate=maxContentWidth;candidate>=minimumWidth;candidate-=24)widths.push(candidate);if(widths.at(-1)!==minimumWidth)widths.push(minimumWidth);
+  const layoutFor=contentWidth=>{let y=0,usedWidth=0;const laid=[];for(const [title,items] of measuredGroups){if(laid.length)y+=t.legendGroupGapPx;laid.push({heading:true,title,x:0,y,width:Math.min(contentWidth,Math.ceil(measure(title)||0)),height:headingHeight});y+=headingHeight+t.legendRowGapPx;let x=0,rowTop=y;for(const item of items){const natural=swatch+textGap+item.measuredLabelWidth,itemWidth=Math.min(natural,contentWidth);if(x&&x+itemWidth>contentWidth){x=0;rowTop+=rowHeight+t.legendRowGapPx}const maxLabelWidth=Math.max(0,itemWidth-swatch-textGap);laid.push({...item,x,y:rowTop,width:itemWidth,height:rowHeight,maxLabelWidth,clipped:item.measuredLabelWidth>maxLabelWidth});usedWidth=Math.max(usedWidth,x+itemWidth);x+=itemWidth+itemGap}y=rowTop+rowHeight}return {items:laid,width:Math.max(1,usedWidth),height:y}};
+  let flow=layoutFor(widths[0]);if(mode==='inside')for(const candidate of widths){const next=layoutFor(candidate);flow=next;if(next.height<=maxInsideHeight)break}
+  const box={width:Math.min(maxBoxWidth,flow.width+pad*2),height:Math.min(mode==='inside'?maxInsideHeight:height,flow.height+pad*2)};
+  box.x=mode==='inside'?width-margins.right-inset-box.width:margins.left;box.y=mode==='inside'?margins.top+inset:8;
   const reservedTop=mode==='outside-top'?Math.max(margins.top,box.y+box.height+8):margins.top;
-  return {mode,box,items:laid.map(item=>({...item,x:box.x+item.x,y:box.y+item.y})),reservedTop,draw:mode!=='hidden'};
+  return {mode,box,metrics:{headingHeight,rowHeight,headingPx:t.legendHeadingPx,labelPx:t.legendPx,lineGap:t.textLineGapPx,rowGap:t.legendRowGapPx,groupGap:t.legendGroupGapPx,padding:pad,swatch,textGap},items:flow.items.map(item=>({...item,x:box.x+pad+item.x,y:box.y+pad+item.y})),reservedTop,draw:mode!=='hidden'};
 }
 export function chainStyle(chainLength) {
   const n = Math.max(2, Number(chainLength) || 2), i = (n - 2) % COLORS.length;
@@ -154,7 +159,7 @@ export function markerIndices(length, count = 10) {
 export const EXPORT_PRESETS=Object.freeze({single:{width:720,height:540,scale:2},double:{width:1200,height:800,scale:2}});
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-export function buildLineSvg(curves,{width=1200,height=800,xLabel='Distance, r (Å)',yLabel='g(r)',logX=false,errorBars=true,markerCount=10,legendMode='outside-top'}={}) {
+export function buildLineSvg(curves,{width=1200,height=800,xLabel='Distance, r (Å)',yLabel='g(r)',logX=false,errorBars=true,markerCount=10,legendMode='inside'}={}) {
   const t=PLOT_THEME,shown=curves.filter(c=>c.visible!==false),model=chainLegendModel(shown),geometry=chainLegendGeometry({width,height,measure:text=>String(text).length*t.legendPx*.58,model,mode:legendMode}),m={...t.margins,top:geometry.reservedTop};
   const rows=shown.flatMap(c=>c.records.map(r=>({x:Number(r.x??r.distanceA),y:Number(r.y??r.gR??r.probabilityDensityPerA)}))).filter(p=>p.x>=(logX?Number.MIN_VALUE:-Infinity)&&Number.isFinite(p.x+p.y));
   if(!rows.length)return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"></svg>`;
@@ -165,7 +170,7 @@ export function buildLineSvg(curves,{width=1200,height=800,xLabel='Distance, r (
   if(logScale)logScale.minor.forEach(v=>body.push(`<line class="minor-tick" x1="${px(v)}" x2="${px(v)}" y1="${height-m.bottom}" y2="${height-m.bottom+4}"/>`));
   xt.forEach(item=>{const v=logX?item.value:item,label=logX?item.label:formatTick(item);body.push(`<line class="tick-mark" x1="${px(v)}" x2="${px(v)}" y1="${height-m.bottom}" y2="${height-m.bottom+7}"/><text class="tick x-tick" x="${px(v)}" y="${height-m.bottom+29}" text-anchor="middle">${label}</text>`)});
   shown.forEach(c=>{const style=c.literature?{color:c.resolvedColor||'#555',marker:'circle'}:chainStyle(c.chainLength),ds=c.literature?{dash:[]}:datasetStyle(c.datasetId),dash=ds.dash.length?' stroke-dasharray="8 5"':'',valid=c.records.filter(r=>Number.isFinite(Number(r.x??r.distanceA)+Number(r.y??r.gR??r.probabilityDensityPerA))&&(!logX||Number(r.x??r.distanceA)>0)),xy=r=>[Number(r.x??r.distanceA),Number(r.y??r.gR??r.probabilityDensityPerA)],path=valid.map((r,i)=>`${i?'L':'M'} ${px(xy(r)[0]).toFixed(2)} ${py(xy(r)[1]).toFixed(2)}`).join(' ');body.push(`<path class="data-line" data-dataset-style="${c.literature?'literature':ds.stroke}" d="${path}" fill="none" stroke="${style.color}"${dash}/>`);markerIndices(valid.length,markerCount).forEach(i=>{const [x,y]=xy(valid[i]);body.push(`<circle class="data-marker marker-${style.marker}" cx="${px(x)}" cy="${py(y)}" r="${t.markerSize/2}" fill="${style.color}"/>`)});if(errorBars)valid.forEach(r=>{const e=Number(r.uncertainty),[x,y]=xy(r);if(Number.isFinite(e))body.push(`<path class="error-bar" d="M ${px(x)} ${py(y-e)} V ${py(y+e)}" stroke="${style.color}"/>`)})});
-  if(geometry.draw){if(legendMode==='inside')body.push(`<rect class="legend-box" x="${geometry.box.x}" y="${geometry.box.y}" width="${geometry.box.width}" height="${geometry.box.height}" rx="3" fill="white" fill-opacity=".92" stroke="#c9d1cd"/>`);for(const item of geometry.items){if(item.heading){body.push(`<text class="legend-heading" x="${item.x}" y="${item.y+12}">${esc(item.title)}</text>`);continue}const y=item.y+10,dash=item.dash?.length?' stroke-dasharray="8 5"':'',color=item.color||t.axisColor;body.push(`<g class="legend-item legend-${item.kind}"><line x1="${item.x}" x2="${item.x+24}" y1="${y}" y2="${y}" stroke="${color}"${dash}/><text class="legend" x="${item.x+30}" y="${y+5}">${esc(item.label)}</text></g>`)}}
+  if(geometry.draw){const clips=geometry.items.map((item,index)=>item.clipped?`<clipPath id="legend-label-${index}"><rect x="${item.x+geometry.metrics.swatch+geometry.metrics.textGap}" y="${item.y}" width="${item.maxLabelWidth}" height="${item.height}"/></clipPath>`:'').join('');if(clips)body.push(`<defs>${clips}</defs>`);if(legendMode==='inside')body.push(`<rect class="legend-box" x="${geometry.box.x}" y="${geometry.box.y}" width="${geometry.box.width}" height="${geometry.box.height}" rx="3" fill="white" fill-opacity=".96" stroke="#c9d1cd"/>`);for(const [legendIndex,item] of geometry.items.entries()){if(item.heading){body.push(`<text class="legend-heading" x="${item.x}" y="${item.y+t.legendHeadingPx}">${esc(item.title)}</text>`);continue}const y=item.y+geometry.metrics.rowHeight/2,dash=item.dash?.length?' stroke-dasharray="8 5"':'',color=item.color||t.axisColor;body.push(`<g class="legend-item legend-${item.kind}"><line x1="${item.x}" x2="${item.x+24}" y1="${y}" y2="${y}" stroke="${color}"${dash}/><text class="legend" x="${item.x+geometry.metrics.swatch+geometry.metrics.textGap}" y="${y+t.legendPx*.35}"${item.clipped?` clip-path="url(#legend-label-${legendIndex})"`:''}>${esc(item.label)}</text></g>`)}}
   body.push(`<line class="axis" x1="${m.left}" x2="${m.left}" y1="${m.top}" y2="${height-m.bottom}"/><line class="axis" x1="${m.left}" x2="${width-m.right}" y1="${height-m.bottom}" y2="${height-m.bottom}"/><text class="axis-title" x="${(m.left+width-m.right)/2}" y="${height-20}" text-anchor="middle">${esc(xLabel)}</text><text class="axis-title" transform="translate(25 ${(m.top+height-m.bottom)/2}) rotate(-90)" text-anchor="middle">${esc(yLabel)}</text>`);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(description)}"><style>text{font-family:${t.fontFamily};fill:${t.axisColor}}.tick{font-size:${t.tickPx}px}.axis-title{font-size:${t.axisTitlePx}px}.legend{font-size:${t.legendPx}px}.legend-heading{font-size:12px;font-weight:bold}.axis,.tick-mark,.minor-tick{stroke:${t.axisColor};stroke-width:${t.axisWidth}}.data-line{stroke-width:${t.lineWidth}}.error-bar{fill:none;stroke-width:${t.errorWidth}}</style>${body.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(description)}"><style>text{font-family:${t.fontFamily};fill:${t.axisColor}}.tick{font-size:${t.tickPx}px}.axis-title{font-size:${t.axisTitlePx}px}.legend{font-size:${t.legendPx}px}.legend-heading{font-size:${t.legendHeadingPx}px;font-weight:bold}.axis,.tick-mark,.minor-tick{stroke:${t.axisColor};stroke-width:${t.axisWidth}}.data-line{stroke-width:${t.lineWidth}}.error-bar{fill:none;stroke-width:${t.errorWidth}}</style>${body.join('')}</svg>`;
 }

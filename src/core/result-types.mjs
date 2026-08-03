@@ -1,5 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=chain-legend-keys';
-import {parseVtkCellParameters} from './spatial-registration.mjs?rev=chain-legend-keys';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=publication-inset-legends-v2';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=publication-inset-legends-v2';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));

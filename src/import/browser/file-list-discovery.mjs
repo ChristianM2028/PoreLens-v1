@@ -1,8 +1,8 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=chain-legend-keys';
-import {parseCif} from '../../core/raspa-package.mjs?rev=chain-legend-keys';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=chain-legend-keys';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=chain-legend-keys';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=chain-legend-keys';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=publication-inset-legends-v2';
+import {parseCif} from '../../core/raspa-package.mjs?rev=publication-inset-legends-v2';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=publication-inset-legends-v2';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=publication-inset-legends-v2';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=publication-inset-legends-v2';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);
