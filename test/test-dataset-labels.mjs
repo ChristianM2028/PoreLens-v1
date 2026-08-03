@@ -26,15 +26,15 @@ test('identical labels do not merge identities and reach legends and exports',()
  assert.deepEqual(exported.data.map(x=>x.dataset_label),['Same label','Same label']);
  assert.deepEqual(exported.data.map(x=>x.dataset_fingerprint),['fp-A','fp-B']);
  const svg=buildLineSvg(curves.map(c=>({...c,records:[{x:1,y:2},{x:2,y:3}]})),{});
- assert.match(svg,/Same label C₅/);
+ assert.equal((svg.match(/>Same label<\/text>/g)||[]).length,2);assert.equal((svg.match(/>C₅<\/text>/g)||[]).length,1);
 });
 
 test('complete long display labels remain in SVG accessibility metadata',()=>{
  const labels=['Primary fluorinated adsorbate collection with a deliberately long provenance label','Reference hydrocarbon collection with an equally long descriptive label'];
  const curves=labels.map((datasetLabel,index)=>({datasetId:index?'B':'A',datasetLabel,legendLabel:datasetLabel,family:datasetLabel,component:'C10',chainLength:10,records:[{x:1,y:2},{x:2,y:3}]}));
  const svg=buildLineSvg(curves,{width:340,height:420});
- for(const label of labels){assert.match(svg,new RegExp(label));assert.match(svg,new RegExp(`data-full-label="${label} C₁₀"`))}
- assert.match(svg,/role="img" aria-label="Line plot;/);assert.match(svg,/legend-clip-/);
+ for(const label of labels)assert.match(svg,new RegExp(label));
+ assert.match(svg,/role="img" aria-label="Color and marker identify chain/);assert.match(svg,/stroke pattern identifies dataset/);
 });
 
 test('comparison UI resolves display labels while retaining slots only as internal keys',async()=>{

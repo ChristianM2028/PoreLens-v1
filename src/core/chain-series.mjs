@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=inset-legend-canvas-coordinates';
-import { parseSimulationInput } from './trajectory.mjs?rev=inset-legend-canvas-coordinates';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=inset-legend-canvas-coordinates';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=inset-legend-canvas-coordinates';
-import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=inset-legend-canvas-coordinates';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=inset-legend-canvas-coordinates';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=chain-legend-keys';
+import { parseSimulationInput } from './trajectory.mjs?rev=chain-legend-keys';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=chain-legend-keys';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=chain-legend-keys';
+import {parseIsothermSummary,SUMMARY_FILES,SUMMARY_LOADING_UNIT} from './isotherm-summary.mjs?rev=chain-legend-keys';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=chain-legend-keys';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

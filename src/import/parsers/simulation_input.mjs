@@ -1,6 +1,6 @@
-import { Component, Framework, SimulationSettings } from '../models.mjs?rev=inset-legend-canvas-coordinates';
-import { diagnostic } from '../diagnostics.mjs?rev=inset-legend-canvas-coordinates';
-import { cleanLines, finiteNumber } from './common.mjs?rev=inset-legend-canvas-coordinates';
+import { Component, Framework, SimulationSettings } from '../models.mjs?rev=chain-legend-keys';
+import { diagnostic } from '../diagnostics.mjs?rev=chain-legend-keys';
+import { cleanLines, finiteNumber } from './common.mjs?rev=chain-legend-keys';
 
 const canonical = key => key.toLowerCase().replace(/[^a-z0-9]/g, '');
 const bool = value => /^(?:yes|true|on|1)$/i.test(value) ? true : /^(?:no|false|off|0)$/i.test(value) ? false : null;

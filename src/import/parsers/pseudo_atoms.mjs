@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=inset-legend-canvas-coordinates';
-import { diagnostic } from '../diagnostics.mjs?rev=inset-legend-canvas-coordinates';
+import { PseudoAtom } from '../models.mjs?rev=chain-legend-keys';
+import { diagnostic } from '../diagnostics.mjs?rev=chain-legend-keys';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

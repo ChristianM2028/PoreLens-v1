@@ -1,19 +1,19 @@
-import {controller as analysisController,navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=inset-legend-canvas-coordinates';
-import { importBrowserFiles } from '../import/importers.mjs?rev=inset-legend-canvas-coordinates';
-import { buildHeatmap, nearestPressureIndex, mapAnnotations, highRegions } from '../core/analysis.mjs?rev=inset-legend-canvas-coordinates';
-import {compareRdfSelections} from '../core/comparison-state.mjs?rev=inset-legend-canvas-coordinates';
-import { DatasetWorkspace } from '../core/workspace.mjs?rev=inset-legend-canvas-coordinates';
-import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=inset-legend-canvas-coordinates';
-import { groupDiagnostics } from '../core/ui-state.mjs?rev=inset-legend-canvas-coordinates';
-import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=inset-legend-canvas-coordinates';
-import {PLOT_THEME, markerIndices, linearTicks, formatTick, formatPressureTick, comparisonCurveLayout, comparisonHeatmapLayout} from './plot-theme.mjs?rev=inset-legend-canvas-coordinates';
-import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=inset-legend-canvas-coordinates';
-import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=inset-legend-canvas-coordinates';
-import {importRunPackage} from '../core/raspa-package.mjs?rev=inset-legend-canvas-coordinates';
-import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=inset-legend-canvas-coordinates';
-import {distributionView} from '../core/result-types.mjs?rev=inset-legend-canvas-coordinates';
-import {setupOccupancyDensityUi} from './occupancy-density-ui.mjs?rev=inset-legend-canvas-coordinates';
-import {evidenceCatalogs,parsedResultCache,registerEvidence,removeEvidence,relabelEvidence,evidenceFor} from './evidence-model.mjs?rev=inset-legend-canvas-coordinates';
+import {controller as analysisController,navigate as navigateWorkspace} from './workspace-navigation-ui.mjs?rev=chain-legend-keys';
+import { importBrowserFiles } from '../import/importers.mjs?rev=chain-legend-keys';
+import { buildHeatmap, nearestPressureIndex, mapAnnotations, highRegions } from '../core/analysis.mjs?rev=chain-legend-keys';
+import {compareRdfSelections} from '../core/comparison-state.mjs?rev=chain-legend-keys';
+import { DatasetWorkspace } from '../core/workspace.mjs?rev=chain-legend-keys';
+import { prepareRawLine, smoothDisplay, decimateMarkers, lineCommands, formatNumber, peakTrace } from './plotting.mjs?rev=chain-legend-keys';
+import { groupDiagnostics } from '../core/ui-state.mjs?rev=chain-legend-keys';
+import { AnnotationStore, manifestFingerprint, snapRdf, pressurePointGeometry, pressureRegionGeometry } from '../core/annotations.mjs?rev=chain-legend-keys';
+import {PLOT_THEME, markerIndices, linearTicks, formatTick, formatPressureTick, comparisonCurveLayout, comparisonHeatmapLayout} from './plot-theme.mjs?rev=chain-legend-keys';
+import {normalizedCatalogToBrowserResult,hydrateRdfSeries,deriveRdfSelectorState} from '../import/browser/catalog-adapter.mjs?rev=chain-legend-keys';
+import {discoverChainSeries,exactAuthorizedCatalogRun} from '../import/browser/file-list-discovery.mjs?rev=chain-legend-keys';
+import {importRunPackage} from '../core/raspa-package.mjs?rev=chain-legend-keys';
+import {rdfAnnotationContext} from '../core/annotation-context.mjs?rev=chain-legend-keys';
+import {distributionView} from '../core/result-types.mjs?rev=chain-legend-keys';
+import {setupOccupancyDensityUi} from './occupancy-density-ui.mjs?rev=chain-legend-keys';
+import {evidenceCatalogs,parsedResultCache,registerEvidence,removeEvidence,relabelEvidence,evidenceFor} from './evidence-model.mjs?rev=chain-legend-keys';
 
 const $=selector=>document.querySelector(selector), ws=new DatasetWorkspace();
 setupOccupancyDensityUi();
@@ -139,12 +139,12 @@ $('#suggestPeaks').onclick=()=>{const index=nearestPressureIndex(currentMap.pres
 let rdfDrag=null;$('#realRdfCanvas').onpointerdown=e=>{rdfDrag={x:e.clientX};e.currentTarget.setPointerCapture(e.pointerId)};$('#realRdfCanvas').onpointerup=e=>{const canvas=e.currentTarget,m=canvas._curve;if(!m||!rdfDrag)return;const rect=canvas.getBoundingClientRect(),toDistance=x=>m.xmin+Math.max(0,Math.min(m.plotW,x-rect.left-m.pad.l))/m.plotW*(m.xmax-m.xmin),a=snapRdf(m.records,toDistance(rdfDrag.x)),b=snapRdf(m.records,toDistance(e.clientX)),context=annotationContext();if(Math.abs(e.clientX-rdfDrag.x)<5)annotationStore.create(context,{type:'peak',distanceA:b.distanceA,gR:b.gR},annotationFields());else annotationStore.create(context,{type:'span',startA:Math.min(a.distanceA,b.distanceA),endA:Math.max(a.distanceA,b.distanceA),gR:[a.gR,b.gR]},annotationFields());rdfDrag=null;renderAnnotationTable();selectPressure(false);};
 let heatDrag=null;$('#heatmap').onpointerdown=e=>{if(e.shiftKey){heatDrag={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId)}};$('#heatmap').onpointerup=e=>{if(!heatDrag)return;const m=e.currentTarget._heatmap,rect=e.currentTarget.getBoundingClientRect(),pw=m.pw,toR=x=>m.map.distances[Math.max(0,Math.min(m.map.distances.length-1,Math.round((x-rect.left-m.pad.l)/pw*(m.map.distances.length-1))))],toP=y=>m.map.pressuresPa[Math.max(0,Math.min(m.map.pressuresPa.length-1,Math.floor((y-rect.top-m.pad.t)/m.ph*m.map.pressuresPa.length)))],r1=toR(heatDrag.x),r2=toR(e.clientX),p1=toP(heatDrag.y),p2=toP(e.clientY),row=m.map.rows[nearestPressureIndex(m.map.pressuresPa,p1)];annotationStore.create(annotationContext(elements.datasetSelect.value,row),{type:'region',startA:Math.min(r1,r2),endA:Math.max(r1,r2),pressureMinPa:Math.min(p1,p2),pressureMaxPa:Math.max(p1,p2)},annotationFields());heatDrag=null;renderAnnotationTable();selectPressure(false);};
 window.addEventListener('beforeunload',e=>{if(annotationStore.dirty){e.preventDefault();e.returnValue='';}});syncDatasetLabels();renderAnnotationTable();
-import('./lj-ui.mjs?rev=inset-legend-canvas-coordinates')
+import('./lj-ui.mjs?rev=chain-legend-keys')
   .then(({setupLjWorkflow})=>setupLjWorkflow({workspace:ws,annotationStore}))
-  .catch(error=>import('./workspace-navigation-ui.mjs?rev=inset-legend-canvas-coordinates').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
+  .catch(error=>import('./workspace-navigation-ui.mjs?rev=chain-legend-keys').then(({reportFeatureUnavailable})=>reportFeatureUnavailable('trajectory',error)));
 // GEMC and Henry are progressively enhanced independent stores; this import does not
 // read, merge, or derive metadata from either GCMC slot.
-import('./phase-workspaces.mjs?rev=inset-legend-canvas-coordinates').catch(error=>console.error('[PoreLens phase workspaces]',error));
+import('./phase-workspaces.mjs?rev=chain-legend-keys').catch(error=>console.error('[PoreLens phase workspaces]',error));
 
 let pressureRegionStart=null;
 $('#annotatePressurePoint').onclick=()=>{const context=annotationContext();annotationStore.create(context,pressurePointGeometry(context.run,context.pressurePa),annotationFields());renderAnnotationTable();selectPressure(false);};

@@ -1,12 +1,12 @@
-import {resolvePairName} from '../import/importers.mjs?rev=inset-legend-canvas-coordinates';
-import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=inset-legend-canvas-coordinates';
-import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=inset-legend-canvas-coordinates';
-import {cellMatrix} from '../core/raspa-physics.mjs?rev=inset-legend-canvas-coordinates';
-import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=inset-legend-canvas-coordinates';
-import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=inset-legend-canvas-coordinates';
-import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=inset-legend-canvas-coordinates';
-import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=inset-legend-canvas-coordinates';
-import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=inset-legend-canvas-coordinates';
+import {resolvePairName} from '../import/importers.mjs?rev=chain-legend-keys';
+import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=chain-legend-keys';
+import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=chain-legend-keys';
+import {cellMatrix} from '../core/raspa-physics.mjs?rev=chain-legend-keys';
+import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=chain-legend-keys';
+import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=chain-legend-keys';
+import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=chain-legend-keys';
+import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=chain-legend-keys';
+import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=chain-legend-keys';
 export {validateSpatialRegistration};
 
 export class LjResultRegistry{

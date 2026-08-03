@@ -1,4 +1,4 @@
-import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=inset-legend-canvas-coordinates';
+import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=chain-legend-keys';
 
 export const PROVENANCE_SCHEMA='porelens.run-provenance';
 const value=(x,fallback=null)=>x??fallback;

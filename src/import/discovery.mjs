@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Dataset, Series, SimulationRun } from './models.mjs?rev=inset-legend-canvas-coordinates';
-import { diagnostic } from './diagnostics.mjs?rev=inset-legend-canvas-coordinates';
-import { indexRun } from './indexer.mjs?rev=inset-legend-canvas-coordinates';
-import { cacheEntryIsFresh, readIndex, writeIndex } from './cache.mjs?rev=inset-legend-canvas-coordinates';
+import { Dataset, Series, SimulationRun } from './models.mjs?rev=chain-legend-keys';
+import { diagnostic } from './diagnostics.mjs?rev=chain-legend-keys';
+import { indexRun } from './indexer.mjs?rev=chain-legend-keys';
+import { cacheEntryIsFresh, readIndex, writeIndex } from './cache.mjs?rev=chain-legend-keys';
 
 async function findInputs(root, found = [], visited = new Set()) { let real; try { real = await fs.realpath(root); } catch { return found; } if (visited.has(real)) return found; visited.add(real); for (const entry of await fs.readdir(root, { withFileTypes: true })) { if (entry.name === '.poreview') continue; const target = path.join(root, entry.name); if (entry.isDirectory()) await findInputs(target, found, visited); else if (entry.isFile() && /^simulation\.input$/i.test(entry.name)) found.push(target); } return found; }
 export async function discoverRuns(root, options = {}) { return (await discoverDataset(root, { ...options, writeCache: false })).runs; }
