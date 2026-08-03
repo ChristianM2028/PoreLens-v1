@@ -1,5 +1,5 @@
-import { RDFRecord } from '../models.mjs?rev=inset-legend-canvas-coordinates';
-import { diagnostic } from '../diagnostics.mjs?rev=inset-legend-canvas-coordinates';
+import { RDFRecord } from '../models.mjs?rev=chain-legend-keys';
+import { diagnostic } from '../diagnostics.mjs?rev=chain-legend-keys';
 
 export function resolveRdfPair(filename, knownNames = []) {
   const stem = filename.split(/[\\/]/).at(-1).replace(/^RDF_/i, '').replace(/\.[^.]+$/, ''), names = [...new Set(['Framework', ...knownNames])].sort((a, b) => b.length - a.length);

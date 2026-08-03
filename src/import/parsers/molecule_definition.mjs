@@ -1,5 +1,5 @@
-import { MoleculeAtom, MoleculeDefinition } from '../models.mjs?rev=inset-legend-canvas-coordinates';
-import { diagnostic } from '../diagnostics.mjs?rev=inset-legend-canvas-coordinates';
+import { MoleculeAtom, MoleculeDefinition } from '../models.mjs?rev=chain-legend-keys';
+import { diagnostic } from '../diagnostics.mjs?rev=chain-legend-keys';
 
 const marker = (lines, re) => lines.findIndex(line => re.test(line));
 const section = (lines, start, arity) => { const out = []; if (start < 0) return out; for (let i = start + 1; i < lines.length; i++) { const p = lines[i].trim().split(/\s+/); if (p.length < arity || p.slice(0, arity).some(x => !/^\d+$/.test(x))) break; out.push({ atoms: p.slice(0, arity).map(Number), type: p[arity] ?? null, parameters: p.slice(arity + 1), rawRecord: lines[i] }); } return out; };

@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=inset-legend-canvas-coordinates';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=chain-legend-keys';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();

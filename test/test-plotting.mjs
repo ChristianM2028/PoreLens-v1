@@ -111,3 +111,30 @@ test('workspace renderers expose one/multi-row, axes, color scale mode, and true
 });
 
 test('GEMC allocator overflows safely and canvas legend geometry supports interaction', async()=>{const {allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect,GEMC_COLORS}=await import('../src/ui/plot-theme.mjs');const keys=Array.from({length:15},(_,i)=>`F | C${i}`),a=allocateGemcStyles(keys),b=allocateGemcStyles([...keys].reverse());assert.deepEqual(a,b);assert.equal(new Set(keys.slice(0,GEMC_COLORS.length).map(k=>a[k].color)).size,GEMC_COLORS.length);const g=canvasPlotLayout({width:300,height:220,measure:x=>x.length*9,labels:keys.map(x=>x.repeat(3)),position:{x:1,y:1},overlay:true});assert.ok(g.legend.items.length===15&&g.legend.items.some(x=>x.clipped)&&g.legend.items.at(-1).row>0);assert.ok(g.legend.x+g.legend.width<=300&&g.legend.y+g.legend.height<=220);const canvas={width:600,height:400,getBoundingClientRect:()=>({left:10,top:20,width:300,height:200})};assert.deepEqual(canvasPointer(canvas,{clientX:160,clientY:120}),{x:300,y:200});assert.ok(hitRect({x:g.legend.x,y:g.legend.y},g.legend));assert.deepEqual(moveNormalizedLegend({x:1,y:1},100,100,g),{x:0,y:1});const movable=canvasPlotLayout({width:800,height:400,measure:x=>x.length*7,labels:['A'],position:{x:1,y:1},overlay:true});assert.ok(moveNormalizedLegend({x:1,y:1},-5,0,movable).x<1)});
+
+test('chain legend separates deduplicated chain and dataset encodings',async()=>{
+  const {chainLegendModel,datasetStyle}=await import('../src/ui/plot-theme.mjs');
+  const curves=[
+    {visible:true,component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Primary custom label'},
+    {visible:true,component:'C2',chainLength:2,datasetId:'B',datasetLabel:'A very long comparison dataset display label'},
+    {visible:true,component:'C3',chainLength:3,datasetId:'B',datasetLabel:'A very long comparison dataset display label'},
+    {visible:true,literature:true,legendLabel:'Literature — Smith',resolvedColor:'#555'}
+  ],model=chainLegendModel(curves);
+  assert.deepEqual(model.chains.map(x=>x.label),['C₂','C₃']);
+  assert.deepEqual(model.datasets.map(x=>[x.label,x.stroke]),[['Primary custom label','solid'],['A very long comparison dataset display label','dashed']]);
+  assert.equal(model.literature[0].label,'Literature — Smith');
+  assert.deepEqual(datasetStyle('B').dash,[8,5]);assert.equal(datasetStyle('A').stroke,'solid');
+});
+
+test('inside, outside, hidden, and long-label chain legend geometry preserve spacing rules',async()=>{
+  const {chainLegendModel,chainLegendGeometry,PLOT_THEME}=await import('../src/ui/plot-theme.mjs'),model=chainLegendModel([{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Primary dataset with an exceptionally long descriptive label',visible:true},{component:'C3',chainLength:3,datasetId:'B',datasetLabel:'Comparison dataset with another exceptionally long descriptive label',visible:true}]),args={width:520,height:360,measure:x=>x.length*8,model};
+  const inside=chainLegendGeometry({...args,mode:'inside'}),outside=chainLegendGeometry({...args,mode:'outside-top'}),hidden=chainLegendGeometry({...args,mode:'hidden'});
+  assert.equal(inside.reservedTop,PLOT_THEME.margins.top);assert.ok(outside.reservedTop>PLOT_THEME.margins.top);assert.equal(hidden.reservedTop,PLOT_THEME.margins.top);assert.equal(hidden.draw,false);
+  assert.ok(inside.box.x>=PLOT_THEME.margins.left&&inside.box.x+inside.box.width<=args.width-PLOT_THEME.margins.right);
+  assert.ok(inside.items.filter(x=>!x.heading).some(x=>x.y>inside.items.filter(y=>!y.heading)[0].y),'long entries wrap into measured rows');
+});
+
+test('SVG uses the shared dataset resolver and independent legend keys',()=>{
+ const curves=[{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Renamed A',records:[{x:1,y:1},{x:2,y:2}]},{component:'C2',chainLength:2,datasetId:'B',datasetLabel:'Renamed B',records:[{x:1,y:2},{x:2,y:3}]}],svg=buildLineSvg(curves,{legendMode:'inside'});
+ assert.equal((svg.match(/legend-chain/g)||[]).length,1);assert.equal((svg.match(/legend-dataset/g)||[]).length,2);assert.match(svg,/data-dataset-style="solid"/);assert.match(svg,/data-dataset-style="dashed"[^>]*stroke-dasharray="8 5"/);assert.match(svg,/class="legend-box"/);
+});
