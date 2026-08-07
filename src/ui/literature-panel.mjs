@@ -1,4 +1,4 @@
-import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=draggable-chain-legend-v1';
+import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=axis-label-black-v1';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];

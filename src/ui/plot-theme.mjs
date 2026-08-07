@@ -2,7 +2,7 @@
 export const PLOT_THEME = Object.freeze({
   fontFamily: 'Arial, Helvetica, sans-serif', axisTitlePx: 20, tickPx: 16,
   legendPx: 16, legendHeadingPx: 17, textLineGapPx: 4, legendRowGapPx: 5,
-  legendGroupGapPx: 9, axisColor: '#26332e', gridColor: '#e1e5e3', axisWidth: 1.4,
+  legendGroupGapPx: 9, axisColor: '#000000', gridColor: '#e1e5e3', axisWidth: 1.4,
   lineWidth: 2, markerSize: 6, errorWidth: 1.1, errorCap: 4,
   background: '#ffffff', margins: Object.freeze({ left: 112, right: 30, top: 66, bottom: 82 })
 });

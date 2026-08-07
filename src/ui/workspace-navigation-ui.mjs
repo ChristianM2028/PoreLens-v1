@@ -1,4 +1,4 @@
-import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=draggable-chain-legend-v1';
+import {AnalysisWorkspaces} from './analysis-workspaces.mjs?rev=axis-label-black-v1';
 const WORKSPACE_IDS=['isotherm','rdf','end_to_end','comparison','gemc','henry'];
 const controller=new AnalysisWorkspaces();
 const sections=()=>document.querySelectorAll('[data-analysis-workspace]');
@@ -108,11 +108,11 @@ function loadFeature(feature,source){return import(source).catch(error=>{reportF
 // Each optional entry point is imported independently so one parser or renderer cannot
 // prevent the progressively enhanced shell from remaining usable.
 if(document.documentElement){
-  void loadFeature('rdf','./app.js?rev=draggable-chain-legend-v1');
-  void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=draggable-chain-legend-v1');
-  void loadFeature('result-browser','./result-browser-ui.mjs?rev=draggable-chain-legend-v1');
-  void loadFeature('catalog','./directory-import-ui.mjs?rev=draggable-chain-legend-v1');
-  void loadFeature('phase-workspaces','./phase-workspaces.mjs?rev=draggable-chain-legend-v1');
+  void loadFeature('rdf','./app.js?rev=axis-label-black-v1');
+  void loadFeature('isotherms','./chain-plotter-ui.mjs?rev=axis-label-black-v1');
+  void loadFeature('result-browser','./result-browser-ui.mjs?rev=axis-label-black-v1');
+  void loadFeature('catalog','./directory-import-ui.mjs?rev=axis-label-black-v1');
+  void loadFeature('phase-workspaces','./phase-workspaces.mjs?rev=axis-label-black-v1');
 }
 
 export {controller,activate,activateComparisonTab,activateLocation,attachChainRenderer,loadFeature,navigate,openRdfEvidence,reportFeatureUnavailable};
