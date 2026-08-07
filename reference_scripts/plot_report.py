@@ -70,6 +70,10 @@ COMPONENT_COLORS = {
 LINESTYLES = ["-", "--", ":", "-.", (0, (5, 1)), (0, (3, 1, 1, 1)), (0, (1, 1))]
 PURE_FILES = ["final_abs_pressure_up", "final_abs_fug_up"]
 MIX_FILE = "final_mix_abs_molkg"
+CHAIN_LEGEND_FONTSIZE = 13
+DATASET_LEGEND_FONTSIZE = 7.5
+
+SUBSCRIPT_DIGITS = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
 
 # Publication-oriented defaults: readable at two-column width and embedded fonts in PDF.
 matplotlib.rcParams.update({
@@ -103,6 +107,14 @@ def natural_component_key(component: str) -> Tuple[int, str]:
     if m:
         return (int(m.group(1)), component)
     return (10_000, component)
+
+
+def format_component_label(component: str) -> str:
+    """Format a canonical ``C<n>`` key for display without changing the key."""
+    match = re.fullmatch(r"C(\d+)", component)
+    if match is None:
+        return component
+    return f"C{match.group(1).translate(SUBSCRIPT_DIGITS)}"
 
 
 def component_from_path(path: Path) -> Optional[str]:
@@ -770,7 +782,14 @@ def plot_series(
     ax.tick_params(which="both", direction="in", top=True, right=True)
 
     component_handles = [
-        Line2D([0], [0], color=color_by_component[c], lw=2.4, linestyle="-", label=c)
+        Line2D(
+            [0],
+            [0],
+            color=color_by_component[c],
+            lw=2.4,
+            linestyle="-",
+            label=format_component_label(c),
+        )
         for c in components
     ]
     dataset_handles = [
@@ -778,9 +797,25 @@ def plot_series(
         for label in dataset_labels
     ]
 
-    leg1 = ax.legend(handles=component_handles, title="Component", loc="upper left", framealpha=0.92, edgecolor="0.75")
+    leg1 = ax.legend(
+        handles=component_handles,
+        title="Chain",
+        loc="upper left",
+        framealpha=0.92,
+        edgecolor="0.75",
+        fontsize=CHAIN_LEGEND_FONTSIZE,
+    )
+    for label in leg1.get_texts():
+        label.set_fontweight("bold")
     ax.add_artist(leg1)
-    ax.legend(handles=dataset_handles, title="Dataset", loc="lower right", framealpha=0.92, edgecolor="0.75")
+    ax.legend(
+        handles=dataset_handles,
+        title="Dataset",
+        loc="lower right",
+        framealpha=0.92,
+        edgecolor="0.75",
+        fontsize=DATASET_LEGEND_FONTSIZE,
+    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=600, bbox_inches="tight", pad_inches=0.03)
@@ -1368,4 +1403,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
