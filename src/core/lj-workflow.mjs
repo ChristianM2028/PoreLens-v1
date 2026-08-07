@@ -1,6 +1,6 @@
-import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=draggable-chain-legend-v1';
-import {expandFramework} from './raspa-package.mjs?rev=draggable-chain-legend-v1';
-import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=draggable-chain-legend-v1';
+import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=axis-label-black-v1';
+import {expandFramework} from './raspa-package.mjs?rev=axis-label-black-v1';
+import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=axis-label-black-v1';
 
 export const LJ_COMPARISON_INPUT_FORMAT='porelens.lj-comparison-input';
 export const LJ_COMPARISON_INPUT_VERSION=1;

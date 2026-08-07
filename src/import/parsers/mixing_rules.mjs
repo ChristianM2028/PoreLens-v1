@@ -1,5 +1,5 @@
-import { VdwParameter } from '../models.mjs?rev=draggable-chain-legend-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=draggable-chain-legend-v1';
+import { VdwParameter } from '../models.mjs?rev=axis-label-black-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=axis-label-black-v1';
 
 export function parseMixingRules(text, source = 'force_field_mixing_rules.def') {
   const parameters = [], diagnostics = [], data = text.split(/\r?\n/).map(x => x.replace(/\/\/.*$/, '').trim()).filter(x => x && !x.startsWith('#'));
