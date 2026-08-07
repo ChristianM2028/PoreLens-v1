@@ -70,7 +70,11 @@ COMPONENT_COLORS = {
 LINESTYLES = ["-", "--", ":", "-.", (0, (5, 1)), (0, (3, 1, 1, 1)), (0, (1, 1))]
 PURE_FILES = ["final_abs_pressure_up", "final_abs_fug_up"]
 MIX_FILE = "final_mix_abs_molkg"
-CHAIN_LEGEND_FONTSIZE = 13
+# Chain identifiers are the report-facing key and must remain legible when the
+# figure is reduced for a manuscript.  Keep dataset text separate: its labels
+# can be considerably longer and should not compete with the plotted data.
+CHAIN_IDENTIFIER_FONTSIZE = 22
+CHAIN_LEGEND_TITLE_FONTSIZE = 18
 DATASET_LEGEND_FONTSIZE = 7.5
 
 SUBSCRIPT_DIGITS = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
@@ -803,10 +807,17 @@ def plot_series(
         loc="upper left",
         framealpha=0.92,
         edgecolor="0.75",
-        fontsize=CHAIN_LEGEND_FONTSIZE,
+        fontsize=CHAIN_IDENTIFIER_FONTSIZE,
+        borderpad=0.55,
+        labelspacing=0.45,
+        handlelength=1.8,
+        handletextpad=0.65,
     )
     for label in leg1.get_texts():
+        label.set_fontsize(CHAIN_IDENTIFIER_FONTSIZE)
         label.set_fontweight("bold")
+    leg1.get_title().set_fontsize(CHAIN_LEGEND_TITLE_FONTSIZE)
+    leg1.get_title().set_fontweight("bold")
     ax.add_artist(leg1)
     ax.legend(
         handles=dataset_handles,

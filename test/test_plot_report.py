@@ -21,7 +21,11 @@ class PlotReportLegendTests(unittest.TestCase):
             if isinstance(node, ast.Assign)
             and len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
-            and node.targets[0].id in {"CHAIN_LEGEND_FONTSIZE", "DATASET_LEGEND_FONTSIZE"}
+            and node.targets[0].id in {
+                "CHAIN_IDENTIFIER_FONTSIZE",
+                "CHAIN_LEGEND_TITLE_FONTSIZE",
+                "DATASET_LEGEND_FONTSIZE",
+            }
         }
 
     def test_multi_digit_chain_label_uses_typographic_subscripts(self) -> None:
@@ -39,10 +43,14 @@ class PlotReportLegendTests(unittest.TestCase):
         self.assertEqual("methane", namespace["format_component_label"]("methane"))
 
     def test_chain_and_dataset_legends_have_independent_font_sizes(self) -> None:
-        self.assertGreaterEqual(self.assignments["CHAIN_LEGEND_FONTSIZE"], 12)
-        self.assertLessEqual(self.assignments["CHAIN_LEGEND_FONTSIZE"], 14)
+        self.assertGreaterEqual(self.assignments["CHAIN_IDENTIFIER_FONTSIZE"], 20)
+        self.assertLessEqual(self.assignments["CHAIN_IDENTIFIER_FONTSIZE"], 24)
+        self.assertLess(
+            self.assignments["CHAIN_LEGEND_TITLE_FONTSIZE"],
+            self.assignments["CHAIN_IDENTIFIER_FONTSIZE"],
+        )
         self.assertNotEqual(
-            self.assignments["CHAIN_LEGEND_FONTSIZE"],
+            self.assignments["CHAIN_IDENTIFIER_FONTSIZE"],
             self.assignments["DATASET_LEGEND_FONTSIZE"],
         )
 
@@ -63,13 +71,23 @@ class PlotReportLegendTests(unittest.TestCase):
             if keyword.arg == "fontsize" and isinstance(keyword.value, ast.Name)
         }
         self.assertEqual(
-            {"CHAIN_LEGEND_FONTSIZE", "DATASET_LEGEND_FONTSIZE"},
+            {"CHAIN_IDENTIFIER_FONTSIZE", "DATASET_LEGEND_FONTSIZE"},
             fontsize_names,
         )
-        self.assertTrue(any(
-            isinstance(node, ast.Attribute) and node.attr == "set_fontweight"
+        method_calls = {
+            node.func.attr
             for node in ast.walk(plot_series)
-        ))
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        }
+        self.assertIn("get_texts", method_calls)
+        self.assertIn("set_fontsize", method_calls)
+        self.assertIn("set_fontweight", method_calls)
+        self.assertIn("get_title", method_calls)
+
+        constants_used = {
+            node.id for node in ast.walk(plot_series) if isinstance(node, ast.Name)
+        }
+        self.assertIn("CHAIN_LEGEND_TITLE_FONTSIZE", constants_used)
 
 
 if __name__ == "__main__":
