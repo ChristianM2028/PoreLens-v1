@@ -1,5 +1,5 @@
-import { RDFRecord } from '../models.mjs?rev=chain-label-plain-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=chain-label-plain-v1';
+import { RDFRecord } from '../models.mjs?rev=mixture-isotherm-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=mixture-isotherm-v1';
 
 export function resolveRdfPair(filename, knownNames = []) {
   const stem = filename.split(/[\\/]/).at(-1).replace(/^RDF_/i, '').replace(/\.[^.]+$/, ''), names = [...new Set(['Framework', ...knownNames])].sort((a, b) => b.length - a.length);

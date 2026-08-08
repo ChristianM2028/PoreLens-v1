@@ -1,4 +1,4 @@
-import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=chain-label-plain-v1';
+import {spatialDensityCapability,vtkVisualizationState,resultCapability} from '../core/result-types.mjs?rev=mixture-isotherm-v1';
 
 export const PROVENANCE_SCHEMA='porelens.run-provenance';
 const value=(x,fallback=null)=>x??fallback;

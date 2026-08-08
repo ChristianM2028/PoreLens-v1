@@ -1,10 +1,11 @@
-import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=chain-label-plain-v1';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=chain-label-plain-v1';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=chain-label-plain-v1';
-import {parseCif} from '../../core/raspa-package.mjs?rev=chain-label-plain-v1';
+import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=mixture-isotherm-v1';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=mixture-isotherm-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=mixture-isotherm-v1';
+import {parseCif} from '../../core/raspa-package.mjs?rev=mixture-isotherm-v1';
 
 const CHAIN=/^C\d+$/i, RUN=/^\d+(?:_|$)/;
 const SUMMARIES=new Map([['final_abs_pressure_up','pressure'],['final_abs_fug_up','fugacity']]);
+const MIXTURE_SUMMARY='final_mix_abs_molkg';
 const OUTPUTS={RadialDistributionFunctions:['rdf',/\.(?:dat|txt|data)$/i],EndToEndDistanceHistograms:['end_to_end',/\.(?:dat|txt|data)$/i],Movies:['movie',isAllComponentsMovieBasename],VTK:['vtk',/\.(?:vtk|vti)$/i],Output:['raspa_output',/\.data$/i]};
 const pause=()=>new Promise(resolve=>setTimeout(resolve,0));
 const extension=name=>{const match=name.match(/(\.[^.]+)$/);return match?match[1].toLowerCase():''};
@@ -19,7 +20,7 @@ export class DirectoryCatalogScanner {
   constructor(root,{batchSize=100,onUpdate=()=>{},previous=null}={}){
     this.root=root;this.batchSize=batchSize;this.onUpdate=onUpdate;this.previous=previous;
     this.cancelled=false;this.initialized=false;this.cursor=0;this.queue=[];this.supporting=[];this.catalog={version:3,name:root.name,runs:[],summaries:[],ignoredFiles:[],diagnostics:[],manifest:null,startedAt:Date.now(),finished:false,authorized:true,stats:stats()};
-    this.worker=typeof Worker!=='undefined'?new Worker(new URL('../../workers/catalog-worker.mjs?rev=chain-label-plain-v1',import.meta.url),{type:'module'}):null;this.workerId=0;
+    this.worker=typeof Worker!=='undefined'?new Worker(new URL('../../workers/catalog-worker.mjs?rev=mixture-isotherm-v1',import.meta.url),{type:'module'}):null;this.workerId=0;
   }
   async parseSimulation(text){if(!this.worker)return parseSimulationInput(text);const id=++this.workerId;return new Promise((resolve,reject)=>{const receive=event=>{if(event.data.id!==id)return;this.worker.removeEventListener('message',receive);event.data.error?reject(new Error(event.data.error)):resolve(event.data.value)};this.worker.addEventListener('message',receive);this.worker.postMessage({id,text})})}
   ignored(path,reason,parentOutputDirectory=null){const name=path.split('/').at(-1);this.catalog.ignoredFiles.push({relativePath:path,filename:name,extension:extension(name),parentOutputDirectory,reason});this.catalog.stats.ignored++}
@@ -33,10 +34,13 @@ export class DirectoryCatalogScanner {
     await this.discoverRoot(this.root,'');
   }
   async discoverRoot(directory,prefix){
-    for await(const [name,handle] of directory.entries()){
+    const children=[];for await(const pair of directory.entries())children.push(pair);const mixtureRoot=children.some(([name,handle])=>handle.kind==='file'&&name===MIXTURE_SUMMARY);
+    for(const [name,handle] of children){
       const rootPath=prefix?`${prefix}/${name}`:name;
-      if(handle.kind==='file'&&/^manifest(?:\.csv)?$/i.test(name)&&!this.catalog.manifest){const file=await handle.getFile();this.catalog.manifest={path:rootPath,handle,file:pathFile(handle,rootPath),text:await file.text()};this.catalog.stats.filesRead++}
+      if(handle.kind==='file'&&name===MIXTURE_SUMMARY){this.catalog.summaries.push({type:'mixture_isotherm_summary',xKind:'pressure',chain:null,chainLength:null,name,path:rootPath,file:pathFile(handle,rootPath),handle,mixtureIdentity:prefix});this.catalog.stats.summaries++}
+      else if(handle.kind==='file'&&/^manifest(?:\.csv)?$/i.test(name)&&!this.catalog.manifest){const file=await handle.getFile();this.catalog.manifest={path:rootPath,handle,file:pathFile(handle,rootPath),text:await file.text()};this.catalog.stats.filesRead++}
       else if(handle.kind==='file'&&(/\.cif$/i.test(name)||/\.def$/i.test(name))){this.supporting.push(pathFile(handle,rootPath));}
+      else if(handle.kind==='directory'&&mixtureRoot&&RUN.test(name)){this.queue.push({chain:'mixture',run:name,handle,prefix});}
       else if(handle.kind==='directory'&&CHAIN.test(name)){this.catalog.stats.chains++;for await(const [childName,child] of handle.entries()){
         const path=`${rootPath}/${childName}`;
         if(child.kind==='file'&&SUMMARIES.has(childName)){this.catalog.summaries.push({type:'isotherm_summary',xKind:SUMMARIES.get(childName),chain:name,chainLength:Number(name.slice(1)),name:childName,path,file:pathFile(child,path),handle:child});this.catalog.stats.summaries++}
@@ -52,7 +56,7 @@ export class DirectoryCatalogScanner {
   async scan(){
     if(!this.initialized)await this.init();
     while(this.queue.length&&!this.cancelled){const item=this.queue.shift();await this.indexRun(item.chain,item.run,item.handle,item.prefix);await this.yieldIfNeeded(true)}
-    if(!this.cancelled){const rdfDirectories=this.catalog.runs.filter(r=>r.rdfDirectories>0).length;if(rdfDirectories&&!this.catalog.stats.rdfs)this.diagnostic('error','rdf_directories_empty','RadialDistributionFunctions directories were found, but no RDF files were indexed.');if(this.catalog.stats.ignored&&!this.catalog.stats.rdfs)this.diagnostic('error','no_rdf_selector_records',`${this.catalog.stats.ignored} files were ignored and no RDF records can reach the selector model.`);this.catalog.finished=true;this.emit(this.catalog.stats.failures?'complete-with-errors':'complete')}return this.catalog;
+    if(!this.cancelled){for(const summary of this.catalog.summaries.filter(x=>x.type==='mixture_isotherm_summary')){const candidates=this.catalog.runs.filter(run=>run.rootRelativePath.startsWith(`${summary.mixtureIdentity}/`)&&run.simulation?.components?.length);const signature=run=>JSON.stringify(run.simulation.components.map((component,index)=>({index:Number(component.index??index),name:component.name,feedMoleFraction:Number(component.settings?.molfraction)})));const signatures=[...new Set(candidates.map(signature))];if(signatures.length===1){summary.components=JSON.parse(signatures[0]);summary.simulationFile=candidates[0].simulationFile}else this.diagnostic('warning',signatures.length?'ambiguous_mixture_simulation':'mixture_simulation_missing',`${summary.path}: ${signatures.length?'numbered runs disagree on component metadata':'no matching numbered-run simulation.input was found'}`,summary.path)}const rdfDirectories=this.catalog.runs.filter(r=>r.rdfDirectories>0).length;if(rdfDirectories&&!this.catalog.stats.rdfs)this.diagnostic('error','rdf_directories_empty','RadialDistributionFunctions directories were found, but no RDF files were indexed.');if(this.catalog.stats.ignored&&!this.catalog.stats.rdfs)this.diagnostic('error','no_rdf_selector_records',`${this.catalog.stats.ignored} files were ignored and no RDF records can reach the selector model.`);this.catalog.finished=true;this.emit(this.catalog.stats.failures?'complete-with-errors':'complete')}return this.catalog;
   }
   async indexRun(chain,run,handle,prefix=chain){
     const item={id:`${chain}/${run}`,rootRelativePath:`${prefix}/${run}`,chain,run,handle,simulation:null,simulationFile:null,dependencies:{},pseudoAtoms:null,forceFieldParameters:null,moleculeDefinitions:[],frameworkCif:null,frameworkLabels:[],outputs:{raspa_output:[],rdf:[],end_to_end:[],movie:[],vtk:[]},rdfDirectories:0,diagnostics:[]};
@@ -103,6 +107,6 @@ export class DirectoryCatalogScanner {
   }
 }
 
-export function lightweightSnapshot(catalog){return {version:catalog.version,name:catalog.name,finished:catalog.finished,authorized:false,stats:catalog.stats,ignoredFiles:catalog.ignoredFiles,diagnostics:catalog.diagnostics,summaries:(catalog.summaries||[]).map(({chain,chainLength,name,path,type,xKind})=>({chain,chainLength,name,path,type,xKind})),runs:catalog.runs.map(r=>({id:r.id,chain:r.chain,run:r.run,simulation:r.simulation,rdfDirectories:r.rdfDirectories,outputs:Object.fromEntries(Object.entries(r.outputs).map(([k,v])=>[k,v.map(x=>({name:x.name,path:x.path,type:x.type}))])),diagnostics:r.diagnostics}))}}
+export function lightweightSnapshot(catalog){return {version:catalog.version,name:catalog.name,finished:catalog.finished,authorized:false,stats:catalog.stats,ignoredFiles:catalog.ignoredFiles,diagnostics:catalog.diagnostics,summaries:(catalog.summaries||[]).map(({chain,chainLength,name,path,type,xKind,components,mixtureIdentity,simulationFile})=>({chain,chainLength,name,path,type,xKind,components,mixtureIdentity,simulationFile})),runs:catalog.runs.map(r=>({id:r.id,chain:r.chain,run:r.run,simulation:r.simulation,rdfDirectories:r.rdfDirectories,outputs:Object.fromEntries(Object.entries(r.outputs).map(([k,v])=>[k,v.map(x=>({name:x.name,path:x.path,type:x.type}))])),diagnostics:r.diagnostics}))}}
 export async function persistDirectoryCatalog(catalog,root,{slot=null}={}){if(!globalThis.indexedDB)return false;return new Promise((resolve,reject)=>{const req=indexedDB.open('porelens-local-catalog',1);req.onupgradeneeded=()=>req.result.createObjectStore('datasets');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const tx=req.result.transaction('datasets','readwrite'),key=slot?`${slot}:${root.name}`:root.name;tx.objectStore('datasets').put({root,catalog:lightweightSnapshot(catalog),slot,savedAt:Date.now()},key);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error)}})}
 export async function restoreDirectoryCatalog(name){if(!globalThis.indexedDB)return null;return new Promise((resolve,reject)=>{const req=indexedDB.open('porelens-local-catalog',1);req.onupgradeneeded=()=>req.result.createObjectStore('datasets');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const get=req.result.transaction('datasets').objectStore('datasets').get(name);get.onsuccess=()=>resolve(get.result||null);get.onerror=()=>reject(get.error)}})}

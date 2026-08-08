@@ -1,6 +1,6 @@
 // Compatibility entry point: keep the historical import path while exposing
 // the canonical typed representation, not a second divergent flat parser.
-export {parseSimulationInput} from '../import/parsers/simulation_input.mjs?rev=chain-label-plain-v1';
+export {parseSimulationInput} from '../import/parsers/simulation_input.mjs?rev=mixture-isotherm-v1';
 
 export function parsePdbMovie(text,{sitesPerMolecule=null,siteTypes=null}={}){
   const frames=[]; let frame=null;

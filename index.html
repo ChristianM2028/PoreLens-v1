@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PoreLens — scientific analysis workspaces</title>
-  <meta name="porelens-revision" content="chain-label-plain-v1">
-  <link rel="stylesheet" href="styles.css?rev=chain-label-plain-v1">
+  <meta name="porelens-revision" content="mixture-isotherm-v1">
+  <link rel="stylesheet" href="styles.css?rev=mixture-isotherm-v1">
 </head>
 <body>
 <div id="fileLaunchWarning" class="notice" role="alert" hidden>
@@ -173,7 +173,7 @@
 <footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
 <div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
 <script type="module">
-  import('./src/ui/workspace-navigation-ui.mjs?rev=chain-label-plain-v1').catch(error => {
+  import('./src/ui/workspace-navigation-ui.mjs?rev=mixture-isotherm-v1').catch(error => {
     const message = document.getElementById('shellStartupFailure');
     message.hidden = false;
     message.append(document.createTextNode(` ${error.message}`));
