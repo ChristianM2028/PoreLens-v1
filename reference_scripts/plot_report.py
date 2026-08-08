@@ -77,8 +77,6 @@ CHAIN_IDENTIFIER_FONTSIZE = 22
 CHAIN_LEGEND_TITLE_FONTSIZE = 18
 DATASET_LEGEND_FONTSIZE = 7.5
 
-SUBSCRIPT_DIGITS = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
-
 # Publication-oriented defaults: readable at two-column width and embedded fonts in PDF.
 matplotlib.rcParams.update({
     "font.family": "sans-serif",
@@ -118,7 +116,7 @@ def format_component_label(component: str) -> str:
     match = re.fullmatch(r"C(\d+)", component)
     if match is None:
         return component
-    return f"C{match.group(1).translate(SUBSCRIPT_DIGITS)}"
+    return f"C{match.group(1)}"
 
 
 def component_from_path(path: Path) -> Optional[str]:

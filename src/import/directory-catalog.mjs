@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './browser/directory-handle-discovery.mjs?rev=axis-label-black-v1';
+export * from './browser/directory-handle-discovery.mjs?rev=chain-label-plain-v1';
 
 /** Authorized-file index shared by every workspace; values stay lazy File/handle references. */
 export class AuthorizedRunCatalog {

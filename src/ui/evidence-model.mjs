@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=axis-label-black-v1';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=chain-label-plain-v1';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();
