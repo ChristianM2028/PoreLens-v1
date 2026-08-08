@@ -1,1 +1,67 @@
+# PoreLens dataset index/cache
+.poreview/
 
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+venv/
+
+# Test/browser artifacts
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+
+# Local analysis and export directories
+/output/
+/outputs/
+/results/
+/exports/
+/artifacts/
+/analysis-output/
+/tmp/
+/temp/
+/.cache/
+
+# Default plot_report.py outputs
+/pure_length_overlay.png
+/pure_length_overlay.pdf
+/mixture_overlay.png
+/mixture_overlay.pdf
+/auto_discovered_pure_overlay.png
+/auto_discovered_pure_overlay.pdf
+/auto_discovered_mixture_overlay.png
+/auto_discovered_mixture_overlay.pdf
+
+# Local environment/secrets
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating-system clutter
+.DS_Store
+Thumbs.db
+Desktop.ini
