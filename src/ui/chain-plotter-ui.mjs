@@ -1,11 +1,11 @@
-import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, buildMixtureIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=mixture-isotherm-v1';
-import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=mixture-isotherm-v1';
-import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=mixture-isotherm-v1';
-import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=mixture-isotherm-v1';
-import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,chainLegendModel,chainLegendGeometry,datasetStyle,canvasPointer,moveNormalizedLegend,hitRect,EXPORT_PRESETS} from './plot-theme.mjs?rev=mixture-isotherm-v1';
-import {convertPressure} from '../core/plot-configuration.mjs?rev=mixture-isotherm-v1';
-import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=mixture-isotherm-v1';
-import {literatureExportRows} from '../core/literature-series.mjs?rev=mixture-isotherm-v1';
+import { matchRuns, plottedExport, exportCsv, buildSummaryIsothermCurves, buildMixtureIsothermCurves, histogramIdentity, updateHistogramSelections } from '../core/chain-series.mjs?rev=mixture-directory-v2';
+import {evidenceCatalogs as catalogs,evidenceCatalogStates as catalogStates,parsedResultCache as cache,registerEvidence,removeEvidence} from './evidence-model.mjs?rev=mixture-directory-v2';
+import {logPlottableRecords,prepareIsothermSeries} from '../core/isotherm-summary.mjs?rev=mixture-directory-v2';
+import {distributionStatistics,distributionView,terminalPseudoatoms} from '../core/result-types.mjs?rev=mixture-directory-v2';
+import {PLOT_THEME,chainStyle,conciseCurveLabel,linearTicks,formatTick,logTicks,markerIndices,buildLineSvg,chainLegendModel,chainLegendGeometry,datasetStyle,canvasPointer,moveNormalizedLegend,hitRect,EXPORT_PRESETS} from './plot-theme.mjs?rev=mixture-directory-v2';
+import {convertPressure} from '../core/plot-configuration.mjs?rev=mixture-directory-v2';
+import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=mixture-directory-v2';
+import {literatureExportRows} from '../core/literature-series.mjs?rev=mixture-directory-v2';
 
 const $=s=>document.querySelector(s),histogramSelections=new Map(),histogramVisibility=new Map(); let curves=[], zoom=1, renderGeneration=0,selectionInitialized=false,savedConfigurationRestored=false; const chainPlotState={legendPosition:{x:1,y:0}};
 const ids=['chainErrors','chainPreset','chainDatasetA','chainDatasetB','chainResult','chainLengths','chainPair','chainMatch','chainPressure','chainTolerance','chainCompare','chainXAxis','chainAxis','chainPressureUnit','chainManual','chainLoading','chainAnnotations','chainUnits','chainLoadingKind','chainLoadingUnit','chainLines','chainLegend'];

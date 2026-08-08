@@ -1,6 +1,13 @@
 export const SUMMARY_FILES={pressure:'final_abs_pressure_up',fugacity:'final_abs_fug_up'};
 export const SUMMARY_LOADING_UNIT='mol/kg framework';
 export const MIXTURE_SUMMARY_FILE='final_mix_abs_molkg';
+export const MIXTURE_NUMBERED_RUN=/^\d+(?:_.*)?$/;
+export const normalizedBrowserPath=value=>String(value||'').replaceAll('\\','/').replace(/^\.\//,'').replace(/\/+$/,'');
+export const isMixtureSummaryPath=value=>normalizedBrowserPath(value).split('/').at(-1)===MIXTURE_SUMMARY_FILE;
+export function matchingMixtureSimulationPath(summaryPath,simulationPath){
+  const summary=normalizedBrowserPath(summaryPath),simulation=normalizedBrowserPath(simulationPath),parent=summary.split('/').slice(0,-1).join('/'),parts=simulation.split('/'),run=parts.at(-2);
+  return parts.at(-1)?.toLowerCase()==='simulation.input'&&MIXTURE_NUMBERED_RUN.test(run||'')&&parts.slice(0,-2).join('/')===parent;
+}
 /** Verified by reference_scripts/plot_report.py and representative-run metadata. */
 export const MIXTURE_SUMMARY_CONTRACT={pressureUnit:'Pa',partialQuantity:'partial pressure',partialUnit:'Pa',loadingKind:'absolute',loadingUnit:SUMMARY_LOADING_UNIT,compositionQuantity:'loading-derived adsorbed composition (component absolute loading / summed component absolute loading)',compositionUnit:'dimensionless'};
 

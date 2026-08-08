@@ -1,8 +1,9 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=mixture-isotherm-v1';
-import {parseCif} from '../../core/raspa-package.mjs?rev=mixture-isotherm-v1';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=mixture-isotherm-v1';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=mixture-isotherm-v1';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=mixture-isotherm-v1';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=mixture-directory-v2';
+import {parseCif} from '../../core/raspa-package.mjs?rev=mixture-directory-v2';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=mixture-directory-v2';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=mixture-directory-v2';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=mixture-directory-v2';
+import {isMixtureSummaryPath,matchingMixtureSimulationPath,mixtureComponentsFromSimulation} from '../../core/isotherm-summary.mjs?rev=mixture-directory-v2';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);
@@ -43,7 +44,8 @@ export async function discoverChainSeries(files,{manifestRows=[],datasetName=nul
     const m=manifest.get(`${chain}/${run}`),manifestPressure=m?Number(m.pressure_pa):null;if(m&&Number.isFinite(manifestPressure)&&!numericEqual(manifestPressure,simulation.pressurePa))diagnostics.push({severity:'error',code:'manifest_pressure_mismatch',message:`Manifest pressure ${manifestPressure} Pa contradicts simulation.input ${simulation.pressurePa} Pa; run identity was not remapped.`});
     const dependencies={framework,molecules,pseudoatoms,mixing,overrides};const physicsReady=!!(framework&&Object.values(molecules).every(Boolean)&&pseudoatoms&&mixing)&&!diagnostics.some(x=>x.severity==='error'&&x.code!=='duplicate_movies');runs.push({id:`${chain}/${run}`,family:simulation.components.map(x=>x.name).join('+')||chain,chain,chainLength:Number(chain.slice(1)),run,pressurePa:Number.isFinite(manifestPressure)?manifestPressure:simulation.pressurePa,simulationPressurePa:simulation.pressurePa,framework:simulation.framework.name,temperatureK:simulation.temperatureK,unitCells:simulation.settings.unitCells,forceField:simulation.settings.forceField,simulationPath:simPath,simulationFile:simFile,movie,movieCandidates,outputs:outputFiles,dependencies,annotations:{run,pressurePa:Number.isFinite(manifestPressure)?manifestPressure:simulation.pressurePa,simulationPressurePa:simulation.pressurePa,framework:simulation.framework.name,temperatureK:simulation.temperatureK,unitCells:simulation.settings.unitCells,componentNames:simulation.components.map(x=>x.name),physicsFiles:{framework:framework?.path||null,molecules:Object.fromEntries(Object.entries(molecules).map(([k,v])=>[k,v?.path||null])),pseudoatoms:pseudoatoms?.path||null,mixing:mixing?.path||null,overrides:overrides.map(x=>x.path)}},ready:{rdf:!!outputFiles.rdf.length,endToEnd:!!outputFiles.endToEnd.length,vtk:!!outputFiles.vtk.length,movie:!!movie,physics:physicsReady,analysis:!!movie&&physicsReady},diagnostics});
   }
-  runs.sort((a,b)=>a.chainLength-b.chainLength||Number(a.run)-Number(b.run));return {dataset:datasetName||root||'Selected dataset',root,runs,createdAt:new Date().toISOString()};
+  const summaries=[];for(const file of all.filter(file=>isMixtureSummaryPath(pathOf(file)))){const path=pathOf(file),simulationFile=all.find(candidate=>matchingMixtureSimulationPath(path,pathOf(candidate)));if(!simulationFile)continue;try{const components=mixtureComponentsFromSimulation(parseSimulationInput(await textOf(simulationFile)),{source:pathOf(simulationFile)});summaries.push({type:'mixture_isotherm_summary',xKind:'pressure',path,file,simulationFile,components,mixtureIdentity:dirname(path)})}catch{} }
+  runs.sort((a,b)=>a.chainLength-b.chainLength||Number(a.run)-Number(b.run));return {dataset:datasetName||root||'Selected dataset',root,runs,summaries,createdAt:new Date().toISOString()};
 }
 
 export function filesForCatalogRun(entry){
