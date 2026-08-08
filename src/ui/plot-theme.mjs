@@ -96,11 +96,10 @@ export const DATASET_STYLES=Object.freeze({
 });
 /** Dataset slot, never its editable label, determines stroke encoding. */
 export function datasetStyle(datasetId){return DATASET_STYLES[String(datasetId)]||DATASET_STYLES.A}
-const subscript=n=>[...String(n)].map(d=>'₀₁₂₃₄₅₆₇₈₉'[d]??d).join('');
 /** Independent legend keys for the two simulation encodings, plus literature. */
 export function chainLegendModel(curves){
   const shown=curves.filter(c=>c.visible!==false),sim=shown.filter(c=>!c.literature),literature=shown.filter(c=>c.literature);
-  const chains=[...new Map(sim.map(c=>[String(c.component||`C${c.chainLength}`),{kind:'chain',label:`C${subscript(c.chainLength??String(c.component).replace(/^C/,''))}`,...chainStyle(c.chainLength)}])).values()].sort((a,b)=>a.label.localeCompare(b.label,undefined,{numeric:true}));
+  const chains=[...new Map(sim.map(c=>[String(c.component||`C${c.chainLength}`),{kind:'chain',label:String(c.component||`C${c.chainLength}`),...chainStyle(c.chainLength)}])).values()].sort((a,b)=>a.label.localeCompare(b.label,undefined,{numeric:true}));
   const datasets=[...new Map(sim.map(c=>[String(c.datasetId),{kind:'dataset',datasetId:String(c.datasetId),label:String(c.datasetLabel||c.legendLabel||c.datasetId),...datasetStyle(c.datasetId)}])).values()];
   return {chains,datasets,literature:literature.map(c=>({kind:'literature',label:String(c.legendLabel||'Literature'),color:c.resolvedColor||'#555',dash:[]}))};
 }
@@ -125,7 +124,7 @@ export function chainStyle(chainLength) {
   return Object.freeze({ color: COLORS[i], marker: MARKERS[i] });
 }
 export function conciseCurveLabel(curve, multipleDatasets = false) {
-  const chain = String(curve.component || `C${curve.chainLength || ''}`).replace(/^C(\d+)$/,(_,n)=>`C${'₀₁₂₃₄₅₆₇₈₉'[n] || [...n].map(x=>'₀₁₂₃₄₅₆₇₈₉'[x]).join('')}`);
+  const chain = String(curve.component || `C${curve.chainLength || ''}`);
   if (!multipleDatasets) return chain;
   const family = String(curve.legendLabel || curve.datasetLabel || curve.family || curve.datasetId || '').replace(/^[AB]:\s*/, '').split(/[·/]/)[0].trim();
   return `${family || 'Dataset'} ${chain}`;

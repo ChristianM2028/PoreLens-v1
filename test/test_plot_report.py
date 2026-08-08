@@ -28,18 +28,17 @@ class PlotReportLegendTests(unittest.TestCase):
             }
         }
 
-    def test_multi_digit_chain_label_uses_typographic_subscripts(self) -> None:
+    def test_multi_digit_chain_label_remains_plain_text(self) -> None:
         namespace = {"re": re}
         selected_nodes = [
             node
             for node in self.tree.body
-            if (isinstance(node, ast.Assign) and node.targets[0].id == "SUBSCRIPT_DIGITS")
-            or (isinstance(node, ast.FunctionDef) and node.name == "format_component_label")
+            if isinstance(node, ast.FunctionDef) and node.name == "format_component_label"
         ]
         exec(compile(ast.Module(body=selected_nodes, type_ignores=[]), str(SOURCE_PATH), "exec"), namespace)
 
-        self.assertEqual("C₁₀", namespace["format_component_label"]("C10"))
-        self.assertEqual("C₁₂₃", namespace["format_component_label"]("C123"))
+        self.assertEqual("C10", namespace["format_component_label"]("C10"))
+        self.assertEqual("C123", namespace["format_component_label"]("C123"))
         self.assertEqual("methane", namespace["format_component_label"]("methane"))
 
     def test_chain_and_dataset_legends_have_independent_font_sizes(self) -> None:

@@ -20,13 +20,13 @@ test('identical labels do not merge identities and reach legends and exports',()
  const parsed={records:[{x:1,loading:2,xKind:'pressure',sourcePath:'a',lineNumber:1}],diagnostics:[],xKind:'pressure'};
  const entries=['A','B'].map(datasetId=>({entry:{datasetId,datasetLabel:'Same label',datasetFingerprint:`fp-${datasetId}`,component:'C5',chainLength:5,path:`${datasetId}.dat`},parsed}));
  const curves=buildSummaryIsothermCurves(entries).curves;
- assert.equal(conciseCurveLabel(curves[0],true),'Same label C₅');
+ assert.equal(conciseCurveLabel(curves[0],true),'Same label C5');
  const exported=plottedExport(curves,{});
  assert.deepEqual(exported.data.map(x=>x.dataset_id),['A','B']);
  assert.deepEqual(exported.data.map(x=>x.dataset_label),['Same label','Same label']);
  assert.deepEqual(exported.data.map(x=>x.dataset_fingerprint),['fp-A','fp-B']);
  const svg=buildLineSvg(curves.map(c=>({...c,records:[{x:1,y:2},{x:2,y:3}]})),{});
- assert.equal((svg.match(/>Same label<\/text>/g)||[]).length,2);assert.equal((svg.match(/>C₅<\/text>/g)||[]).length,1);
+ assert.equal((svg.match(/>Same label<\/text>/g)||[]).length,2);assert.equal((svg.match(/>C5<\/text>/g)||[]).length,1);
 });
 
 test('complete long display labels remain in SVG accessibility metadata',()=>{

@@ -1,4 +1,4 @@
-import {mixPair,lennardJonesK,periodicDistance,minimumImageGeometry} from './raspa-physics.mjs?rev=axis-label-black-v1';
+import {mixPair,lennardJonesK,periodicDistance,minimumImageGeometry} from './raspa-physics.mjs?rev=chain-label-plain-v1';
 export const RESULT_FORMAT='porelens.trajectory-energetics'; export const RESULT_VERSION=2; export const K_TO_KJMOL=0.00831446261815324;
 export const ENERGETICS_LABEL='reconstructed coordinate-based pairwise LJ contributions under the validated simulated model';
 const scopes=new Set(['pair_only','anchor_site','whole_molecule']),criteria=new Set(['any','nearest','all']);

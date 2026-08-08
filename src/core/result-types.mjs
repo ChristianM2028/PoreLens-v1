@@ -1,5 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=axis-label-black-v1';
-import {parseVtkCellParameters} from './spatial-registration.mjs?rev=axis-label-black-v1';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=chain-label-plain-v1';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=chain-label-plain-v1';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));
