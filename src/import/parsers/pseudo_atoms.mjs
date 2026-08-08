@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=chain-label-plain-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=chain-label-plain-v1';
+import { PseudoAtom } from '../models.mjs?rev=mixture-isotherm-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=mixture-isotherm-v1';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];
