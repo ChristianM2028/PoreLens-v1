@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><pre id="result">waiting</pre><iframe id="app" style="width:1400px;height:1200px"></iframe>
+<script type="module">
+import {DirectoryCatalogScanner} from '../../src/import/browser/directory-handle-discovery.mjs';
+const result=document.querySelector('#result'),frame=document.querySelector('#app');
+const waitFor=async(fn,ms=10000)=>{const end=Date.now()+ms;while(Date.now()<end){const value=fn();if(value)return value;await new Promise(r=>setTimeout(r,25))}throw new Error('timed out')};
+const file=(name,text)=>({kind:'file',name,async getFile(){return {name,size:text.length,lastModified:1,text:async()=>text,arrayBuffer:async()=>new TextEncoder().encode(text).buffer}}});
+const dir=(name,children)=>({kind:'directory',name,async *entries(){for(const child of children)yield[child.name,child]}});
+try{
+  const [summary,simulation]=await Promise.all([fetch('../../test/fixtures/Representative_Mixture_Run/C1_to_C5_input/final_mix_abs_molkg').then(r=>r.text()),fetch('../../test/fixtures/Representative_Mixture_Run/C1_to_C5_input/25/simulation.input').then(r=>r.text())]);
+  const root=dir('C1_to_C5_input',[file('final_mix_abs_molkg',summary),dir('25',[file('simulation.input',simulation)])]);
+  const catalog=await new DirectoryCatalogScanner(root).scan();frame.src='../../index.html#adsorption-isotherms';await new Promise(resolve=>frame.onload=resolve);
+  const w=frame.contentWindow,d=w.document,loaded=[];w.addEventListener('porelens:dataset-loaded',event=>loaded.push(event.detail));
+  await waitFor(()=>d.querySelector('#filesA').onchange&&d.querySelector('#chainCanvas'));
+  w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{slot:'A',catalog}}));
+  await waitFor(()=>loaded.some(x=>x.slot==='A')&&d.querySelector('#chainCanvas')._visible?.length===5);
+  result.textContent=JSON.stringify({ok:true,summaries:catalog.summaries.length,runs:catalog.runs.length,status:d.querySelector('#statusA').textContent,name:d.querySelector('#nameA').textContent,hash:w.location.hash,curves:d.querySelector('#chainCanvas')._visible.map(x=>x.component),capabilities:loaded.at(-1).capabilities,rdfControlsDisabled:d.querySelector('#componentSelect').disabled});
+}catch(error){result.textContent=JSON.stringify({ok:false,error:error.stack||error.message})}
+</script>

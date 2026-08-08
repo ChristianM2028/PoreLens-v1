@@ -1,5 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=mixture-isotherm-v1';
-import {parseVtkCellParameters} from './spatial-registration.mjs?rev=mixture-isotherm-v1';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=mixture-directory-v2';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=mixture-directory-v2';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));

@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=mixture-isotherm-v1';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=mixture-directory-v2';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();
