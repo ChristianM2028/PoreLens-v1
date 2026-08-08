@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --job-name="gc-TMMC"
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 60:00:00
+#SBATCH -p long
+#SBATCH -A p32177
+#SBATCH --export=ALL
+echo $SLURM_JOBID > jobid
+#valhost = $SLURM_JOB_NODELIST
+#echo $valhost > hostname
+export RASPA_DIR=/projects/p32177/Christian/raspa
+export DYLD_LIBRARY_PATH=${RASPA_DIR}/lib
+export LD_LIBRARY_PATH=${RASPA_DIR}/lib
+$RASPA_DIR/bin/simulate $1

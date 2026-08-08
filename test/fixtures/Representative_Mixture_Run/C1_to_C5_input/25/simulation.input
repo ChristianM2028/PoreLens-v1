@@ -1,0 +1,90 @@
+SimulationType                MonteCarlo
+NumberOfCycles                100000 
+NumberOfInitializationCycles 50000
+PrintEvery                    1000
+PrintPropertiesEvery          1000
+Movies                        no
+WriteMoviesEvery              1000
+RestartFile no
+
+Forcefield                    local
+UseChargesFromCIFFile         yes
+CutOffVDW                     12.9
+
+Framework 0
+FrameworkName IRMOF-1
+UnitCells 1 1 1
+ExternalTemperature 300.0
+ExternalPressure   9236708.571873866
+
+ComputeRDF yes
+WriteRDFEvery 1000
+ComputeEndToEndDistanceHistogram yes
+ComputeDensityProfile3DVTKGrid yes
+WriteDensityProfile3DVTKGridEvery 500
+DensityProfile3DVTKGridPoints 10 10 10
+
+Component 0 MoleculeName             C1_alk
+            MoleculeDefinition       local
+            MolFraction              0.3333
+            IdealGasRosenbluthWeight 1
+            TranslationProbability   1
+            RotationProbability      1
+            ReinsertionProbability   1
+            CBMCProbability          1
+            SwapProbability          5.5
+            IdentityChangeProbability 0.5
+            NumberOfIdentityChanges  5
+            IdentityChangesList      0 1 2 3 4
+
+Component 1 MoleculeName             C2_alk
+            MoleculeDefinition       local
+            MolFraction              0.2667
+            IdealGasRosenbluthWeight 1
+            TranslationProbability   1
+            RotationProbability      1
+            ReinsertionProbability   1
+            CBMCProbability          1
+            SwapProbability          5.5
+            IdentityChangeProbability 0.5
+            NumberOfIdentityChanges  5
+            IdentityChangesList      0 1 2 3 4
+
+Component 2 MoleculeName             C3_alk
+            MoleculeDefinition       local
+            MolFraction              0.2
+            IdealGasRosenbluthWeight 1
+            TranslationProbability   1
+            RotationProbability      1
+            ReinsertionProbability   1
+            CBMCProbability          1
+            SwapProbability          5.5
+            IdentityChangeProbability 0.5
+            NumberOfIdentityChanges  5
+            IdentityChangesList      0 1 2 3 4
+
+Component 3 MoleculeName             C4_alk
+            MoleculeDefinition       local
+            MolFraction              0.1333
+            IdealGasRosenbluthWeight 0.1296930
+            TranslationProbability   1
+            RotationProbability      1
+            ReinsertionProbability   1
+            CBMCProbability          1
+            SwapProbability          5.5
+            IdentityChangeProbability 0.5
+            NumberOfIdentityChanges  5
+            IdentityChangesList      0 1 2 3 4
+
+Component 4 MoleculeName             C5_alk
+            MoleculeDefinition       local
+            MolFraction              0.0667
+            IdealGasRosenbluthWeight 0.0197344
+            TranslationProbability   1
+            RotationProbability      1
+            ReinsertionProbability   1
+            CBMCProbability          1
+            SwapProbability          5.5
+            IdentityChangeProbability 0.5
+            NumberOfIdentityChanges  5
+            IdentityChangesList      0 1 2 3 4
