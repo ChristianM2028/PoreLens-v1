@@ -171,6 +171,27 @@ test('five-component mixtures keep source identities but receive normalized labe
  assert.equal(new Set(curves.map(x=>styles.get(x).color)).size,5);
 });
 
+test('qualified mixture overlays share normalized chain encodings without mutating source identities',async()=>{
+ const {componentDisplayLabel,chainLegendModel,curveStyleMap}=await import('../src/ui/plot-theme.mjs');
+ const curves=[
+  {component:'C1_alk',chainLength:1,isMixture:true,datasetId:'A',records:[{x:1,y:1},{x:2,y:2}]},
+  {component:'C1_pfa',chainLength:1,isMixture:true,datasetId:'B',records:[{x:1,y:2},{x:2,y:3}]},
+  {component:'C3_alk',chainLength:3,isMixture:true,datasetId:'A',records:[{x:1,y:3},{x:2,y:4}]},
+  {component:'C3_pfa',chainLength:3,isMixture:true,datasetId:'B',records:[{x:1,y:4},{x:2,y:5}]}
+ ],sourceComponents=curves.map(curve=>curve.component),styles=curveStyleMap(curves),model=chainLegendModel(curves);
+ assert.equal(componentDisplayLabel('C3'),'C3');assert.equal(componentDisplayLabel('C3_alk'),'C3');assert.equal(componentDisplayLabel('C3_pfa'),'C3');
+ for(const [a,b] of [[curves[0],curves[1]],[curves[2],curves[3]]]){
+  assert.equal(styles.get(a).color,styles.get(b).color);assert.equal(styles.get(a).marker,styles.get(b).marker);
+  assert.deepEqual(styles.get(a).dash,[]);assert.deepEqual(styles.get(b).dash,[8,5]);
+ }
+ assert.notEqual(styles.get(curves[0]).color,styles.get(curves[2]).color);
+ assert.deepEqual(model.chains.map(item=>item.label),['C1','C3']);
+ assert.deepEqual(curves.map(curve=>curve.component),sourceComponents);
+ const svg=buildLineSvg(curves);assert.equal((svg.match(/class="legend-item legend-chain"/g)||[]).length,2);
+ assert.match(svg,/data-dataset="A"[^>]*stroke="#[A-Fa-f0-9]+"\/>/);assert.match(svg,/data-dataset="B"[^>]*stroke-dasharray="8 5"/);
+ assert.doesNotMatch(svg,/C1_(?:alk|pfa)|C3_(?:alk|pfa)/);
+});
+
 test('SVG export uses the saved normalized legend position',()=>{
  const curves=[{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'A',records:[{x:1,y:1},{x:2,y:2}]}],left=buildLineSvg(curves,{legendPosition:{x:0,y:0}}),right=buildLineSvg(curves,{legendPosition:{x:1,y:0}}),x=svg=>Number(svg.match(/class="legend-box" x="([\d.]+)/)?.[1]);
  assert.ok(x(right)>x(left));

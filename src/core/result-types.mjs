@@ -1,5 +1,5 @@
-import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=dataset-line-style-v1';
-import {parseVtkCellParameters} from './spatial-registration.mjs?rev=dataset-line-style-v1';
+import {parseMoleculeDefinition} from './raspa-physics.mjs?rev=normalized-chain-key-v1';
+import {parseVtkCellParameters} from './spatial-registration.mjs?rev=normalized-chain-key-v1';
 
 const finite=n=>Number.isFinite(n);
 const cleanLines=text=>text.split(/\r?\n/).map((raw,index)=>({raw,trimmed:raw.trim(),line:index+1}));
