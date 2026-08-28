@@ -1,5 +1,5 @@
-import { RDFRecord } from '../models.mjs?rev=mixture-literature-style-v2';
-import { diagnostic } from '../diagnostics.mjs?rev=mixture-literature-style-v2';
+import { RDFRecord } from '../models.mjs?rev=literature-markers-v3';
+import { diagnostic } from '../diagnostics.mjs?rev=literature-markers-v3';
 
 export function resolveRdfPair(filename, knownNames = []) {
   const stem = filename.split(/[\\/]/).at(-1).replace(/^RDF_/i, '').replace(/\.[^.]+$/, ''), names = [...new Set(['Framework', ...knownNames])].sort((a, b) => b.length - a.length);

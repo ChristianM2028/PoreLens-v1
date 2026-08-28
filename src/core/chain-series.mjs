@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=mixture-literature-style-v2';
-import { parseSimulationInput } from './trajectory.mjs?rev=mixture-literature-style-v2';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=mixture-literature-style-v2';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=mixture-literature-style-v2';
-import {parseIsothermSummary,parseRepresentativeMixtureSummary,mixtureComponentsFromSimulation,SUMMARY_FILES,SUMMARY_LOADING_UNIT,MIXTURE_SUMMARY_FILE,isMixtureSummaryPath,matchingMixtureSimulationPath} from './isotherm-summary.mjs?rev=mixture-literature-style-v2';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=mixture-literature-style-v2';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=literature-markers-v3';
+import { parseSimulationInput } from './trajectory.mjs?rev=literature-markers-v3';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=literature-markers-v3';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=literature-markers-v3';
+import {parseIsothermSummary,parseRepresentativeMixtureSummary,mixtureComponentsFromSimulation,SUMMARY_FILES,SUMMARY_LOADING_UNIT,MIXTURE_SUMMARY_FILE,isMixtureSummaryPath,matchingMixtureSimulationPath} from './isotherm-summary.mjs?rev=literature-markers-v3';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=literature-markers-v3';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

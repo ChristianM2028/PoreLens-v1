@@ -112,18 +112,21 @@ test('workspace renderers expose one/multi-row, axes, color scale mode, and true
 
 test('GEMC allocator overflows safely and canvas legend geometry supports interaction', async()=>{const {allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect,GEMC_COLORS}=await import('../src/ui/plot-theme.mjs');const keys=Array.from({length:15},(_,i)=>`F | C${i}`),a=allocateGemcStyles(keys),b=allocateGemcStyles([...keys].reverse());assert.deepEqual(a,b);assert.equal(new Set(keys.slice(0,GEMC_COLORS.length).map(k=>a[k].color)).size,GEMC_COLORS.length);const g=canvasPlotLayout({width:300,height:220,measure:x=>x.length*9,labels:keys.map(x=>x.repeat(3)),position:{x:1,y:1},overlay:true});assert.ok(g.legend.items.length===15&&g.legend.items.some(x=>x.clipped)&&g.legend.items.at(-1).row>0);assert.ok(g.legend.x+g.legend.width<=300&&g.legend.y+g.legend.height<=220);const canvas={width:600,height:400,getBoundingClientRect:()=>({left:10,top:20,width:300,height:200})};assert.deepEqual(canvasPointer(canvas,{clientX:160,clientY:120}),{x:300,y:200});assert.ok(hitRect({x:g.legend.x,y:g.legend.y},g.legend));assert.deepEqual(moveNormalizedLegend({x:1,y:1},100,100,g),{x:0,y:1});const movable=canvasPlotLayout({width:800,height:400,measure:x=>x.length*7,labels:['A'],position:{x:1,y:1},overlay:true});assert.ok(moveNormalizedLegend({x:1,y:1},-5,0,movable).x<1)});
 
-test('chain legend separates deduplicated chain and dataset encodings',async()=>{
-  const {chainLegendModel,datasetStyle}=await import('../src/ui/plot-theme.mjs');
+test('chain legend keeps chain colors and has one compact data-source key',async()=>{
+  const {chainLegendModel,curveStyleMap}=await import('../src/ui/plot-theme.mjs');
   const curves=[
     {visible:true,component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Primary custom label'},
-    {visible:true,component:'C2',chainLength:2,datasetId:'B',datasetLabel:'A very long comparison dataset display label'},
-    {visible:true,component:'C3',chainLength:3,datasetId:'B',datasetLabel:'A very long comparison dataset display label'},
-    {visible:true,literature:true,legendLabel:'Literature — Smith',resolvedColor:'#555'}
-  ],model=chainLegendModel(curves);
+    {visible:true,component:'C2',chainLength:2,datasetId:'B',datasetLabel:'Comparison label'},
+    {visible:true,component:'C3',chainLength:3,datasetId:'B'},
+    {visible:true,literature:true,legendLabel:'Literature — Smith',resolvedColor:'#0072B2'},
+    {visible:true,literature:true,legendLabel:'Literature — Jones',resolvedColor:'#E69F00'}
+  ],model=chainLegendModel(curves),styles=curveStyleMap(curves);
   assert.deepEqual(model.chains.map(x=>x.label),['C2','C3']);
-  assert.deepEqual(model.datasets.map(x=>[x.label,x.stroke]),[['Primary custom label','solid'],['A very long comparison dataset display label','dashed']]);
-  assert.deepEqual(model.literature[0],{kind:'literature',label:'Literature',color:'#555',marker:'circle',fill:'#ffffff',border:'#555',dash:[8,5]});
-  assert.deepEqual(datasetStyle('B').dash,[8,5]);assert.equal(datasetStyle('A').stroke,'solid');
+  assert.deepEqual(model.sources.map(x=>x.label),['Simulation','Literature']);
+  assert.equal(model.sources.filter(x=>x.source==='simulation').length,1);
+  assert.equal(model.sources.filter(x=>x.source==='literature').length,1);
+  assert.deepEqual(styles.get(curves[3]).dash,[]);assert.equal(styles.get(curves[3]).line,false);assert.equal(styles.get(curves[3]).hollow,true);
+  assert.deepEqual(model.sources[1],{kind:'source',source:'literature',label:'Literature',color:'#000000',marker:'circle',fill:'#ffffff',border:'#000000',dash:[],line:false});
 });
 
 test('inside, outside, hidden, and long-label chain legend geometry preserve spacing rules',async()=>{
@@ -147,17 +150,18 @@ test('chain legend normalized position moves, clamps, and survives canvas resizi
   assert.equal(outside.box.x,topLeft.box.x-8);assert.equal(hidden.draw,false);assert.equal(hidden.reservedTop,66);
 });
 
-test('SVG uses the shared dataset resolver and independent legend keys',()=>{
- const curves=[{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Renamed A',records:[{x:1,y:1},{x:2,y:2}]},{component:'C2',chainLength:2,datasetId:'B',datasetLabel:'Renamed B',records:[{x:1,y:2},{x:2,y:3}]}],svg=buildLineSvg(curves,{legendMode:'inside'});
- assert.equal((svg.match(/legend-chain/g)||[]).length,1);assert.equal((svg.match(/legend-dataset/g)||[]).length,2);assert.match(svg,/data-dataset-style="solid"/);assert.match(svg,/data-dataset-style="dashed"[^>]*stroke-dasharray="8 5"/);assert.match(svg,/class="legend-box"/);
+test('SVG uses solid simulation paths and a compact source legend',()=>{
+ const curves=[{component:'C2',chainLength:2,datasetId:'A',records:[{x:1,y:1},{x:2,y:2}]},{component:'C2',chainLength:2,datasetId:'B',records:[{x:1,y:2},{x:2,y:3}]}],svg=buildLineSvg(curves,{legendMode:'inside'});
+ assert.equal((svg.match(/legend-chain/g)||[]).length,1);assert.equal((svg.match(/legend-simulation/g)||[]).length,1);
+ assert.equal((svg.match(/class="data-line simulation-line"/g)||[]).length,2);assert.doesNotMatch(svg,/class="data-line simulation-line"[^>]*stroke-dasharray/);assert.match(svg,/class="legend-box"/);
 });
 
-test('literature SVG curves and legend use matching dashed lines and hollow circles',()=>{
- const svg=buildLineSvg([{literature:true,legendLabel:'Literature — full source detail',resolvedColor:'#882255',records:[{x:1,y:1},{x:2,y:2}]}]);
- assert.match(svg,/data-dataset-style="literature"[^>]*stroke="#882255" stroke-dasharray="8 5"/);
- assert.match(svg,/class="data-marker marker-circle"[^>]*fill="#ffffff" stroke="#882255"/);
- assert.match(svg,/class="legend-item legend-literature"[\s\S]*?stroke="#882255" stroke-dasharray="8 5"[\s\S]*?class="legend-marker"[^>]*fill="#ffffff" stroke="#882255"[\s\S]*?>Literature</);
- assert.doesNotMatch(svg,/full source detail/);
+test('literature SVG renders every point as a hollow circle without a path or legend line',()=>{
+ const records=Array.from({length:14},(_,i)=>({x:i+1,y:i+1})),svg=buildLineSvg([{literature:true,legendLabel:'Literature — full source detail',resolvedColor:'#882255',records}]);
+ assert.equal((svg.match(/class="data-marker marker-circle"/g)||[]).length,records.length);
+ assert.doesNotMatch(svg,/data-dataset-style="literature"|class="data-line[^"]*literature|stroke-dasharray="8 5"/);
+ assert.match(svg,/class="legend-item legend-source legend-literature"><circle class="legend-marker"[^>]*fill="#ffffff" stroke="#000000"/);
+ assert.doesNotMatch(svg,/legend-literature"><line|full source detail/);
 });
 
 test('five-component mixtures keep source identities but receive normalized labels and distinct colors',async()=>{
@@ -206,11 +210,11 @@ test('new sessions and SVG exports default to a publication-sized inset legend',
   assert.match(svg,/class="legend-box"/);assert.match(svg,new RegExp(`\\.tick\\{font-size:${PLOT_THEME.tickPx}px\\}`));assert.match(svg,new RegExp(`\\.axis-title\\{font-size:${PLOT_THEME.axisTitlePx}px\\}`));assert.match(svg,new RegExp(`\\.legend-heading\\{font-size:${PLOT_THEME.legendHeadingPx}px`));
 });
 
-test('mixture resolver preserves an exact selected component style for literature and SVG',()=>{
- const simulation=Array.from({length:5},(_,i)=>({component:`C${i+1}_alk`,chainLength:i+1,isMixture:true,datasetId:'A',mixtureProvenance:{identity:'C1-to-C5'},xKind:'pressure',records:[{x:1,y:i+1},{x:2,y:i+2}]})),styles=curveStyleMap(simulation),selected=styles.get(simulation[1]),literature={literature:true,legendLabel:'Literature — Literature',resolvedColor:selected.color,resolvedStyle:{...selected,dash:[...selected.dash]},records:[{x:1,y:2},{x:2,y:3}]},all=[...simulation,literature],resolved=curveStyleMap(all),model=chainLegendModel(all),svg=buildLineSvg(all);
+test('mixture resolver preserves an exact selected component style for literature and SVG',async()=>{
+ const {curveStyleMap,chainLegendModel}=await import('../src/ui/plot-theme.mjs'),simulation=Array.from({length:5},(_,i)=>({component:`C${i+1}_alk`,chainLength:i+1,isMixture:true,datasetId:'A',mixtureProvenance:{identity:'C1-to-C5'},xKind:'pressure',records:[{x:1,y:i+1},{x:2,y:i+2}]})),styles=curveStyleMap(simulation),selected=styles.get(simulation[1]),literature={literature:true,legendLabel:'Literature — Literature',resolvedColor:selected.color,resolvedStyle:{...selected,dash:[...selected.dash]},records:[{x:1,y:2},{x:2,y:3}]},all=[...simulation,literature],resolved=curveStyleMap(all),model=chainLegendModel(all),svg=buildLineSvg(all);
  assert.equal(new Set(simulation.map(curve=>styles.get(curve).color)).size,5);
  assert.notEqual(styles.get(simulation[0]).color,styles.get(simulation[1]).color);
- assert.equal(resolved.get(literature).color,selected.color);assert.deepEqual(resolved.get(literature).dash,[8,5]);assert.equal(resolved.get(literature).hollow,true);
- assert.deepEqual(model.chains.map(x=>x.label),['C1','C2','C3','C4','C5']);assert.deepEqual(model.literature.map(x=>x.label),['Literature']);
- assert.doesNotMatch(svg,/C1_alk|Literature — Literature/);assert.match(svg,new RegExp(`data-dataset-style="literature"[^>]*stroke="${selected.color}" stroke-dasharray="8 5"`));assert.match(svg,new RegExp(`fill="#ffffff" stroke="${selected.color}"`));
+ assert.equal(resolved.get(literature).color,selected.color);assert.deepEqual(resolved.get(literature).dash,[]);assert.equal(resolved.get(literature).hollow,true);
+ assert.deepEqual(model.chains.map(x=>x.label),['C1','C2','C3','C4','C5']);assert.deepEqual(model.sources.map(x=>x.label),['Simulation','Literature']);
+ assert.doesNotMatch(svg,/C1_alk|Literature — Literature|data-dataset-style="literature"/);assert.match(svg,new RegExp(`class="data-marker marker-circle"[^>]*fill="#ffffff" stroke="${selected.color}"`));
 });
