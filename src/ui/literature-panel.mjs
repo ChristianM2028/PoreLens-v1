@@ -1,4 +1,4 @@
-import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=literature-markers-v3';
+import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=dataset-line-style-v1';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];

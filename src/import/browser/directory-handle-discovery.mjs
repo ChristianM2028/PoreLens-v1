@@ -1,8 +1,8 @@
-import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=literature-markers-v3';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=literature-markers-v3';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=literature-markers-v3';
-import {parseCif} from '../../core/raspa-package.mjs?rev=literature-markers-v3';
-import {MIXTURE_SUMMARY_FILE,MIXTURE_NUMBERED_RUN,matchingMixtureSimulationPath} from '../../core/isotherm-summary.mjs?rev=literature-markers-v3';
+import {parseSimulationInput,parseMixingRules,parsePseudoAtoms,parseMoleculeDefinition} from '../parsers/index.mjs?rev=dataset-line-style-v1';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=dataset-line-style-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=dataset-line-style-v1';
+import {parseCif} from '../../core/raspa-package.mjs?rev=dataset-line-style-v1';
+import {MIXTURE_SUMMARY_FILE,MIXTURE_NUMBERED_RUN,matchingMixtureSimulationPath} from '../../core/isotherm-summary.mjs?rev=dataset-line-style-v1';
 
 const CHAIN=/^C\d+$/i, RUN=/^\d+(?:_|$)/;
 const SUMMARIES=new Map([['final_abs_pressure_up','pressure'],['final_abs_fug_up','fugacity']]);
@@ -20,7 +20,7 @@ export class DirectoryCatalogScanner {
   constructor(root,{batchSize=100,onUpdate=()=>{},previous=null}={}){
     this.root=root;this.batchSize=batchSize;this.onUpdate=onUpdate;this.previous=previous;
     this.cancelled=false;this.initialized=false;this.cursor=0;this.queue=[];this.supporting=[];this.catalog={version:3,name:root.name,runs:[],summaries:[],ignoredFiles:[],diagnostics:[],manifest:null,startedAt:Date.now(),finished:false,authorized:true,stats:stats()};
-    this.worker=typeof Worker!=='undefined'?new Worker(new URL('../../workers/catalog-worker.mjs?rev=literature-markers-v3',import.meta.url),{type:'module'}):null;this.workerId=0;
+    this.worker=typeof Worker!=='undefined'?new Worker(new URL('../../workers/catalog-worker.mjs?rev=dataset-line-style-v1',import.meta.url),{type:'module'}):null;this.workerId=0;
   }
   async parseSimulation(text){if(!this.worker)return parseSimulationInput(text);const id=++this.workerId;return new Promise((resolve,reject)=>{const receive=event=>{if(event.data.id!==id)return;this.worker.removeEventListener('message',receive);event.data.error?reject(new Error(event.data.error)):resolve(event.data.value)};this.worker.addEventListener('message',receive);this.worker.postMessage({id,text})})}
   ignored(path,reason,parentOutputDirectory=null){const name=path.split('/').at(-1);this.catalog.ignoredFiles.push({relativePath:path,filename:name,extension:extension(name),parentOutputDirectory,reason});this.catalog.stats.ignored++}

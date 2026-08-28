@@ -1,16 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { SimulationRun } from './models.mjs?rev=literature-markers-v3';
-import { diagnostic } from './diagnostics.mjs?rev=literature-markers-v3';
-import { parseSimulationInput } from './parsers/simulation_input.mjs?rev=literature-markers-v3';
-import { parsePseudoAtoms } from './parsers/pseudo_atoms.mjs?rev=literature-markers-v3';
-import { parseMixingRules } from './parsers/mixing_rules.mjs?rev=literature-markers-v3';
-import { parseMoleculeDefinition } from './parsers/molecule_definition.mjs?rev=literature-markers-v3';
-import { indexRdf } from './parsers/rdf.mjs?rev=literature-markers-v3';
-import { indexEndToEnd } from './parsers/end_to_end.mjs?rev=literature-markers-v3';
-import { indexVtk } from './parsers/vtk.mjs?rev=literature-markers-v3';
-import { resolveRunInputs } from './resolver.mjs?rev=literature-markers-v3';
-import { fingerprint } from './cache.mjs?rev=literature-markers-v3';
+import { SimulationRun } from './models.mjs?rev=dataset-line-style-v1';
+import { diagnostic } from './diagnostics.mjs?rev=dataset-line-style-v1';
+import { parseSimulationInput } from './parsers/simulation_input.mjs?rev=dataset-line-style-v1';
+import { parsePseudoAtoms } from './parsers/pseudo_atoms.mjs?rev=dataset-line-style-v1';
+import { parseMixingRules } from './parsers/mixing_rules.mjs?rev=dataset-line-style-v1';
+import { parseMoleculeDefinition } from './parsers/molecule_definition.mjs?rev=dataset-line-style-v1';
+import { indexRdf } from './parsers/rdf.mjs?rev=dataset-line-style-v1';
+import { indexEndToEnd } from './parsers/end_to_end.mjs?rev=dataset-line-style-v1';
+import { indexVtk } from './parsers/vtk.mjs?rev=dataset-line-style-v1';
+import { resolveRunInputs } from './resolver.mjs?rev=dataset-line-style-v1';
+import { fingerprint } from './cache.mjs?rev=dataset-line-style-v1';
 
 const rel = (root, value) => value ? path.relative(root, value).split(path.sep).join('/') : null;
 async function walk(root, nestedRuns, output = []) { for (const entry of await fs.readdir(root, { withFileTypes: true })) { if (entry.name === '.poreview') continue; const file = path.join(root, entry.name); if (entry.isDirectory()) { if (!nestedRuns.has(path.resolve(file))) await walk(file, nestedRuns, output); } else if (entry.isFile()) output.push(file); } return output; }
