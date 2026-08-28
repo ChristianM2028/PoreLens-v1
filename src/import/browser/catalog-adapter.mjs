@@ -1,4 +1,4 @@
-import {parseRdf} from '../importers.mjs?rev=plot-literature-v1';
+import {parseRdf} from '../importers.mjs?rev=mixture-literature-style-v2';
 const LEGACY_STANDALONE_LABELS=['CH3_sp3','CH2_sp3','CF3_sp3','CF2_sp3','Zn1','O1','O2','C1','C2','C3','H1'];
 
 /** Resolve only complete known labels; never split each underscore. */

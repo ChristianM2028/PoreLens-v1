@@ -205,3 +205,12 @@ test('new sessions and SVG exports default to a publication-sized inset legend',
   const svg=buildLineSvg([{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Long dataset label',records:[{x:1,y:1},{x:2,y:2}]}]);
   assert.match(svg,/class="legend-box"/);assert.match(svg,new RegExp(`\\.tick\\{font-size:${PLOT_THEME.tickPx}px\\}`));assert.match(svg,new RegExp(`\\.axis-title\\{font-size:${PLOT_THEME.axisTitlePx}px\\}`));assert.match(svg,new RegExp(`\\.legend-heading\\{font-size:${PLOT_THEME.legendHeadingPx}px`));
 });
+
+test('mixture resolver preserves an exact selected component style for literature and SVG',()=>{
+ const simulation=Array.from({length:5},(_,i)=>({component:`C${i+1}_alk`,chainLength:i+1,isMixture:true,datasetId:'A',mixtureProvenance:{identity:'C1-to-C5'},xKind:'pressure',records:[{x:1,y:i+1},{x:2,y:i+2}]})),styles=curveStyleMap(simulation),selected=styles.get(simulation[1]),literature={literature:true,legendLabel:'Literature — Literature',resolvedColor:selected.color,resolvedStyle:{...selected,dash:[...selected.dash]},records:[{x:1,y:2},{x:2,y:3}]},all=[...simulation,literature],resolved=curveStyleMap(all),model=chainLegendModel(all),svg=buildLineSvg(all);
+ assert.equal(new Set(simulation.map(curve=>styles.get(curve).color)).size,5);
+ assert.notEqual(styles.get(simulation[0]).color,styles.get(simulation[1]).color);
+ assert.equal(resolved.get(literature).color,selected.color);assert.deepEqual(resolved.get(literature).dash,[8,5]);assert.equal(resolved.get(literature).hollow,true);
+ assert.deepEqual(model.chains.map(x=>x.label),['C1','C2','C3','C4','C5']);assert.deepEqual(model.literature.map(x=>x.label),['Literature']);
+ assert.doesNotMatch(svg,/C1_alk|Literature — Literature/);assert.match(svg,new RegExp(`data-dataset-style="literature"[^>]*stroke="${selected.color}" stroke-dasharray="8 5"`));assert.match(svg,new RegExp(`fill="#ffffff" stroke="${selected.color}"`));
+});

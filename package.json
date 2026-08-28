@@ -10,6 +10,7 @@
     "start": "node serve.mjs",
     "test": "node --test",
     "scan": "node src/import/cli.mjs scan",
-    "assets:revision": "node scripts/set-asset-revision.mjs"
+    "assets:revision": "node scripts/set-asset-revision.mjs",
+    "deploy:smoke": "node scripts/deployment-smoke.mjs"
   }
 }

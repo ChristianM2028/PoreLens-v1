@@ -1,6 +1,6 @@
-import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=plot-literature-v1';
-import {expandFramework} from './raspa-package.mjs?rev=plot-literature-v1';
-import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=plot-literature-v1';
+import {compileAnnotation,selectInteractionPairs,reconstructPairs,traverseReconstructedPairs,buildResult,resultCsv,summarize,classifyNearestAnchors,reconstructConditionalPairs,aggregateConditionalDecomposition,CONDITIONING_BOUNDARIES} from './movie-analysis.mjs?rev=mixture-literature-style-v2';
+import {expandFramework} from './raspa-package.mjs?rev=mixture-literature-style-v2';
+import {analysisRange,selectedPdbFrames} from './trajectory.mjs?rev=mixture-literature-style-v2';
 
 export const LJ_COMPARISON_INPUT_FORMAT='porelens.lj-comparison-input';
 export const LJ_COMPARISON_INPUT_VERSION=1;
