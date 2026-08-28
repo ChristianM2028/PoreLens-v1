@@ -1,4 +1,4 @@
-import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=mixture-literature-style-v2';
+import {DirectoryCatalogScanner,persistDirectoryCatalog,restoreDirectoryCatalog} from '../import/browser/directory-handle-discovery.mjs?rev=literature-markers-v3';
 const $=s=>document.querySelector(s),SLOTS=['A','B'];
 
 /** Slot-scoped scan ownership. A callback is accepted only while its scan is current. */

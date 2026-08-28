@@ -1,12 +1,12 @@
-import {resolvePairName} from '../import/importers.mjs?rev=mixture-literature-style-v2';
-import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=mixture-literature-style-v2';
-import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=mixture-literature-style-v2';
-import {cellMatrix} from '../core/raspa-physics.mjs?rev=mixture-literature-style-v2';
-import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=mixture-literature-style-v2';
-import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=mixture-literature-style-v2';
-import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=mixture-literature-style-v2';
-import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=mixture-literature-style-v2';
-import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=mixture-literature-style-v2';
+import {resolvePairName} from '../import/importers.mjs?rev=literature-markers-v3';
+import {analyzeMovieRun,compareConditionalRuns,createLjComparisonInput} from '../core/lj-workflow.mjs?rev=literature-markers-v3';
+import {analysisRange,decodePdbSourceFrame,selectedPdbFrames} from '../core/trajectory.mjs?rev=literature-markers-v3';
+import {cellMatrix} from '../core/raspa-physics.mjs?rev=literature-markers-v3';
+import {reconstructOccupancyDensity,occupancyPopulationAvailability} from '../core/occupancy-density.mjs?rev=literature-markers-v3';
+import {PLOT_THEME,chainStyle,formatTick,linearTicks} from './plot-theme.mjs?rev=literature-markers-v3';
+import {displayValues,parseLegacyVtk,SPATIAL_CAPABILITY_LEVELS,vtkSlice,vtkVisualizationState} from '../core/result-types.mjs?rev=literature-markers-v3';
+import {buildSpatialRegistrationInput,validateSpatialRegistration} from '../core/spatial-registration.mjs?rev=literature-markers-v3';
+import {resolveOccupancyCell} from '../core/raspa-package.mjs?rev=literature-markers-v3';
 export {validateSpatialRegistration};
 
 export class LjResultRegistry{
