@@ -88,6 +88,48 @@ class PlotReportLegendTests(unittest.TestCase):
         }
         self.assertIn("CHAIN_LEGEND_TITLE_FONTSIZE", constants_used)
 
+    def test_dataset_qualified_components_share_visual_chain_encoding(self) -> None:
+        namespace = {"re": re}
+        helper = next(
+            node for node in self.tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "visual_chain_key"
+        )
+        exec(compile(ast.Module(body=[helper], type_ignores=[]), str(SOURCE_PATH), "exec"), namespace)
+
+        components = ["C3", "C3_pfa", "C1", "C1_pfa"]
+        expected_keys = ["C3", "C3", "C1", "C1"]
+        self.assertEqual(
+            expected_keys,
+            [namespace["visual_chain_key"](component) for component in components],
+        )
+
+        # The visual lookup collapses qualifiers while source identifiers stay intact.
+        colors = {"C1": "blue", "C3": "green"}
+        self.assertEqual(colors["C3"], colors[namespace["visual_chain_key"]("C3_pfa")])
+        self.assertEqual(colors["C1"], colors[namespace["visual_chain_key"]("C1_pfa")])
+        self.assertEqual(["C3", "C3_pfa", "C1", "C1_pfa"], components)
+
+        line_styles = ast.literal_eval(next(
+            node.value for node in self.tree.body
+            if isinstance(node, ast.Assign)
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "LINESTYLES"
+        ))
+        style_by_dataset = dict(zip(["Ideal", "PFA"], line_styles))
+        self.assertEqual("-", style_by_dataset["Ideal"])
+        self.assertEqual("--", style_by_dataset["PFA"])
+
+        plot_series = next(
+            node for node in self.tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "plot_series"
+        )
+        source = ast.unparse(plot_series)
+        self.assertIn("visual_chain_key(s.component)", source)
+        self.assertIn("for c in chain_keys", source)
+        self.assertIn("style_by_dataset[s.dataset_label]", source)
+        self.assertIn("marker='o'", source)
+        self.assertNotIn("marker_by_component", source)
+
 
 if __name__ == "__main__":
     unittest.main()

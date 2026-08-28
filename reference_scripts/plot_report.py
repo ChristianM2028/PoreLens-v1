@@ -111,6 +111,17 @@ def natural_component_key(component: str) -> Tuple[int, str]:
     return (10_000, component)
 
 
+def visual_chain_key(component: str) -> str:
+    """Return the base chain key used for visual encodings and legends.
+
+    Dataset-qualified component identifiers remain on :class:`Series` for
+    provenance; only a ``C<n>_<qualifier>`` display key is collapsed to its
+    base ``C<n>`` identity here.
+    """
+    match = re.fullmatch(r"(C\d+)(?:_.+)?", component)
+    return match.group(1) if match is not None else component
+
+
 def format_component_label(component: str) -> str:
     """Format a canonical ``C<n>`` key for display without changing the key."""
     match = re.fullmatch(r"C(\d+)", component)
@@ -738,13 +749,22 @@ def plot_series(
             dataset_labels.append(s.dataset_label)
     style_by_dataset = {label: LINESTYLES[i % len(LINESTYLES)] for i, label in enumerate(dataset_labels)}
 
-    components = sorted({s.component for s in cleaned}, key=natural_component_key)
-    color_by_component = {c: COMPONENT_COLORS.get(c, f"C{i % 10}") for i, c in enumerate(components)}
+    chain_keys = sorted({visual_chain_key(s.component) for s in cleaned}, key=natural_component_key)
+    color_by_component = {
+        chain: COMPONENT_COLORS.get(chain, f"C{i % 10}")
+        for i, chain in enumerate(chain_keys)
+    }
 
     fig, ax = plt.subplots(figsize=(7.1, 4.6), constrained_layout=True)
 
-    for s in sorted(cleaned, key=lambda z: (natural_component_key(z.component), dataset_labels.index(z.dataset_label))):
-        color = color_by_component[s.component]
+    for s in sorted(
+        cleaned,
+        key=lambda z: (
+            natural_component_key(visual_chain_key(z.component)),
+            dataset_labels.index(z.dataset_label),
+        ),
+    ):
+        color = color_by_component[visual_chain_key(s.component)]
         linestyle = style_by_dataset[s.dataset_label]
         if show_errorbars and s.yerr is not None:
             ax.errorbar(
@@ -792,7 +812,7 @@ def plot_series(
             linestyle="-",
             label=format_component_label(c),
         )
-        for c in components
+        for c in chain_keys
     ]
     dataset_handles = [
         Line2D([0], [0], color="black", lw=2.2, linestyle=style_by_dataset[label], label=label)
