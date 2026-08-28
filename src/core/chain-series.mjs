@@ -1,9 +1,9 @@
-import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=dataset-line-style-v1';
-import { parseSimulationInput } from './trajectory.mjs?rev=dataset-line-style-v1';
-import { parseEndToEndDistribution } from './result-types.mjs?rev=dataset-line-style-v1';
-import { parseRaspaOutput } from './raspa-package.mjs?rev=dataset-line-style-v1';
-import {parseIsothermSummary,parseRepresentativeMixtureSummary,mixtureComponentsFromSimulation,SUMMARY_FILES,SUMMARY_LOADING_UNIT,MIXTURE_SUMMARY_FILE,isMixtureSummaryPath,matchingMixtureSimulationPath} from './isotherm-summary.mjs?rev=dataset-line-style-v1';
-import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=dataset-line-style-v1';
+import { parseManifest, parseRdf, resolvePairName } from '../import/importers.mjs?rev=normalized-chain-key-v1';
+import { parseSimulationInput } from './trajectory.mjs?rev=normalized-chain-key-v1';
+import { parseEndToEndDistribution } from './result-types.mjs?rev=normalized-chain-key-v1';
+import { parseRaspaOutput } from './raspa-package.mjs?rev=normalized-chain-key-v1';
+import {parseIsothermSummary,parseRepresentativeMixtureSummary,mixtureComponentsFromSimulation,SUMMARY_FILES,SUMMARY_LOADING_UNIT,MIXTURE_SUMMARY_FILE,isMixtureSummaryPath,matchingMixtureSimulationPath} from './isotherm-summary.mjs?rev=normalized-chain-key-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../import/parsers/vtk.mjs?rev=normalized-chain-key-v1';
 
 const CHAIN_RE = /^C(\d+)$/;
 const RUN_RE = /^(\d+)(?:_|$)/;

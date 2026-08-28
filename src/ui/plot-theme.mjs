@@ -99,25 +99,26 @@ export function datasetStyle(datasetId){return DATASET_STYLES[String(datasetId)]
 /** Shorten only recognized chain-component identifiers for visual labels. */
 export function componentDisplayLabel(component) {
   const identity=String(component??'');
-  const match=/^(C\d+)_alk$/i.exec(identity);
+  const match=/^(C\d+)_(?:alk|pfa)$/i.exec(identity);
   return match?`C${Number(match[1].slice(1))}`:identity;
 }
-const mixtureStyleKey=curve=>String(curve.component??`C${curve.chainLength??''}`);
+/** Dataset-qualified source identifiers remain on curves; this key is visual only. */
+const visualChainKey=curve=>componentDisplayLabel(curve.component??`C${curve.chainLength??''}`);
 /** Resolve curve colors as a set so mixture components cannot collide while the
  * shared color-vision-deficiency-friendly palette has capacity. */
 export function curveStyleMap(curves) {
-  const shown=curves.filter(c=>c.visible!==false),mixtures=shown.filter(c=>c.isMixture),keys=[...new Set(mixtures.map(mixtureStyleKey))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),allocated=new Map();
+  const shown=curves.filter(c=>c.visible!==false),mixtures=shown.filter(c=>c.isMixture),keys=[...new Set(mixtures.map(visualChainKey))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),allocated=new Map();
   keys.forEach((key,index)=>allocated.set(key,{color:COLORS[index%COLORS.length],marker:MARKERS[index%MARKERS.length]}));
   return new Map(shown.map(curve=>{
     if(curve.literature){const saved=curve.resolvedStyle||{};return [curve,Object.freeze({color:saved.color||curve.resolvedColor||'#555',marker:'circle',dash:Object.freeze([]),line:false,hollow:true})]}
-    const base=curve.isMixture?allocated.get(mixtureStyleKey(curve)):chainStyle(curve.chainLength);
+    const base=curve.isMixture?allocated.get(visualChainKey(curve)):chainStyle(curve.chainLength);
     return [curve,Object.freeze({...base,dash:datasetStyle(curve.datasetId).dash,line:true,hollow:false})];
   }));
 }
 /** Chain colors plus a compact, dataset-independent data-source key. */
 export function chainLegendModel(curves){
   const shown=curves.filter(c=>c.visible!==false),sim=shown.filter(c=>!c.literature),literature=shown.filter(c=>c.literature),styles=curveStyleMap(shown);
-  const chains=[...new Map(sim.map(c=>[String(c.component||`C${c.chainLength}`),{kind:'chain',label:componentDisplayLabel(c.component||`C${c.chainLength}`),fill:styles.get(c).color,border:styles.get(c).color,...styles.get(c),dash:[]}])).values()].sort((a,b)=>a.label.localeCompare(b.label,undefined,{numeric:true}));
+  const chains=[...new Map(sim.map(c=>[visualChainKey(c),{kind:'chain',label:visualChainKey(c),fill:styles.get(c).color,border:styles.get(c).color,...styles.get(c),dash:[]}])).values()].sort((a,b)=>a.label.localeCompare(b.label,undefined,{numeric:true}));
   const datasets=[...sim.reduce((items,c)=>{const id=String(c.datasetId);if(!items.has(id))items.set(id,{kind:'dataset',datasetId:id,label:String(c.datasetLabel||id),color:PLOT_THEME.axisColor,dash:datasetStyle(id).dash,line:true});return items},new Map()).values()];
   const sources=[];
   if(literature.length)sources.push({kind:'source',source:'literature',label:'Literature',color:PLOT_THEME.axisColor,marker:'circle',fill:'#ffffff',border:PLOT_THEME.axisColor,dash:[],line:false});

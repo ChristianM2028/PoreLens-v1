@@ -1,9 +1,9 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=dataset-line-style-v1';
-import {parseCif} from '../../core/raspa-package.mjs?rev=dataset-line-style-v1';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=dataset-line-style-v1';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=dataset-line-style-v1';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=dataset-line-style-v1';
-import {isMixtureSummaryPath,matchingMixtureSimulationPath,mixtureComponentsFromSimulation} from '../../core/isotherm-summary.mjs?rev=dataset-line-style-v1';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=normalized-chain-key-v1';
+import {parseCif} from '../../core/raspa-package.mjs?rev=normalized-chain-key-v1';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=normalized-chain-key-v1';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=normalized-chain-key-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=normalized-chain-key-v1';
+import {isMixtureSummaryPath,matchingMixtureSimulationPath,mixtureComponentsFromSimulation} from '../../core/isotherm-summary.mjs?rev=normalized-chain-key-v1';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);

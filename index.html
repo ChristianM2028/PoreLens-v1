@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PoreLens — scientific analysis workspaces</title>
-  <meta name="porelens-revision" content="dataset-line-style-v1">
-  <link rel="stylesheet" href="styles.css?rev=dataset-line-style-v1">
+  <meta name="porelens-revision" content="normalized-chain-key-v1">
+  <link rel="stylesheet" href="styles.css?rev=normalized-chain-key-v1">
 </head>
 <body>
 <div id="fileLaunchWarning" class="notice" role="alert" hidden>
@@ -174,7 +174,7 @@
 <div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
 <script type="module">
   const revision=document.querySelector('meta[name="porelens-revision"]').content, commit=document.querySelector('meta[name="porelens-commit"]')?.content; document.getElementById('assetRevision').textContent=`Renderer revision: ${revision}${commit?` · commit ${commit}`:''}`;
-  import('./src/ui/workspace-navigation-ui.mjs?rev=dataset-line-style-v1').catch(error => {
+  import('./src/ui/workspace-navigation-ui.mjs?rev=normalized-chain-key-v1').catch(error => {
     const message = document.getElementById('shellStartupFailure');
     message.hidden = false;
     message.append(document.createTextNode(` ${error.message}`));

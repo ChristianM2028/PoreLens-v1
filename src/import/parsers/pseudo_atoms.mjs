@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=dataset-line-style-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=dataset-line-style-v1';
+import { PseudoAtom } from '../models.mjs?rev=normalized-chain-key-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=normalized-chain-key-v1';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];

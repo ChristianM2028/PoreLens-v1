@@ -1,7 +1,7 @@
-import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=dataset-line-style-v1';
-import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=dataset-line-style-v1';
-import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=dataset-line-style-v1';
-import {parsePdbCryst1,SPATIAL_REGISTRATION_TOLERANCES} from './spatial-registration.mjs?rev=dataset-line-style-v1';
+import {parseSimulationInput,indexPdbSource,validateMovieTopology} from './trajectory.mjs?rev=normalized-chain-key-v1';
+import {parsePseudoAtoms,parseMixingRules,parsePairOverrides,parseMoleculeDefinition,cellMatrix,physicsFingerprint} from './raspa-physics.mjs?rev=normalized-chain-key-v1';
+import {isAllComponentsMovieBasename,parseAllComponentsMovieFilename} from '../import/movie-filename.mjs?rev=normalized-chain-key-v1';
+import {parsePdbCryst1,SPATIAL_REGISTRATION_TOLERANCES} from './spatial-registration.mjs?rev=normalized-chain-key-v1';
 
 export function parseCif(text){
   const scalar=k=>{const m=text.match(new RegExp(`^\\s*${k}\\s+([^\\s#]+)`,'mi'));return m?Number(m[1].replace(/\([^)]*\)$/,'')):null;},lengths=['a','b','c'].map(x=>scalar(`_cell_length_${x}`)),angles=['alpha','beta','gamma'].map(x=>scalar(`_cell_angle_${x}`));

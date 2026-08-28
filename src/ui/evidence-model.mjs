@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=dataset-line-style-v1';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=normalized-chain-key-v1';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();
