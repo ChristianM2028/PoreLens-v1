@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PoreLens — scientific analysis workspaces</title>
-  <meta name="porelens-revision" content="plot-literature-v1">
-  <link rel="stylesheet" href="styles.css?rev=plot-literature-v1">
+  <meta name="porelens-revision" content="mixture-literature-style-v2">
+  <link rel="stylesheet" href="styles.css?rev=mixture-literature-style-v2">
 </head>
 <body>
 <div id="fileLaunchWarning" class="notice" role="alert" hidden>
@@ -170,10 +170,11 @@
     <div class="phase-exports"><button id="henryExportCsv">Export CSV</button><button id="henryExportJson">Export JSON + provenance</button><button id="henryExportPng">Export PNG</button></div>
   </section>
 </main>
-<footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span></footer>
+<footer class="page-footer"><span>PoreLens / local-first scientific analysis</span><span>Measurements and provenance remain in this browser tab</span><span id="assetRevision">Renderer revision: loading…</span></footer>
 <div id="shellStartupFailure" class="notice" role="alert" hidden><strong>The PoreLens shell could not start.</strong> This browser may not support JavaScript modules. The no-dataset Isotherms workspace above remains available.</div>
 <script type="module">
-  import('./src/ui/workspace-navigation-ui.mjs?rev=plot-literature-v1').catch(error => {
+  const revision=document.querySelector('meta[name="porelens-revision"]').content, commit=document.querySelector('meta[name="porelens-commit"]')?.content; document.getElementById('assetRevision').textContent=`Renderer revision: ${revision}${commit?` · commit ${commit}`:''}`;
+  import('./src/ui/workspace-navigation-ui.mjs?rev=mixture-literature-style-v2').catch(error => {
     const message = document.getElementById('shellStartupFailure');
     message.hidden = false;
     message.append(document.createTextNode(` ${error.message}`));

@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Dataset, Series, SimulationRun } from './models.mjs?rev=plot-literature-v1';
-import { diagnostic } from './diagnostics.mjs?rev=plot-literature-v1';
-import { indexRun } from './indexer.mjs?rev=plot-literature-v1';
-import { cacheEntryIsFresh, readIndex, writeIndex } from './cache.mjs?rev=plot-literature-v1';
+import { Dataset, Series, SimulationRun } from './models.mjs?rev=mixture-literature-style-v2';
+import { diagnostic } from './diagnostics.mjs?rev=mixture-literature-style-v2';
+import { indexRun } from './indexer.mjs?rev=mixture-literature-style-v2';
+import { cacheEntryIsFresh, readIndex, writeIndex } from './cache.mjs?rev=mixture-literature-style-v2';
 
 async function findInputs(root, found = [], visited = new Set()) { let real; try { real = await fs.realpath(root); } catch { return found; } if (visited.has(real)) return found; visited.add(real); for (const entry of await fs.readdir(root, { withFileTypes: true })) { if (entry.name === '.poreview') continue; const target = path.join(root, entry.name); if (entry.isDirectory()) await findInputs(target, found, visited); else if (entry.isFile() && /^simulation\.input$/i.test(entry.name)) found.push(target); } return found; }
 export async function discoverRuns(root, options = {}) { return (await discoverDataset(root, { ...options, writeCache: false })).runs; }

@@ -1,4 +1,4 @@
-import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=plot-literature-v1';
+import {buildChainCatalog,buildHandleCatalog,ParsedResultCache} from '../core/chain-series.mjs?rev=mixture-literature-style-v2';
 
 export const evidenceCatalogs=new Map();
 export const evidenceCatalogStates=new Map();

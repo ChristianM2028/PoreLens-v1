@@ -32,3 +32,25 @@ for `index.html`, `src/ui/app.js`, `src/core/raspa-package.mjs`, and `src/core/t
 must report the same `X-PoreLens-Revision`; `src/core/raspa-package.mjs` must import
 `indexPdbSource`, and `src/core/trajectory.mjs` must declare
 `export async function indexPdbSource`.
+
+## Required renderer deployment verification
+
+A successful `git pull` is not evidence that the running renderer changed. After
+updating the release checkout, run `npm install` when dependencies changed and
+**restart the PoreLens server process** (or atomically switch the release and
+restart its service). Then verify the origin before opening the application:
+
+```sh
+npm run deploy:smoke -- https://your-porelens-origin.example <expected-revision>
+```
+
+The check fetches `index.html` without cache, requires its revision meta value
+and `X-PoreLens-Revision` header to match, then fetches the revisioned
+`chain-plotter-ui.mjs` and verifies its module graph and immutable cache policy.
+Do not begin visual assertions unless this command passes.
+
+Finally, close old application tabs and perform a hard refresh in a new tab
+(with DevTools cache disabled during incident verification). Confirm the footer
+shows the expected **Renderer revision** and, when deployment injects a
+`porelens-commit` meta tag, the expected Git commit. If either differs, stop:
+the new source checkout is not the renderer being served.

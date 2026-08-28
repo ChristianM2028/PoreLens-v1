@@ -1,5 +1,5 @@
-import { PseudoAtom } from '../models.mjs?rev=plot-literature-v1';
-import { diagnostic } from '../diagnostics.mjs?rev=plot-literature-v1';
+import { PseudoAtom } from '../models.mjs?rev=mixture-literature-style-v2';
+import { diagnostic } from '../diagnostics.mjs?rev=mixture-literature-style-v2';
 
 export function parsePseudoAtoms(text, source = 'pseudo_atoms.def') {
   const records = [], diagnostics = [];
