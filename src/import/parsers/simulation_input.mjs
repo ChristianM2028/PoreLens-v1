@@ -1,6 +1,6 @@
-import { Component, Framework, SimulationSettings } from '../models.mjs?rev=literature-markers-v3';
-import { diagnostic } from '../diagnostics.mjs?rev=literature-markers-v3';
-import { cleanLines, finiteNumber } from './common.mjs?rev=literature-markers-v3';
+import { Component, Framework, SimulationSettings } from '../models.mjs?rev=dataset-line-style-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=dataset-line-style-v1';
+import { cleanLines, finiteNumber } from './common.mjs?rev=dataset-line-style-v1';
 
 const canonical = key => key.toLowerCase().replace(/[^a-z0-9]/g, '');
 const bool = value => /^(?:yes|true|on|1)$/i.test(value) ? true : /^(?:no|false|off|0)$/i.test(value) ? false : null;

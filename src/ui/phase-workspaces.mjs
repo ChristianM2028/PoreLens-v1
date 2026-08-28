@@ -1,9 +1,9 @@
-import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,gemcCriticalParametersByGroup,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=literature-markers-v3';
-import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=literature-markers-v3';
-import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=literature-markers-v3';
-import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=literature-markers-v3';
-import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=literature-markers-v3';
-import {literatureExportRows} from '../core/literature-series.mjs?rev=literature-markers-v3';
+import {parseGemcOutput,pairGemcBoxes,aggregateGemcReplicates,groupGemcRecords,clausiusClapeyronGroups,gemcCriticalParametersByGroup,GEMC_PRESSURE_DEFINITION} from '../core/gemc.mjs?rev=dataset-line-style-v1';
+import {parseHenryOutput,deduplicateHenry,HENRY_UNITS} from '../core/henry.mjs?rev=dataset-line-style-v1';
+import {IndependentWorkspaceStores} from '../core/independent-workspaces.mjs?rev=dataset-line-style-v1';
+import {PLOT_THEME,linearTicks,formatTick,chainStyle,allocateGemcStyles,canvasPlotLayout,canvasPointer,moveNormalizedLegend,hitRect} from './plot-theme.mjs?rev=dataset-line-style-v1';
+import {bindLiteraturePanel,literatureSeriesFor,literatureState} from './literature-panel.mjs?rev=dataset-line-style-v1';
+import {literatureExportRows} from '../core/literature-series.mjs?rev=dataset-line-style-v1';
 
 export const phaseStores=new IndependentWorkspaceStores();
 const $=id=>document.getElementById(id),filePath=file=>file.webkitRelativePath||file.name;

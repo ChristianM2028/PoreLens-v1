@@ -1,5 +1,5 @@
-import { VdwParameter } from '../models.mjs?rev=literature-markers-v3';
-import { diagnostic } from '../diagnostics.mjs?rev=literature-markers-v3';
+import { VdwParameter } from '../models.mjs?rev=dataset-line-style-v1';
+import { diagnostic } from '../diagnostics.mjs?rev=dataset-line-style-v1';
 
 export function parseMixingRules(text, source = 'force_field_mixing_rules.def') {
   const parameters = [], diagnostics = [], data = text.split(/\r?\n/).map(x => x.replace(/\/\/.*$/, '').trim()).filter(x => x && !x.startsWith('#'));

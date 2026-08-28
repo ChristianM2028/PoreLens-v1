@@ -1,5 +1,5 @@
 /** @deprecated Compatibility facade. Browser discovery lives in poreview/ingestion. */
-export * from './browser/directory-handle-discovery.mjs?rev=literature-markers-v3';
+export * from './browser/directory-handle-discovery.mjs?rev=dataset-line-style-v1';
 
 /** Authorized-file index shared by every workspace; values stay lazy File/handle references. */
 export class AuthorizedRunCatalog {
