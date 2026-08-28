@@ -25,8 +25,8 @@ test('hidden comparison heatmap does not reserve an empty grid row',async()=>{co
 
 test('representative parsed RDF maps one-for-one to raw line coordinates',async()=>{const {readFile}=await import('node:fs/promises'),rdf=parseRdf(await readFile(new URL('./fixtures/representative_run/RDF_CF3_sp3_C1.dat',import.meta.url),'utf8')),line=prepareRawLine(rdf.records);assert.deepEqual(line.map(x=>[x.distanceA,x.gR]),rdf.records.map(x=>[x.distanceA,x.gR]));assert.ok(line.every(x=>x.valid))});
 
-import {PLOT_THEME, chainStyle, conciseCurveLabel, linearTicks, logTicks, markerIndices, buildLineSvg} from '../src/ui/plot-theme.mjs';
-test('one shared publication theme supplies stable chain encodings and readable black axes',()=>{assert.equal(chainStyle(2).color,chainStyle(2).color);assert.notEqual(chainStyle(2).color,chainStyle(3).color);assert.equal(PLOT_THEME.axisColor,'#000000');assert.ok(PLOT_THEME.axisTitlePx>=20);assert.ok(PLOT_THEME.tickPx>=16);assert.ok(PLOT_THEME.legendPx>=16);assert.ok(PLOT_THEME.legendHeadingPx>=17);assert.ok(linearTicks(0,4.8).length>=5);assert.deepEqual(markerIndices(50,10),[0,5,11,16,22,27,33,38,44,49]);assert.deepEqual(logTicks(1,1e4).major.map(x=>x.label),['10⁰','10¹','10²','10³','10⁴']);assert.equal(conciseCurveLabel({component:'C10'}),'C10')});
+import {PLOT_THEME, chainStyle, componentDisplayLabel, conciseCurveLabel, linearTicks, logTicks, markerIndices, buildLineSvg} from '../src/ui/plot-theme.mjs';
+test('one shared publication theme supplies stable chain encodings and readable black axes',()=>{assert.equal(chainStyle(2).color,chainStyle(2).color);assert.notEqual(chainStyle(2).color,chainStyle(3).color);assert.equal(PLOT_THEME.axisColor,'#000000');assert.ok(PLOT_THEME.axisTitlePx>=20);assert.ok(PLOT_THEME.tickPx>=16);assert.ok(PLOT_THEME.legendPx>=16);assert.ok(PLOT_THEME.legendHeadingPx>=17);assert.ok(linearTicks(0,4.8).length>=5);assert.deepEqual(markerIndices(50,10),[0,5,11,16,22,27,33,38,44,49]);assert.deepEqual(logTicks(1,1e4).major.map(x=>x.label),['10⁰','10¹','10²','10³','10⁴']);assert.equal(conciseCurveLabel({component:'C10_alk'}),'C10');assert.equal(componentDisplayLabel('CF3_sp3'),'CF3_sp3')});
 test('publication SVG has numeric ticks, concise legend, and no interface or provenance text',()=>{const records=Array.from({length:50},(_,i)=>({x:10**(i/10),y:i/10,uncertainty:.02})),svg=buildLineSvg([{component:'C2',chainLength:2,family:'PFA',records}],{logX:true,xLabel:'Pressure, P (Pa)',yLabel:'Absolute loading (mol kg⁻¹ framework)'});assert.match(svg,/class="tick x-tick"/);assert.match(svg,/10⁰/);assert.match(svg,/C2/);assert.match(svg,/Absolute loading \(mol kg⁻¹ framework\)/);assert.match(svg,/class="error-bar"/);for(const forbidden of ['Adsorption Isotherms','checkbox','final_abs_pressure_up','wheel to zoom','provenance'])assert.doesNotMatch(svg,new RegExp(forbidden,'i'))});
 
 test('workspace curve renderer requires generic accessors and explicit axis metadata',async()=>{const {readFile}=await import('node:fs/promises'),source=await readFile(new URL('../src/ui/app.js',import.meta.url),'utf8'),draw=source.slice(source.indexOf('function drawCurve'),source.indexOf('function viridis'));assert.match(draw,/\{x,y,xLabel,xUnit,yLabel,yUnit,/);assert.match(draw,/missing: \$\{missing\.join/);assert.doesNotMatch(draw,/x\?\?r\.distanceA|y\?\?r\.gR/);assert.match(source,/yLabel:'Radial distribution function, g\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Δg\(r\)',yUnit:'dimensionless'/);assert.match(source,/yLabel:'Probability density',yUnit:'Å⁻¹'/)});
@@ -122,7 +122,7 @@ test('chain legend separates deduplicated chain and dataset encodings',async()=>
   ],model=chainLegendModel(curves);
   assert.deepEqual(model.chains.map(x=>x.label),['C2','C3']);
   assert.deepEqual(model.datasets.map(x=>[x.label,x.stroke]),[['Primary custom label','solid'],['A very long comparison dataset display label','dashed']]);
-  assert.equal(model.literature[0].label,'Literature — Smith');
+  assert.deepEqual(model.literature[0],{kind:'literature',label:'Literature',color:'#555',marker:'circle',fill:'#ffffff',border:'#555',dash:[8,5]});
   assert.deepEqual(datasetStyle('B').dash,[8,5]);assert.equal(datasetStyle('A').stroke,'solid');
 });
 
@@ -150,6 +150,22 @@ test('chain legend normalized position moves, clamps, and survives canvas resizi
 test('SVG uses the shared dataset resolver and independent legend keys',()=>{
  const curves=[{component:'C2',chainLength:2,datasetId:'A',datasetLabel:'Renamed A',records:[{x:1,y:1},{x:2,y:2}]},{component:'C2',chainLength:2,datasetId:'B',datasetLabel:'Renamed B',records:[{x:1,y:2},{x:2,y:3}]}],svg=buildLineSvg(curves,{legendMode:'inside'});
  assert.equal((svg.match(/legend-chain/g)||[]).length,1);assert.equal((svg.match(/legend-dataset/g)||[]).length,2);assert.match(svg,/data-dataset-style="solid"/);assert.match(svg,/data-dataset-style="dashed"[^>]*stroke-dasharray="8 5"/);assert.match(svg,/class="legend-box"/);
+});
+
+test('literature SVG curves and legend use matching dashed lines and hollow circles',()=>{
+ const svg=buildLineSvg([{literature:true,legendLabel:'Literature — full source detail',resolvedColor:'#882255',records:[{x:1,y:1},{x:2,y:2}]}]);
+ assert.match(svg,/data-dataset-style="literature"[^>]*stroke="#882255" stroke-dasharray="8 5"/);
+ assert.match(svg,/class="data-marker marker-circle"[^>]*fill="#ffffff" stroke="#882255"/);
+ assert.match(svg,/class="legend-item legend-literature"[\s\S]*?stroke="#882255" stroke-dasharray="8 5"[\s\S]*?class="legend-marker"[^>]*fill="#ffffff" stroke="#882255"[\s\S]*?>Literature</);
+ assert.doesNotMatch(svg,/full source detail/);
+});
+
+test('five-component mixtures keep source identities but receive normalized labels and distinct colors',async()=>{
+ const {chainLegendModel,curveStyleMap}=await import('../src/ui/plot-theme.mjs'),curves=Array.from({length:5},(_,i)=>({component:`C${i+1}_alk`,chainLength:i+1,isMixture:true,datasetId:'A',mixtureProvenance:{identity:'stable-mixture'},records:[]}));
+ const model=chainLegendModel(curves),styles=curveStyleMap(curves);
+ assert.deepEqual(curves.map(x=>x.component),['C1_alk','C2_alk','C3_alk','C4_alk','C5_alk']);
+ assert.deepEqual(model.chains.map(x=>x.label),['C1','C2','C3','C4','C5']);
+ assert.equal(new Set(curves.map(x=>styles.get(x).color)).size,5);
 });
 
 test('SVG export uses the saved normalized legend position',()=>{

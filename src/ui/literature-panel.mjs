@@ -1,4 +1,4 @@
-import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=mixture-directory-v2';
+import {createLiteratureSeries,createGemcLiteratureSeries,literatureValidity} from '../core/literature-series.mjs?rev=plot-literature-v1';
 
 const states=new Map();
 export const literatureState=scope=>states.get(scope)??[];
