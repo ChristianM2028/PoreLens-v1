@@ -13,6 +13,6 @@ try{
   await waitFor(()=>d.querySelector('#filesA').onchange&&d.querySelector('#chainCanvas'));
   w.dispatchEvent(new w.CustomEvent('porelens:catalog-updated',{detail:{slot:'A',catalog}}));
   await waitFor(()=>loaded.some(x=>x.slot==='A')&&d.querySelector('#chainCanvas')._visible?.length===5);
-  result.textContent=JSON.stringify({ok:true,summaries:catalog.summaries.length,runs:catalog.runs.length,status:d.querySelector('#statusA').textContent,name:d.querySelector('#nameA').textContent,hash:w.location.hash,curves:d.querySelector('#chainCanvas')._visible.map(x=>x.component),capabilities:loaded.at(-1).capabilities,rdfControlsDisabled:d.querySelector('#componentSelect').disabled});
+  result.textContent=JSON.stringify({ok:true,summaries:catalog.summaries.length,runs:catalog.runs.length,status:d.querySelector('#statusA').textContent,name:d.querySelector('#nameA').textContent,hash:w.location.hash,curves:d.querySelector('#chainCanvas')._visible.map(x=>x.component),renderedLabels:[...d.querySelectorAll('#chainCurveControls .curve-toggle')].map(x=>x.textContent.trim()),capabilities:loaded.at(-1).capabilities,rdfControlsDisabled:d.querySelector('#componentSelect').disabled});
 }catch(error){result.textContent=JSON.stringify({ok:false,error:error.stack||error.message})}
 </script>

@@ -1,9 +1,9 @@
-import {parseSimulationInput} from '../../core/trajectory.mjs?rev=mixture-directory-v2';
-import {parseCif} from '../../core/raspa-package.mjs?rev=mixture-directory-v2';
-import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=mixture-directory-v2';
-import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=mixture-directory-v2';
-import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=mixture-directory-v2';
-import {isMixtureSummaryPath,matchingMixtureSimulationPath,mixtureComponentsFromSimulation} from '../../core/isotherm-summary.mjs?rev=mixture-directory-v2';
+import {parseSimulationInput} from '../../core/trajectory.mjs?rev=plot-literature-v1';
+import {parseCif} from '../../core/raspa-package.mjs?rev=plot-literature-v1';
+import {parseMoleculeDefinition,parseMixingRules,parsePseudoAtoms,parsePairOverrides} from '../../core/raspa-physics.mjs?rev=plot-literature-v1';
+import {isAllComponentsMovieBasename} from '../movie-filename.mjs?rev=plot-literature-v1';
+import {indexVtk,readVtkHeaderPrefix} from '../parsers/vtk.mjs?rev=plot-literature-v1';
+import {isMixtureSummaryPath,matchingMixtureSimulationPath,mixtureComponentsFromSimulation} from '../../core/isotherm-summary.mjs?rev=plot-literature-v1';
 
 const pathOf=file=>(file.webkitRelativePath||file.name||file.path||'').replace(/^\.\//,'').replace(/\\/g,'/');
 const base=path=>path.split('/').at(-1);
