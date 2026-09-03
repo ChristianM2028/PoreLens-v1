@@ -1,7 +1,7 @@
 /** Shared, publication-oriented visual language for every PoreLens plot. */
 export const PLOT_THEME = Object.freeze({
   fontFamily: 'Arial, Helvetica, sans-serif', axisTitlePx: 34, tickPx: 30,
-  legendPx: 28, legendHeadingPx: 17, textLineGapPx: 4, legendRowGapPx: 5,
+  legendPx: 26, legendHeadingPx: 17, textLineGapPx: 4, legendRowGapPx: 5,
   legendGroupGapPx: 9, axisColor: '#000000', gridColor: '#e1e5e3', axisWidth: 1.4,
   lineWidth: 2, markerSize: 6, errorWidth: 1.1, errorCap: 4,
   background: '#ffffff', margins: Object.freeze({ left: 112, right: 30, top: 66, bottom: 82 })
